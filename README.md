@@ -1,6 +1,6 @@
 TRISURF NG
 ==========
-
+Modified by Yoav based on Rajkumar's cluster version
 
 1. Instalation
 --------------
@@ -51,13 +51,14 @@ If you are experiencing difficulties due to different automake versions, proceed
 
 
 This procedure can be done automatically by calling the build.sh script.
+(build.sh is modified not to make install)
 
 2. Use
 ------
 
 Prepare tape file, storing the definition for the simulation. You can use the sample tape file in the ``src/`` directory as a template for your simulation.
 
-Run simulations with ``trisurf-ng --force-from-tape`` for initial run, or ``trisurf-ng`` for continuing aborted simulations.
+Run simulations with ``cluster-trisurf/src/trisurf --force-from-tape`` for initial run, or ``cluster-trisurf/src/trisurf`` for continuing aborted simulations.
 
 ======== LIBRARY VERSION ================
 
