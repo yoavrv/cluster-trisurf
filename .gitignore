@@ -114,3 +114,6 @@ dout
 output.pvd
 .lock
 .status
+trisurf
+tspoststat
+tsmeasure
