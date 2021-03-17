@@ -75,7 +75,7 @@ ts_bool write_histogram_data(ts_uint timestep_no, ts_vesicle *vesicle){
 	char filename[255];
 	sprintf(filename,"histogram_%.6u.csv",timestep_no);
 	FILE *fd=fopen(filename,"w");
-	fprintf(fd,"Number_of_vertices_in cluster Number_of_clusters\n");
+	fprintf(fd,"Number_of_vertices_in_cluster,Number_of_clusters,\n");
 	for(k=0;k<cstlist->n;k++)
 		if(cstlist->cluster[k]->nvtx>max_nvtx) max_nvtx=cstlist->cluster[k]->nvtx;
 	//printf("Max. number of vertices in cluster: %d\n",max_nvtx);
@@ -83,7 +83,7 @@ ts_bool write_histogram_data(ts_uint timestep_no, ts_vesicle *vesicle){
 		cnt=0;
 		for(k=0;k<cstlist->n;k++)
 			if(cstlist->cluster[k]->nvtx==i) cnt++;
-		fprintf(fd,"%d %d\n",i,cnt);
+		fprintf(fd,"%d,%d,\n",i,cnt);
 		test+=cnt*i;
 	}
 	//for(k=0;k<cstlist->n;k++){

@@ -25,7 +25,7 @@ constareaswitch=0
 
 
 #Stretching
-stretchswitch=1
+stretchswitch=0
 xkA0=1.0
 
 ####### Polymer (brush) definitions ###########
@@ -109,14 +109,16 @@ plane_d=10
 #plane to vesicle repulsion force while closing
 plane_F=1.0
 
+#Vicsek: force direction is sum of own normal + (nearest neighbor normals * vicsek_strength)
+vicsek_strength=0
+
 #some important parameters
 #which type of adhesion model do you want; step_potential (1), parabolic potential (2) , for shperical surface with step potential (3), for cylindrical surface with step potential (4)
-type_of_adhesion_model=1
+type_of_adhesion_model=0
 #do you want to see any crawling motion on x-y plane, then choose 1, 0 otherwise; only for flate and cylindrical substrate 
 allow_xy_plane_movement=0
 #in active case, we need to apply an external force in the z-direction for overall force balance along z-direction, choose 1 if you want this, 0 otherwise
 force_balance_along_z_axis=0
-
 
 #Adhesion
 adhesion_switch=0
