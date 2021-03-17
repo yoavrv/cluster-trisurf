@@ -1,13 +1,13 @@
-bin_PROGRAMS = trisurf tsmeasure tspoststat
-trisurf_SOURCES = main.c
+bin_PROGRAMS = trisurf_y tsmeasure_y tspoststat_y
+trisurf_y_SOURCES = main.c
 AM_CPPFLAGS = ${libxml2_CFLAGS} -fgnu89-inline
-trisurf_LDADD = libtrisurf.la ${libcurl_LIBS} ${libxml2_LIBS}
+trisurf_y_LDADD = libtrisurf.la ${libcurl_LIBS} ${libxml2_LIBS}
 
-tsmeasure_SOURCES = tsmeasure.c 
-tsmeasure_LDADD = libtrisurf.la ${libcurl_LIBS} ${libxml2_LIBS}
+tsmeasure_y_SOURCES = tsmeasure.c
+tsmeasure_y_LDADD = libtrisurf.la ${libcurl_LIBS} ${libxml2_LIBS}
 
-tspoststat_SOURCES = tspoststat.c
-tspoststat_LDADD = libtrisurf.la ${libcurl_LIBS} ${libxml2_LIBS}
+tspoststat_y_SOURCES = tspoststat.c
+tspoststat_y_LDADD = libtrisurf.la ${libcurl_LIBS} ${libxml2_LIBS}
 
 #------------- LIBS ----------
 
