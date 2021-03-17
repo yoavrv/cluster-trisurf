@@ -491,6 +491,7 @@ while (1)
             }
            break;
 	 case 'v':
+     		fprintf(stdout,"TRISURF-NG v. %s, compiled on: %s %s.\n", TS_VERSION, __DATE__, __TIME__);
         	fprintf(stdout,"Programming done by: Samo Penic and Miha Fosnaric\n");
         	fprintf(stdout,"Released under terms of GPLv3\n");
 		exit(0);
@@ -604,7 +605,9 @@ while (1)
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 ts_bool print_help(FILE *fd){
+    fprintf(fd,"TRISURF-NG v. %s, compiled on: %s %s.\n", TS_VERSION, __DATE__, __TIME__);
 	fprintf(fd,"Programming done by: Samo Penic and Miha Fosnaric\n");
+    fprintf(fd,"Additional Programming done by: Raj-Kumar Sadhu, Yoav Ravid\n");
 	fprintf(fd,"Released under terms of GPLv3\n\n");
 
 	fprintf(fd, "Invoking trisurf-ng without any flags results in default operation. Program reads 'tape' file and 'dump.bin' binary representation of the vesicle from disk and continues the simulation where it was aborted (as specified in 'dump.bin').\n\n");
@@ -1233,6 +1236,9 @@ ts_tape *parsetapebuffer(char *buffer){
 /* Variables related to stretching */
 //	CFG_FLOAT("stretchswitch", 0, CFGF_NONE),
 //	CFG_FLOAT("xkA0",0,CFGF_NONE),
+
+/* variables for Vicsek interaction*/
+    CFG_FLOAT("vicsek_strength", 0, CFGF_NONE),
         CFG_END()
     };
     cfg_t *cfg;    
@@ -1242,7 +1248,7 @@ ts_tape *parsetapebuffer(char *buffer){
 	tape->plane_confinement_switch=cfg_getint(cfg,"plane_confinement_switch");
 	tape->plane_d=cfg_getfloat(cfg,"plane_d");
 	tape->plane_F=cfg_getfloat(cfg,"plane_F");
-
+    tape->vicsek_strength=cfg_getfloat(cfg,"vicsek_strength");
 	tape->adhesion_switch=cfg_getint(cfg,"adhesion_switch");
 	tape->adhesion_cuttoff=cfg_getfloat(cfg,"adhesion_cuttoff");
 	tape->adhesion_strength=cfg_getfloat(cfg,"adhesion_strength");

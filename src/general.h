@@ -302,6 +302,7 @@ typedef struct {
 	long int plane_confinement_switch;
 	ts_double plane_d;
 	ts_double plane_F;
+	ts_double vicsek_strength;
 	long int type_of_adhesion_model;
 	long int allow_xy_plane_movement;
 	long int force_balance_along_z_axis;
@@ -397,4 +398,7 @@ int createPidFile(const char *progName, const char *pidFile, int flags);
 
 int lockRegion(int fd, int type, int whence, int start, int len);
 char *libVersion();
+#ifndef  TS_VESRION
+#define TS_VERSION "undefined_version"
+#endif
 #endif

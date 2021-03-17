@@ -135,3 +135,6 @@ lockRegion(int fd, int type, int whence, int start, int len)
     return lockReg(fd, F_SETLK, type, whence, start, len);
 }
 
+char *libVersion(){
+	return TS_VERSION;
+}

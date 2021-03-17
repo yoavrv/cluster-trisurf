@@ -36,10 +36,17 @@ int main(int argv, char *argc[]){
 	/* create lock file */
 	createPidFile("ts_trisurf",".lock",0);
 	parse_args(argv,argc); // sets global variable command_line_args (defined in io.h)
+	ts_fprintf(stdout,"TRISURF-NG v. %s, compiled on: %s %s.\n", TS_VERSION, __DATE__, __TIME__);
+	ts_fprintf(stdout,"Programming done by: Samo Penic and Miha Fosnaric\n");
+	ts_fprintf(stdout,"Released under terms of GPLv3\n");
+	ts_fprintf(stdout,"Starting program...\n\n");
 //	vesicle = parseDump("timestep_000000.vtu");
 //		run_simulation(vesicle, vesicle->tape->mcsweeps, vesicle->tape->inititer, vesicle->tape->iterations, 1);
 
     if(command_line_args.dump_from_vtk[0]!=0){
+		ts_fprintf(stdout,"************************************************\n");
+		ts_fprintf(stdout,"**** Restoring vesicle from VTK points list ****\n");
+		ts_fprintf(stdout,"************************************************\n\n");
 		vesicle = parseDump(command_line_args.dump_from_vtk);
 //		write_vertex_xml_file(vesicle,9999); // here you can test if restoration and rewritting results in the same dump file. Only the date od creation of dump file must differ.
 		tape = vesicle->tape;
@@ -60,10 +67,16 @@ int main(int argv, char *argc[]){
   //      vesicle=vtk2vesicle(command_line_args.dump_from_vtk,tape);
     }
 	else if(command_line_args.force_from_tape){
+		ts_fprintf(stdout,"************************************************\n");
+		ts_fprintf(stdout,"**** Generating initial geometry from tape *****\n");
+		ts_fprintf(stdout,"************************************************\n\n");
 		tape=parsetape(command_line_args.tape_fullfilename);
 		vesicle=create_vesicle_from_tape(tape);
 	} else {
 
+		ts_fprintf(stdout,"**********************************************************************\n");
+		ts_fprintf(stdout,"**** Recreating vesicle from dump file and continuing simulation *****\n");
+		ts_fprintf(stdout,"**********************************************************************\n\n");
 		tape=parsetape(command_line_args.tape_fullfilename);
 		vesicle=restore_state(&start_iteration);
         if(vesicle==NULL){

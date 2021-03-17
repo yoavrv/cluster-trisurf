@@ -40,7 +40,7 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_uint mcsweeps, ts_uint inititer, 
 		fatal("Cannot open statistics.csv file for writing",1);
 	}
 	if(start_iteration==0)
-		fprintf(fd, "Epoch OuterLoop VertexMoveSucessRate BondFlipSuccessRate Volume Area lamdba1 lambda2 lambda3 Kc(2-9) Kc(6-9) Kc(2-end) Kc(3-6)\n");
+		fprintf(fd, "Epoch,OuterLoop,VertexMoveSucessRate,BondFlipSuccessRate,Volume,Area,lamdba1,lambda2,lambda3,Kc(2-9),Kc(6-9),Kc(2-end),Kc(3-6)\n");
 
 /*	 if(vesicle->sphHarmonics!=NULL){
         strcpy(filename,command_line_args.path);
@@ -181,7 +181,7 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_uint mcsweeps, ts_uint inititer, 
             }
 */
 
-			fprintf(fd, "%lu %u %e %e %1.16e %1.16e %1.16e %1.16e %1.16e %1.16e %1.16e %1.16e %1.16e\n",epochtime,i,vmsr,bfsr,vesicle->volume, vesicle->area,l1,l2,l3,kc1, kc2, kc3,kc4);
+			fprintf(fd, "%lu,%u,%e,%e,%1.16e,%1.16e,%1.16e,%1.16e,%1.16e,%1.16e,%1.16e,%1.16e,%1.16e\n",epochtime,i,vmsr,bfsr,vesicle->volume, vesicle->area,l1,l2,l3,kc1, kc2, kc3,kc4);
 
 		    fflush(fd);	
 		//	sprintf(filename,"timestep-%05d.pov",i-inititer);
