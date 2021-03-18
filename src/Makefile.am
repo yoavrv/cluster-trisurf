@@ -1,5 +1,6 @@
 bin_PROGRAMS = trisurf_y tsmeasure_y tspoststat_y
 trisurf_y_SOURCES = main.c
+#AM_CFLAGS = -DTS_VERSION=\"from_makefile\"
 AM_CPPFLAGS = ${libxml2_CFLAGS} -fgnu89-inline
 trisurf_y_LDADD = libtrisurf.la ${libcurl_LIBS} ${libxml2_LIBS}
 

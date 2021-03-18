@@ -398,7 +398,7 @@ int createPidFile(const char *progName, const char *pidFile, int flags);
 
 int lockRegion(int fd, int type, int whence, int start, int len);
 char *libVersion();
-#ifndef  TS_VESRION
-#define TS_VERSION "undefined_version"
+#ifndef TS_VESRION
+#define TS_VERSION "whatever"
 #endif
 #endif
