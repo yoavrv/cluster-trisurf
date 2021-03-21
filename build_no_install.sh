@@ -8,7 +8,7 @@ autoconf
 ./configure
 make clean
 make
-sudo make install
+#sudo make install
 echo "Warning!"
 echo "Python scripts for running the trisurf-ng have been moved to separate package"
 
