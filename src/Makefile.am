@@ -1,4 +1,4 @@
-bin_PROGRAMS = trisurf_e tsmeasure_ey tspoststat_ey
+bin_PROGRAMS = trisurf_ey tsmeasure_ey tspoststat_ey
 trisurf_ey_SOURCES = main.c
 GITVERSION:=$(shell git --no-pager describe --tags --always --dirty)
 AM_CFLAGS = -DTS_VERSION=\"$(GITVERSION)\"

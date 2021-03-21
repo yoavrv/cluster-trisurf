@@ -117,3 +117,7 @@ output.pvd
 trisurf
 tspoststat
 tsmeasure
+src/trisurf_ey
+.gitignore
+src/tspoststat_ey
+src/tsmeasure_ey
