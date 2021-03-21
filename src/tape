@@ -1,6 +1,6 @@
 ####### Vesicle definitions ###########
 # nshell is a number of divisions of dipyramid
-nshell=25
+nshell=10
 # dmax is the max. bond length (in units l_min)
 dmax=1.7
 # dmin_interspecies in the min. dist. between different vertex species (in units l_min)
@@ -25,7 +25,7 @@ constareaswitch=0
 
 
 #Stretching
-stretchswitch=1
+stretchswitch=0
 xkA0=1.0
 
 ####### Polymer (brush) definitions ###########
@@ -61,18 +61,18 @@ nzmax=100
 ####### Program Control ############
 #how many MC sweeps between subsequent records of states to disk
 #200000
-mcsweeps=50000
+mcsweeps=1000
 #how many initial mcsweeps*inititer MC sweeps before recording to disk?
 #2
 inititer=0
 #how many records do you want on the disk iteration are there in a run?
 #10000
-iterations=300
+iterations=100
 
 
 ###### Spherical harmonics ###########
 # If 0 then spherical harmonics are not calculated at all.
-spherical_harmonics_coefficients=21
+spherical_harmonics_coefficients=0
 
 #shut up if we are using cluster!!!
 quiet=false
@@ -94,11 +94,11 @@ distributed_processes=50
 #number of vertices with spontaneous curvature (integer)
 number_of_vertices_with_c0=0
 #c0/2 is spontaneous curvature. c0 is used as (c1+c1-c0)^2 in energy term (float)
-c0=1.0
+c0=0.5
 #energy of attraction of vertices with spontaneous curvature (float, positive value for attraction)
-w=1.0
+w=2.0
 #direct force on vesicles with spontaneous curvature (float)
-F=0.0
+F=2.0
 
 
 
@@ -109,14 +109,16 @@ plane_d=10
 #plane to vesicle repulsion force while closing
 plane_F=1.0
 
+#Vicsek: force direction is sum of own normal + (nearest neighbor normals * vicsek_strength)
+vicsek_strength=0
+
 #some important parameters
 #which type of adhesion model do you want; step_potential (1), parabolic potential (2) , for shperical surface with step potential (3), for cylindrical surface with step potential (4)
-type_of_adhesion_model=1
+type_of_adhesion_model=0
 #do you want to see any crawling motion on x-y plane, then choose 1, 0 otherwise; only for flate and cylindrical substrate 
 allow_xy_plane_movement=0
 #in active case, we need to apply an external force in the z-direction for overall force balance along z-direction, choose 1 if you want this, 0 otherwise
 force_balance_along_z_axis=0
-
 
 #Adhesion
 adhesion_switch=0
