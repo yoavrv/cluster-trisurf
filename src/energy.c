@@ -215,20 +215,32 @@ inline ts_bool attraction_bond_energy(ts_bond *bond, ts_double w){
 
 ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_old){
 	//Yoav- modified to include Vicsek Interaction
-
-    //self-factor is inverse of vicsek_strength
-    //nearest neighbors
-    //
+    
+    //quit if this is a non-active vertex (or no vertex is active)
+    if(fabs(vesicle->tape->F)<1e-15) return 0.0;
     if(vtx->c<1e-15) return 0.0;
-	//	printf("was here");
-	if(fabs(vesicle->tape->F)<1e-15) return 0.0;
 
 
-    if (fabs(vesicle->tape->vicsek_strength)<1e-15) {
+    ts_double norml,ddp=0.0;
+	ts_uint i,j,k,l;
+	ts_double xnorm=0.0,ynorm=0.0,znorm=0.0;
+	ts_double vixnorm=0.0,viynorm=0.0,viznorm=0.0;
+
+    // breadth-first search "seen" vertex list
+    // should probably be a struct, but for now is kinda volatile
+    // vertex list, with 3 locations: n_c current place, and n_p previous layer
+    // vertex is added at n_c, check is done at n_p<k<n_c
+    // !!! mallocation size should be subject to change: roughly how many
+    // vertex are expected to be counted, which highly depends on the
+    // maximum distance and how crumpled the vesicle is, ~pi*r^2
+    ts_uint max_dist=4,max_vtx_seen=6*max_dist^2; //future: vesicle->tape->max_dist
+    ts_vertex **seen_vtx=(ts_vertex**) malloc(sizeof(ts_vertex*)*max_vtx_seen);;
+    ts_uint n_top=0, n_prev_prev_layer=0, n_prev_layer=0, n_curr_layer=0, curr_dist=0;
+    
+
+    if (fabs(vesicle->tape->vicsek_strength)<1e-15) {//no vicsek
         //regular "force in normal direction"
-        ts_double norml,ddp=0.0;
-	    ts_uint i;
-	    ts_double xnorm=0.0,ynorm=0.0,znorm=0.0;
+
 	
         //vertex normal
 	    /*find normal of the vertex as sum of all the normals of the triangles surrounding it. */
@@ -246,18 +258,15 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 	    /*calculate ddp, Viscek force directed displacement*/
 	    ddp=xnorm*(vtx->x-vtx_old->x)+ynorm*(vtx->y-vtx_old->y)+znorm*(vtx->z-vtx_old->z);
 
-	    return vesicle->tape->F*ddp;	
     }
-    else {
-        //force directed by Vicsek sum over neighbor normals
-        //(provided they are active too (c!=0)
-        ts_double norml,ddp=0.0;
-	    ts_uint i,j;
-	    ts_double xnorm=0.0,ynorm=0.0,znorm=0.0;
-	    ts_double vixnorm=0.0,viynorm=0.0,viznorm=0.0;
+    else {//vicsek
+        //force directed by Vicsek sum-over-neighbors-normals
+        //(provided they are active too (c>0)
+
 	
         //prime vertex normal
-	    /*find normal of the vertex as sum of all the normals of the triangles surrounding it. */
+	    /*find normal of the vertex as sum of all the
+        normals of the triangles surrounding it. */
 	    for(i=0;i<vtx->tristar_no;i++){
 	    	xnorm+=vtx->tristar[i]->xnorm;
 	    	ynorm+=vtx->tristar[i]->ynorm;
@@ -269,22 +278,92 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 	    viynorm=ynorm/norml;
 	    viznorm=znorm/norml;
 
+        //seen the prime vertex
+        seen_vtx[n_top]=vtx;
+        n_top++;
+        curr_dist++;
+        n_curr_layer=n_top;
     
-        //Nearest neighbors normals
-        for (j=0;j<vtx->neigh_no;j++){
-            if (vtx->neigh[j]->c>1e-15){
-                xnorm=0.0; ynorm=0.0; znorm=0.0;
-                for (i=0;i<vtx->neigh[j]->tristar_no;i++){
-                    xnorm+=vtx->neigh[j]->tristar[i]->xnorm;
-                    ynorm+=vtx->neigh[j]->tristar[i]->ynorm;
-                    znorm+=vtx->neigh[j]->tristar[i]->znorm;
+        // Breadth first search using seen_vtx and neighbors
+        // while current distance from the prime vertex
+        // is less than or equal to the maximum
+        while (curr_dist<=max_dist){
+            
+            // ..............
+            //  N -  N -- N                                seen:
+            // / \ / | \ / \    N-not-yet added                [...
+            // N--C--C--C - N   C-current layer being made      Q
+            // | /|\ | \| \ |   P-previous layer                P <-n_prev
+            // N--C--P--P - C   Q-previous-previous layer       ...
+            //  \ |\ |\ | \ |                                   P
+            //    C--P--Q - P          start adding from here-> C <-n_curr_layer
+            // ..............                                   C
+            //                                                  _ <-n_top
+            // The for loop is split by layers
+            // The new "current" layer is being built from
+            // the neighbors of the completed "previous" layer
+            // some of the checked neighbors may be
+            // from the layer before that "previous previous"
+
+            for (i=n_prev_layer; i<n_curr_layer; i++) {
+                //current vertex: seen_vtx[i]
+                //go over neighbors
+                for (j=0; j<seen_vtx[i]->neigh_no; j++) {
+                    //current vertex: seen_vtx[i]->neigh[j]
+
+                    // is this neighbor a bare vertex
+                    if (seen_vtx[i]->neigh[j]->c<1e-15) continue;
+                    //else{ rest of the j loop
+
+                    // has this neighbor been seen?
+                    for (k=n_prev_prev_layer; k<n_top; k++) {
+                        if (n_prev_layer==0) {// no need to check for the first layer
+                            k=n_top;
+                            break;
+                        }
+                        if (seen_vtx[i]->neigh[j]==seen_vtx[k]) break;
+                    }
+                    //pending seen structure, change to
+                    //if was_seen(seen_struct,vtx) continue;
+                    //and drop if(k==n_top)
+                    
+                    if (k==n_top) {//not found: didn't get to break
+                        //new vertex!
+
+                        //add to seen_vtx (pending structure)
+                        if (n_top >= max_vtx_seen) {
+                            max_vtx_seen *= 2;
+                            seen_vtx = realloc(seen_vtx, sizeof(ts_vertex *) * max_vtx_seen);
+                            if (seen_vtx==NULL) fatal("Cannot reallocate memory to extend seen_vtx.",100);
+                        }
+                        seen_vtx[n_top] = seen_vtx[i]->neigh[j];
+
+                        //calculate normal and add to the sum
+                        xnorm = 0.0;
+                        ynorm = 0.0;
+                        znorm = 0.0;
+                        for (l = 0; l < seen_vtx[n_top]->tristar_no; l++){
+                            xnorm += seen_vtx[n_top]->tristar[l]->xnorm;
+                            ynorm += seen_vtx[n_top]->tristar[l]->ynorm;
+                            znorm += seen_vtx[n_top]->tristar[l]->znorm;
+                        }
+                        /*normalize, and add to normal sum with weight by Vicsek strength*/
+                        norml = sqrt(xnorm * xnorm + ynorm * ynorm + znorm * znorm);
+                        vixnorm += vesicle->tape->vicsek_strength * xnorm / norml;
+                        viynorm += vesicle->tape->vicsek_strength * ynorm / norml;
+                        viznorm += vesicle->tape->vicsek_strength * znorm / norml;
+
+                        n_top++; //just livin' the state of sin
+                    }
                 }
-                /*normalize and weight by Vicsek strength*/
-                norml=sqrt(xnorm*xnorm+ynorm*ynorm+znorm*znorm);
-                vixnorm+=vesicle->tape->vicsek_strength*xnorm/norml;
-                viynorm+=vesicle->tape->vicsek_strength*ynorm/norml;
-                viznorm+=vesicle->tape->vicsek_strength*znorm/norml;
             }
+            // finished this layer
+            if (n_curr_layer=n_top) break; //run out of vertices 
+            //(currently built layer was empty)
+            curr_dist++;
+            n_prev_prev_layer=n_prev_layer;
+            n_prev_layer=n_curr_layer;
+            n_curr_layer=n_top;
         }
 
         //having finished summing the normals, normalize the resulting vector
@@ -297,9 +376,13 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 	    ddp=vixnorm*(vtx->x-vtx_old->x)+viynorm*(vtx->y-vtx_old->y)+viznorm*(vtx->z-vtx_old->z);
 	    /*calculate dE*/
     //	printf("ddp=%e",ddp);
-	    return vesicle->tape->F*ddp;
+	    
     //end else
     }
+    
+    //don't forget to free! pending struct free_seen(seen_vtx)
+    free(seen_vtx);
+    return vesicle->tape->F*ddp;
 //end function
 }
 

@@ -1,14 +1,15 @@
-bin_PROGRAMS = trisurf_y tsmeasure_y tspoststat_y
-trisurf_y_SOURCES = main.c
-AM_CFLAGS = -DTS_VERSION=\"from_makefile\"
+bin_PROGRAMS = trisurf_e tsmeasure_ey tspoststat_ey
+trisurf_ey_SOURCES = main.c
+GITVERSION:=$(shell git --no-pager describe --tags --always --dirty)
+AM_CFLAGS = -DTS_VERSION=\"$(GITVERSION)\"
 AM_CPPFLAGS = ${libxml2_CFLAGS} -fgnu89-inline
-trisurf_y_LDADD = libtrisurf.la ${libcurl_LIBS} ${libxml2_LIBS}
+trisurf_ey_LDADD = libtrisurf.la ${libcurl_LIBS} ${libxml2_LIBS}
 
-tsmeasure_y_SOURCES = tsmeasure.c
-tsmeasure_y_LDADD = libtrisurf.la ${libcurl_LIBS} ${libxml2_LIBS}
+tsmeasure_ey_SOURCES = tsmeasure.c
+tsmeasure_ey_LDADD = libtrisurf.la ${libcurl_LIBS} ${libxml2_LIBS}
 
-tspoststat_y_SOURCES = tspoststat.c
-tspoststat_y_LDADD = libtrisurf.la ${libcurl_LIBS} ${libxml2_LIBS}
+tspoststat_ey_SOURCES = tspoststat.c
+tspoststat_ey_LDADD = libtrisurf.la ${libcurl_LIBS} ${libxml2_LIBS}
 
 #------------- LIBS ----------
 
