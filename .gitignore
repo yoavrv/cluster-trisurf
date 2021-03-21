@@ -118,6 +118,8 @@ trisurf
 tspoststat
 tsmeasure
 src/trisurf_ey
-.gitignore
 src/tspoststat_ey
 src/tsmeasure_ey
+src/trisurf_y
+src/tspoststat_y
+src/tsmeasure_y
