@@ -358,7 +358,7 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
                 }
             }
             // finished this layer
-            if (n_curr_layer=n_top) break; //run out of vertices 
+            if (n_curr_layer==n_top) break; //run out of vertices 
             //(currently built layer was empty)
             curr_dist++;
             n_prev_prev_layer=n_prev_layer;
