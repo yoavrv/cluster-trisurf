@@ -302,7 +302,9 @@ typedef struct {
 	long int plane_confinement_switch;
 	ts_double plane_d;
 	ts_double plane_F;
+	ts_double vicsek_model;
 	ts_double vicsek_strength;
+	ts_double vicsek_radius;
 	long int type_of_adhesion_model;
 	long int allow_xy_plane_movement;
 	long int force_balance_along_z_axis;

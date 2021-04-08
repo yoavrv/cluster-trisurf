@@ -92,13 +92,13 @@ distributed_processes=50
 
 
 #number of vertices with spontaneous curvature (integer)
-number_of_vertices_with_c0=0
+number_of_vertices_with_c0=50
 #c0/2 is spontaneous curvature. c0 is used as (c1+c1-c0)^2 in energy term (float)
 c0=0.5
 #energy of attraction of vertices with spontaneous curvature (float, positive value for attraction)
-w=2.0
+w=1.0
 #direct force on vesicles with spontaneous curvature (float)
-F=2.0
+F=1.0
 
 
 
@@ -110,7 +110,10 @@ plane_d=10
 plane_F=1.0
 
 #Vicsek: force direction is sum of own normal + (nearest neighbor normals * vicsek_strength)
-vicsek_strength=0
+# model- 0 for no vicsek, other integer: connected to distance of (int) radius
+vicsek_model=1
+vicsek_strength=0.1
+vicsek_radius=4.0
 
 #some important parameters
 #which type of adhesion model do you want; step_potential (1), parabolic potential (2) , for shperical surface with step potential (3), for cylindrical surface with step potential (4)

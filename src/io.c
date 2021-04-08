@@ -1238,7 +1238,9 @@ ts_tape *parsetapebuffer(char *buffer){
 //	CFG_FLOAT("xkA0",0,CFGF_NONE),
 
 /* variables for Vicsek interaction*/
+    CFG_INT("vicsek_model", 0, CFGF_NONE),
     CFG_FLOAT("vicsek_strength", 0, CFGF_NONE),
+    CFG_FLOAT("vicsek_radius", 1, CFGF_NONE),
         CFG_END()
     };
     cfg_t *cfg;    
@@ -1248,7 +1250,9 @@ ts_tape *parsetapebuffer(char *buffer){
 	tape->plane_confinement_switch=cfg_getint(cfg,"plane_confinement_switch");
 	tape->plane_d=cfg_getfloat(cfg,"plane_d");
 	tape->plane_F=cfg_getfloat(cfg,"plane_F");
+    tape->vicsek_model=cfg_getint(cfg,"vicsek_model");
     tape->vicsek_strength=cfg_getfloat(cfg,"vicsek_strength");
+    tape->vicsek_radius=cfg_getfloat(cfg,"vicsek_radius");
 	tape->adhesion_switch=cfg_getint(cfg,"adhesion_switch");
 	tape->adhesion_cuttoff=cfg_getfloat(cfg,"adhesion_cuttoff");
 	tape->adhesion_strength=cfg_getfloat(cfg,"adhesion_strength");

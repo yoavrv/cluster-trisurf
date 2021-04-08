@@ -12,4 +12,6 @@ ts_double direct_force_energy_with_Fz_balance(ts_vesicle *vesicle, ts_vertex *vt
 void force_per_vertex(ts_vesicle *vesicle, ts_double *Fz);
 
 void stretchenergy(ts_vesicle *vesicle, ts_triangle *triangle);
+
+inline ts_bool was_vertex_seen(ts_vertex **seen_vtx, ts_vertex *vtx, ts_uint check_from, ts_uint check_up_to);
 #endif
