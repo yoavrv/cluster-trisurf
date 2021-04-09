@@ -1239,8 +1239,8 @@ ts_tape *parsetapebuffer(char *buffer){
 
 /* variables for Vicsek interaction*/
     CFG_INT("vicsek_model", 0, CFGF_NONE),
-    CFG_FLOAT("vicsek_strength", 0, CFGF_NONE),
-    CFG_FLOAT("vicsek_radius", 1, CFGF_NONE),
+    CFG_FLOAT("vicsek_strength", 0.1, CFGF_NONE),
+    CFG_FLOAT("vicsek_radius", 1.0, CFGF_NONE),
         CFG_END()
     };
     cfg_t *cfg;    

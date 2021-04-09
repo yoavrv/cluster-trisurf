@@ -236,10 +236,10 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
     // !!! mallocation size should be subject to change: roughly how many
     // vertex are expected to be counted, which highly depends on the
     // maximum distance and how crumpled the vesicle is, ~pi*r^2
-    ts_uint max_vtx_seen=3*(((int) vesicle->tape->vicsek_radius+1)^2); //future: vesicle->tape->max_dist
-    ts_vertex **seen_vtx=(ts_vertex**) malloc(sizeof(ts_vertex*)*max_vtx_seen);;
+    ts_uint max_vtx_seen=3*(( (int) vesicle->tape->vicsek_radius)+1)*(( (int) vesicle->tape->vicsek_radius)+1); //future: vesicle->tape->max_dist
+    ts_vertex **seen_vtx=(ts_vertex**) malloc(sizeof(ts_vertex*)*max_vtx_seen);
     ts_uint n_prev_layer=0, n_curr_layer=0, n_next_layer=0, n_top=0;
-    
+
 
     if (!vesicle->tape->vicsek_model || fabs(vesicle->tape->vicsek_strength)<1e-15 || fabs(vesicle->tape->vicsek_radius)<1e-15) {//no vicsek
         //regular "force in normal direction"
