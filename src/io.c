@@ -1171,6 +1171,45 @@ ts_tape *parsetape(char *filename){
 	fclose(fd);
 	if(size);
 	ts_tape *tape=parsetapebuffer(tapetxt);
+    
+    //fix the tape text with the modified values: that way, it"ll be saved for .vtu
+    char tapetxt_2[128000]; //tmp storage, used to rebuild text file of the tape
+    char* arg_str_pointer=NULL;
+    //we need to go over the lines of the tape: we need to essentially copy
+    // tapetxt = tapetxt[:line] line_to_change tapetxt[next_line:]
+    char* tape_lines_pointer=NULL;
+    ts_uint opt_len=0, optval_len=0;
+    arg_str_pointer = command_line_args.tape_opts; //get the start of the string
+    // the commands are held as "opt1=val1,opt2=val2,..." string
+    // we need to pass over tapetxt, find each command, insert the value, and
+    while(arg_str_pointer != NULL)
+    {
+        // get next option=value
+        opt_len=strcspn(arg_str_pointer,"=");
+        if (opt_len==NULL || opt_len==0) break; //NULL or 0: no option left
+        optval_len=strcspn(arg_str_pointer,",");
+
+        strcpy(tapetxt_2,""); // clear the tape
+        tape_lines_pointer = strtok(tapetxt,"\n"); //break into lines
+        while (tape_lines_pointer != NULL){
+            // big  monstrosity below is just
+            // line starts as "opt..."
+            // and the next char  ^  is either space or =
+            // so "opt=7" and "opt = 7" are replaced, but "opt7" doesn't
+            if (strncmp(arg_str_pointer,tape_lines_pointer,opt_len)==0 \
+            && ((tape_lines_pointer[opt_len])==' ' || (tape_lines_pointer[opt_len])=='=')){
+                strncat(tapetxt_2,arg_str_pointer,optval_len);
+            }
+            else{
+                strcat(tapetxt_2,tape_lines_pointer);
+            }
+            strcat(tapetxt_2,"\n");
+            tape_lines_pointer = strtok(NULL,"\n"); //next line
+        }
+        strcpy(tapetxt,tapetxt_2);
+
+        arg_str_pointer = arg_str_pointer + optval_len + 1;
+    }
 	return tape;
 }
 
