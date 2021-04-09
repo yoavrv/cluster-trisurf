@@ -384,51 +384,23 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 //end function
 }
 
-ts_double direct_force_energy_with_Fz_balance(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_old){
+ts_double direct_force_from_Fz_balance(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_old){
 	if(fabs(vesicle->tape->F)<1e-15) return 0.0;
-
-	ts_double norml,ddp=0.0;
-	ts_uint i;
+    // calculate the Fz force balance separately
+    // F_direct(old) = F_direct + Fz_balance \hat{z}
+    // W = F_direct * dX + Fz_balance * dz
+	ts_double ddp=0.0;
 	ts_double Fz;
-	ts_double xnorm=0.0,ynorm=0.0,znorm=0.0;
 	force_per_vertex(vesicle, &Fz);
-	if(fabs(vtx->c)<1e-15){
 
-	znorm=-Fz;
+	ddp=-Fz*(vtx->z-vtx_old->z);
 
-	/*calculate ddp, perpendicular displacement*/
-	ddp=xnorm*(vtx->x-vtx_old->x)+ynorm*(vtx->y-vtx_old->y)+znorm*(vtx->z-vtx_old->z);
-	/*calculate dE*/
-//	printf("ddp=%e",ddp);
-	return vesicle->tape->F*ddp;	
-
-	}
-
-	/*find normal of the vertex as sum of all the normals of the triangles surrounding it. */
-	for(i=0;i<vtx->tristar_no;i++){
-			xnorm+=vtx->tristar[i]->xnorm;
-			ynorm+=vtx->tristar[i]->ynorm;
-			znorm+=vtx->tristar[i]->znorm;
-	}
-	/*normalize*/
-	norml=sqrt(xnorm*xnorm+ynorm*ynorm+znorm*znorm);
-	xnorm/=norml;
-	ynorm/=norml;
-	znorm/=norml;
-    /*subtract the force per vertex for overall force balance in z-direction*/
-
-	znorm=znorm-Fz;
-
-	/*calculate ddp, perpendicular displacement*/
-	ddp=xnorm*(vtx->x-vtx_old->x)+ynorm*(vtx->y-vtx_old->y)+znorm*(vtx->z-vtx_old->z);
-	/*calculate dE*/
-//	printf("ddp=%e",ddp);
 	return vesicle->tape->F*ddp;		
 	
 }
 
 void force_per_vertex(ts_vesicle *vesicle, ts_double *Fz){
-	ts_double norml;
+    ts_double norml;
 	ts_uint i,j;
 	ts_double fz=0.0;
 	ts_double xnorm,ynorm,znorm;
