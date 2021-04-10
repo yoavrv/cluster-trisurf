@@ -67,7 +67,7 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_uint mcsweeps, ts_uint inititer, 
 	}
 	else{
 		srand48(epochtime);
-		ts_fprintf(stdout,"%lu\n",epochtime);
+		ts_fprintf(stdout,"simulation seed %lu\n",epochtime);
 	}
 
 	if(vesicle->tape->allow_xy_plane_movement==0){
