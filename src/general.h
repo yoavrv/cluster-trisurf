@@ -313,6 +313,7 @@ typedef struct {
 	ts_double adhesion_strength;
 	ts_double z_adhesion;
 	ts_double adhesion_radius;
+	ts_int random_seed;
 } ts_tape;
 
 
