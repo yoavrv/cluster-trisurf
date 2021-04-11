@@ -620,7 +620,8 @@ ts_bool print_help(FILE *fd){
 	fprintf(fd,"--tape (or -t)\t\t specifies tape filename. For --force-from-tape and restoring from binary dump. Defaults to 'tape'.\n");
 	fprintf(fd,"--version (or -v)\t\t Prints version information.\n");
 	fprintf(fd,"--output-file (or -o)\t\t Specifies filename of .PVD file. Defaults to 'output.pvd'\n");
-	fprintf(fd,"--dump-filename (or -f)\t\t specifies filename for binary dump&restore. Defaults to 'dump.bin'\n\n\n");
+	fprintf(fd,"--dump-filename (or -f)\t\t specifies filename for binary dump&restore. Defaults to 'dump.bin'\n");
+    fprintf(fd,"--tape-options (or -c)\t\t specifies replacement options by 'opt1=val1,opt2=val2''\n\n\n");
 	fprintf(fd,"Examples:\n\n");
 	fprintf(fd,"trisurf --force-from-tape\n");
 	fprintf(fd,"trisurf --reset-iteration-count\n");
