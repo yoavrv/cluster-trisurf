@@ -225,13 +225,14 @@ if(vesicle->R_nucleus>0.0){
     delta_energy+=delta_energy_cv;
 //    fprintf(stderr,"Denergy after=%e\n",delta_energy);
     }
-/* Vertices with spontaneous curvature may have spontaneous force perpendicular to the surface of the vesicle. additional delta energy is calculated in this function */
-
-	if (vesicle->tape->force_balance_along_z_axis==0){
-		delta_energy+=direct_force_energy(vesicle,vtx,backupvtx);
-	}
-	else if (vesicle->tape->force_balance_along_z_axis==1){
-		delta_energy+=direct_force_energy_with_Fz_balance(vesicle,vtx,backupvtx);
+	
+	// vertices may be active, and have force applied on them
+	delta_energy+=direct_force_energy(vesicle,vtx,backupvtx);
+	
+	// additionally, vesicle may have force balance, applying additional force
+	// this is doen separately here (since we can split the F)
+	if (vesicle->tape->force_balance_along_z_axis==1){
+		delta_energy+=direct_force_from_Fz_balance(vesicle,vtx,backupvtx);
 	}
 
 	//stretching energy 2 of 3

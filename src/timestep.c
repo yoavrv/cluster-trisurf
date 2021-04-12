@@ -60,8 +60,17 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_uint mcsweeps, ts_uint inititer, 
 */
 
 /* RANDOM SEED SET BY CURRENT TIME */
-	epochtime=get_epoch();			
-	srand48(epochtime);
+	epochtime=get_epoch();	
+	if (vesicle->tape->random_seed!=0){
+		srand48(vesicle->tape->random_seed);
+		ts_fprintf(stdout,"simulation seed = %lu\n",vesicle->tape->random_seed);
+	}
+	else{
+		srand48(epochtime);
+		ts_fprintf(stdout,"simulation seed %lu\n",epochtime);
+		vesicle->tape->random_seed = epochtime;
+	}
+
 	if(vesicle->tape->allow_xy_plane_movement==0){
 		centermass(vesicle);
 	}

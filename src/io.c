@@ -620,7 +620,8 @@ ts_bool print_help(FILE *fd){
 	fprintf(fd,"--tape (or -t)\t\t specifies tape filename. For --force-from-tape and restoring from binary dump. Defaults to 'tape'.\n");
 	fprintf(fd,"--version (or -v)\t\t Prints version information.\n");
 	fprintf(fd,"--output-file (or -o)\t\t Specifies filename of .PVD file. Defaults to 'output.pvd'\n");
-	fprintf(fd,"--dump-filename (or -f)\t\t specifies filename for binary dump&restore. Defaults to 'dump.bin'\n\n\n");
+	fprintf(fd,"--dump-filename (or -f)\t\t specifies filename for binary dump&restore. Defaults to 'dump.bin'\n");
+    fprintf(fd,"--tape-options (or -c)\t\t specifies replacement options by 'opt1=val1,opt2=val2''\n\n\n");
 	fprintf(fd,"Examples:\n\n");
 	fprintf(fd,"trisurf --force-from-tape\n");
 	fprintf(fd,"trisurf --reset-iteration-count\n");
@@ -1170,6 +1171,53 @@ ts_tape *parsetape(char *filename){
 	size=fread (tapetxt, 1, length, fd);
 	fclose(fd);
 	if(size);
+
+    //fix the tape text with the modified values: that way, it"ll be saved for .vtu
+    char tapetxt_2[128000]; //tmp storage, used to rebuild text file of the tape
+    char* arg_str_pointer=NULL;
+    //we need to go over the lines of the tape: we need to essentially copy
+    // tapetxt = tapetxt[:line] line_to_change tapetxt[next_line:]
+    char* tape_lines_pointer=NULL;
+    ts_uint opt_len=0, optval_len=0;
+    ts_uint added_opt_flag=0;
+    arg_str_pointer = command_line_args.tape_opts; //get the start of the string
+    // the commands are held as "opt1=val1,opt2=val2,..." string
+    // we need to pass over tapetxt, find each command, insert the value, and
+    while(arg_str_pointer != NULL)
+    {
+        // get next option=value
+        opt_len=strcspn(arg_str_pointer,"=");
+        if (opt_len==0) break; //NULL or 0: no option left
+        optval_len=strcspn(arg_str_pointer,",");
+
+        added_opt_flag=0;
+        strcpy(tapetxt_2,""); // clear the tape
+        tape_lines_pointer = strtok(tapetxt,"\n"); //break into lines
+        while (tape_lines_pointer != NULL){
+            // big  monstrosity below is just
+            // line starts as "opt..."
+            // and the next char  ^  is either space or =
+            // so "opt=7" and "opt = 7" are replaced, but "opt7" doesn't
+            if (strncmp(arg_str_pointer,tape_lines_pointer,opt_len)==0 \
+            && ((tape_lines_pointer[opt_len])==' ' || (tape_lines_pointer[opt_len])=='=')){
+                strncat(tapetxt_2,arg_str_pointer,optval_len);
+                added_opt_flag = 1;
+            }
+            else{
+                strcat(tapetxt_2,tape_lines_pointer);
+            }
+            strcat(tapetxt_2,"\n");
+            tape_lines_pointer = strtok(NULL,"\n"); //next line
+        }
+        if (!added_opt_flag) {
+            strcat(tapetxt_2,"#--tape-options added\n");
+            strncat(tapetxt_2,arg_str_pointer,optval_len);
+            strcat(tapetxt_2,"\n");
+        }
+        strcpy(tapetxt,tapetxt_2);
+
+        arg_str_pointer = arg_str_pointer + optval_len + 1;
+    }
 	ts_tape *tape=parsetapebuffer(tapetxt);
 	return tape;
 }
@@ -1238,7 +1286,10 @@ ts_tape *parsetapebuffer(char *buffer){
 //	CFG_FLOAT("xkA0",0,CFGF_NONE),
 
 /* variables for Vicsek interaction*/
-    CFG_FLOAT("vicsek_strength", 0, CFGF_NONE),
+    CFG_INT("vicsek_model", 0, CFGF_NONE),
+    CFG_FLOAT("vicsek_strength", 0.1, CFGF_NONE),
+    CFG_FLOAT("vicsek_radius", 1.0, CFGF_NONE),
+    CFG_INT("random_seed",0,CFGF_NONE),
         CFG_END()
     };
     cfg_t *cfg;    
@@ -1248,12 +1299,15 @@ ts_tape *parsetapebuffer(char *buffer){
 	tape->plane_confinement_switch=cfg_getint(cfg,"plane_confinement_switch");
 	tape->plane_d=cfg_getfloat(cfg,"plane_d");
 	tape->plane_F=cfg_getfloat(cfg,"plane_F");
+    tape->vicsek_model=cfg_getint(cfg,"vicsek_model");
     tape->vicsek_strength=cfg_getfloat(cfg,"vicsek_strength");
+    tape->vicsek_radius=cfg_getfloat(cfg,"vicsek_radius");
 	tape->adhesion_switch=cfg_getint(cfg,"adhesion_switch");
 	tape->adhesion_cuttoff=cfg_getfloat(cfg,"adhesion_cuttoff");
 	tape->adhesion_strength=cfg_getfloat(cfg,"adhesion_strength");
 	tape->adhesion_radius=cfg_getfloat(cfg,"adhesion_radius");
 	tape->z_adhesion=cfg_getfloat(cfg,"z_adhesion");
+    tape->random_seed=cfg_getint(cfg,"random_seed");
 
 
     if(retval==CFG_FILE_ERROR){
@@ -1263,8 +1317,10 @@ ts_tape *parsetapebuffer(char *buffer){
 	fatal("Invalid tape!",100);
 	}
 
+    // this bit is not needed, since we re-wrote the tape directly for .vtu reasons
+    // and new variable compatibility
     /* here we override all values read from tape with values from commandline*/
-    getcmdline_tape(cfg,command_line_args.tape_opts);
+    //getcmdline_tape(cfg,command_line_args.tape_opts);
     cfg_free(cfg);
 
 

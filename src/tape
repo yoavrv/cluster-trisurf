@@ -6,7 +6,7 @@ dmax=1.7
 # dmin_interspecies in the min. dist. between different vertex species (in units l_min)
 dmin_interspecies=1.2
 # bending rigidity of the membrane (in units kT)
-xk0=20.0
+xk0=28.5
 # max step size (in units l_min)
 stepsize=0.15
 
@@ -92,13 +92,13 @@ distributed_processes=50
 
 
 #number of vertices with spontaneous curvature (integer)
-number_of_vertices_with_c0=0
+number_of_vertices_with_c0=50
 #c0/2 is spontaneous curvature. c0 is used as (c1+c1-c0)^2 in energy term (float)
 c0=0.5
 #energy of attraction of vertices with spontaneous curvature (float, positive value for attraction)
-w=2.0
+w=1.0
 #direct force on vesicles with spontaneous curvature (float)
-F=2.0
+F=1.0
 
 
 
@@ -110,7 +110,12 @@ plane_d=10
 plane_F=1.0
 
 #Vicsek: force direction is sum of own normal + (nearest neighbor normals * vicsek_strength)
-vicsek_strength=0
+# model- 0 for no vicsek, 1 (or else): connected to neighbors up to radius
+vicsek_model=1
+#interaction strength parameter: 1: weight of neighbors
+vicsek_strength=0.1
+#interactionr radius parameter: 1: max. neighbor distance (int)
+vicsek_radius=4.0
 
 #some important parameters
 #which type of adhesion model do you want; step_potential (1), parabolic potential (2) , for shperical surface with step potential (3), for cylindrical surface with step potential (4)
