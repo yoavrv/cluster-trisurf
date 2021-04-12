@@ -1,8 +1,17 @@
 TRISURF NG
 ==========
-Modified by Yoav based on Rajkumar's cluster version
+Modified by Yoav based on Rajkumar's cluster version of Samo and Miha's trisurf-ng
 
-1. Instalation
+0. Diff
+--------------
+* vicsek interaction: setting vicsek_model=1, the force now sums normals on the 'connected cluster up to vicsek_radius' with weight vicsek_strength
+* adhesion works as it did, does not conflict: turn off vicsek for normal adhesion (vicsek_model=0)
+* added random_seed option to the tape: default (0) to epoch
+* commandline --tape-options now works for adhesion and vicsek parameter too and is saved on the .vtu \<tape\>: use in the form
+> $trisurf --tape-options vicsek_model=0,adhesion_model=2,nshell=5,random_seed=9
+
+
+1. Installation
 --------------
 
 To compile the program, user must have ``automake``, and ``gcc`` tools installed on the computer.
