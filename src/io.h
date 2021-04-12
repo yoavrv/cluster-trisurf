@@ -85,4 +85,6 @@ ts_bool cmdline_to_tape(cfg_t *cfg, char *key, char *val);
 ts_bool print_help(FILE *fd);
 ts_bool dump_state(ts_vesicle *vesicle, ts_uint iteration);
 ts_vesicle *restore_state(ts_uint *iteration);
+
+ts_bool update_tapetxt(char *tape_txt, char *cmd_line_tape_args);
 #endif
