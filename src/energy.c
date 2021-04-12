@@ -225,6 +225,8 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 	ts_double xnorm=0.0,ynorm=0.0,znorm=0.0;
 	ts_double vixnorm=0.0,viynorm=0.0,viznorm=0.0;
 
+    //stupid loop variables don't go in stupid for due to stupid C89 compiler
+    ts_uint i;ts_uint j; ts_uint k; ts_uint curr_dist;
     // breadth-first search "seen" vertex list
     // should probably be a struct, but for now is kinda volatile
     // vertex list, with 4 locations: 
@@ -247,7 +249,7 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 	
         //vertex normal
 	    /*find normal of the vertex as sum of all the normals of the triangles surrounding it. */
-	    for(ts_uint i=0;i<vtx->tristar_no;i++){
+	    for(i=0;i<vtx->tristar_no;i++){
 	    	xnorm+=vtx->tristar[i]->xnorm;
 	    	ynorm+=vtx->tristar[i]->ynorm;
 	    	znorm+=vtx->tristar[i]->znorm;
@@ -270,7 +272,7 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
         //prime vertex normal
 	    /*find normal of the vertex as sum of all the
         normals of the triangles surrounding it. */
-	    for(ts_uint i=0;i<vtx->tristar_no;i++){
+	    for(i=0;i<vtx->tristar_no;i++){
 	    	xnorm+=vtx->tristar[i]->xnorm;
 	    	ynorm+=vtx->tristar[i]->ynorm;
 	    	znorm+=vtx->tristar[i]->znorm;
@@ -289,7 +291,7 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
         // Breadth first search using seen_vtx and neighbors
         // while current distance from the prime vertex
         // is less than or equal to the maximum
-        for (ts_uint curr_dist=1 ; curr_dist<=vesicle->tape->vicsek_radius; curr_dist++){
+        for (curr_dist=1 ; curr_dist<=vesicle->tape->vicsek_radius; curr_dist++){
             
             // The for loops are split by layers
             // The new "next" layer is being built from
@@ -312,11 +314,11 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
             //                                                              A2
             //                                                              _   <-n_top
 
-            for (ts_uint i=n_curr_layer; i<n_next_layer; i++) {
+            for (i=n_curr_layer; i<n_next_layer; i++) {
                 // loop over the current layer: seen_vtx[i]
                 
 
-                for (ts_uint j=0; j<seen_vtx[i]->neigh_no; j++) {
+                for (j=0; j<seen_vtx[i]->neigh_no; j++) {
                     //loop over their neighbors: seen_vtx[i]->neigh[j]
 
                     // is this neighbor is a bare vertex, skip to next neighbor
@@ -342,10 +344,10 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
                         xnorm = 0.0;
                         ynorm = 0.0;
                         znorm = 0.0;
-                        for (ts_uint l = 0; l < seen_vtx[n_top]->tristar_no; l++){
-                            xnorm += seen_vtx[n_top]->tristar[l]->xnorm;
-                            ynorm += seen_vtx[n_top]->tristar[l]->ynorm;
-                            znorm += seen_vtx[n_top]->tristar[l]->znorm;
+                        for (k = 0; k < seen_vtx[n_top]->tristar_no; k++){
+                            xnorm += seen_vtx[n_top]->tristar[k]->xnorm;
+                            ynorm += seen_vtx[n_top]->tristar[k]->ynorm;
+                            znorm += seen_vtx[n_top]->tristar[k]->znorm;
                         }
                         /*normalize, and add to normal sum with weight by Vicsek strength*/
                         norml = sqrt(xnorm * xnorm + ynorm * ynorm + znorm * znorm);
@@ -435,6 +437,7 @@ void stretchenergy(ts_vesicle *vesicle, ts_triangle *triangle){
 }
 
 inline ts_bool was_vertex_seen(ts_vertex **seen_vtx, ts_vertex *vtx, ts_uint check_from, ts_uint check_up_to){
+    ts_uint k;
     // check if vertex was already accounted for in the "seen_vertex" list
     // 
     // we don't typically need to go over all the vertices: when we iterate
@@ -460,7 +463,7 @@ inline ts_bool was_vertex_seen(ts_vertex **seen_vtx, ts_vertex *vtx, ts_uint che
     //                                                              _ <-check_up_to
 
 
-    for (ts_uint k=check_from; k<check_up_to; k++){
+    for (k=check_from; k<check_up_to; k++){
         if (seen_vtx[k]==vtx) return 1;
     }
     return 0;
