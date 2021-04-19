@@ -214,9 +214,9 @@ inline ts_bool attraction_bond_energy(ts_bond *bond, ts_double w){
 
 
 ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_old){
-	//Yoav- modified to include Vicsek Interaction
+	// modified to include Vicsek Interaction
     
-    //quit if this is a non-active vertex (or no vertex is active)
+    // quit if this is a non-active vertex (or no vertex is active)
     if(fabs(vesicle->tape->F)<1e-15) return 0.0;
     if(vtx->c<1e-15) return 0.0;
 
@@ -225,24 +225,26 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 	ts_double xnorm=0.0,ynorm=0.0,znorm=0.0;
 	ts_double vixnorm=0.0,viynorm=0.0,viznorm=0.0;
 
-    //stupid loop variables don't go in stupid for due to stupid C89 compiler
+    //stupid loop variables don't go in stupid for loop due to stupid C89 compiler
     ts_uint i;ts_uint j; ts_uint k; ts_uint curr_dist;
+    
     // breadth-first search "seen" vertex list
-    // should probably be a struct, but for now is kinda volatile
-    // vertex list, with 4 locations: 
-    // n_top, the top of the list, where new vertices are added
-    // n_next_layer, first vertex of the next, under construction layer
-    // n_curr_layer, first vertex of the last completed layer, used to construct the next
-    // n_prev_layer, first vertex of the layer before the current one
-    //
-    // !!! mallocation size should be subject to change: roughly how many
-    // vertex are expected to be counted, which highly depends on the
-    // maximum distance and how crumpled the vesicle is, ~pi*r^2
+    // should probably be a struct
+    // a vertex list, with 4 locations: 
+    // * n_top, the top of the list, where new vertices are added
+    // * n_next_layer, first vertex of the layer under construction
+    // * n_curr_layer, first vertex of the last completed layer, used to construct the next
+    // * n_prev_layer, first vertex of the completed layer before the current one
+
+    // initial mallocation size should be subject to change: roughly ~pi*r^2
     ts_uint max_vtx_seen=3*(( (int) vesicle->tape->vicsek_radius)+1)*(( (int) vesicle->tape->vicsek_radius)+1); //future: vesicle->tape->max_dist
+    // allocate the "struct"
     ts_vertex **seen_vtx=(ts_vertex**) malloc(sizeof(ts_vertex*)*max_vtx_seen);
     ts_uint n_prev_layer=0, n_curr_layer=0, n_next_layer=0, n_top=0;
+    if (seen_vtx==NULL) fatal("Cannot allocate memory to seen_vtx.",100);
 
 
+    // if no point in calculating vicsek model
     if (!vesicle->tape->vicsek_model || fabs(vesicle->tape->vicsek_strength)<1e-15 || fabs(vesicle->tape->vicsek_radius)<1e-15) {//no vicsek
         //regular "force in normal direction"
 
@@ -260,13 +262,13 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 	    ynorm/=norml;
 	    znorm/=norml;
 
-	    /*calculate ddp, Viscek force directed displacement*/
+	    /*calculate ddp, normal force directed displacement*/
 	    ddp=xnorm*(vtx->x-vtx_old->x)+ynorm*(vtx->y-vtx_old->y)+znorm*(vtx->z-vtx_old->z);
 
     }
-    else {//vicsek
+    else {
+        //vicsek model
         //force directed by Vicsek sum-over-neighbors-normals
-        //(provided they are active too (c>0)
 
 	
         //prime vertex normal
@@ -283,21 +285,22 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 	    viynorm=ynorm/norml;
 	    viznorm=znorm/norml;
 
-        //seen the prime vertex
+        
+        // we have now seen the prime vertex
         seen_vtx[n_top]=vtx;
         n_top++;
         n_next_layer=n_top;
     
-        // Breadth first search using seen_vtx and neighbors
+        // Breadth first search using seen_vtx[] and neighbors
         // while current distance from the prime vertex
-        // is less than or equal to the maximum
+        // is less than or equal to the maximum radius
         for (curr_dist=1 ; curr_dist<=vesicle->tape->vicsek_radius; curr_dist++){
             
             // The for loops are split by layers
             // The new "next" layer is being built from
             // the neighbors of the completed "current" layer
             // some of the checked neighbors may be
-            // from the layer before that "previous" layer
+            // from the layer before that: the "previous" layer
             // ..............
             //  A1 --  A2 --  O1     O-not-yet added              seen_vtx[]:
             // /  \  /  |  \  / \    N-bext layer, not added yet          [...
@@ -361,6 +364,8 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
             }
             // finished this layer
             if (n_next_layer==n_top) break; //did not add any vertices: completed cluster
+            
+            // prepare for next iteration
             n_prev_layer=n_curr_layer;
             n_curr_layer=n_next_layer;
             n_next_layer=n_top;
@@ -374,23 +379,28 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 
 	    /*calculate ddp, Viscek force directed displacement*/
 	    ddp=vixnorm*(vtx->x-vtx_old->x)+viynorm*(vtx->y-vtx_old->y)+viznorm*(vtx->z-vtx_old->z);
-	    /*calculate dE*/
-    //	printf("ddp=%e",ddp);
+
 	    
-    //end else from if Vicsek
+    //end else from if (!Vicsek)
     }
+    // we got a ddp from either a normal calculation or vicsek calculation
     
     //don't forget to free! pending struct free_seen(seen_vtx)
     free(seen_vtx);
+    
+    /*calculate dE*/
+    //	printf("ddp=%e",ddp);
     return vesicle->tape->F*ddp;
 //end function
 }
 
 ts_double direct_force_from_Fz_balance(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_old){
 	if(fabs(vesicle->tape->F)<1e-15) return 0.0;
-    // calculate the Fz force balance separately
-    // F_direct(old) = F_direct + Fz_balance \hat{z}
-    // W = F_direct * dX + Fz_balance * dz
+    // calculate the Fz force balance
+    //     separated from direct_force_energy()
+    //     since F_direct(old) = F_direct + Fz_balance \hat{z}
+    //     -- Yoav
+    //   W = F_direct * dX + Fz_balance * dz
 	ts_double ddp=0.0;
 	ts_double Fz;
 	force_per_vertex(vesicle, &Fz);
@@ -402,6 +412,7 @@ ts_double direct_force_from_Fz_balance(ts_vesicle *vesicle, ts_vertex *vtx, ts_v
 }
 
 void force_per_vertex(ts_vesicle *vesicle, ts_double *Fz){
+    // !! Not adapted to use the Vicsek model !! -- yoav 
     ts_double norml;
 	ts_uint i,j;
 	ts_double fz=0.0;
@@ -438,30 +449,33 @@ void stretchenergy(ts_vesicle *vesicle, ts_triangle *triangle){
 
 inline ts_bool was_vertex_seen(ts_vertex **seen_vtx, ts_vertex *vtx, ts_uint check_from, ts_uint check_up_to){
     ts_uint k;
-    // check if vertex was already accounted for in the "seen_vertex" list
-    // 
-    // we don't typically need to go over all the vertices: when we iterate
-    // over neighbors of the current layer, building the next one, we only
-    // need to check from the previous layer, the current layer, and the
-    // layer we're building
-    // if we're checking neighbors of C, we can only be at either P node,
-    // C node, A node, or N node, and we've seen the P,C, and A nodes
-    // ..............
-    //  A1 --  A2 --  O1     O-not-yet added              seen_vtx[]:
-    // /  \  /  |  \  / \    N-bext layer, not added yet          [...
-    // C1--C2--N3--O1 - O1   A-next layer, already added            Q1
-    // | / | \ | \ |  \ |    C-current, neighbor iterated layer     Q2
-    // P1--P2--C3--N4 - O1   P-previous layer                       P1  <-check_from
-    // | \ | \ | \ |  \ |    Q-previous previous layer              P2
-    // Q1--Q2--P3--C4 - N5                                          P3
-    // ..............                                               C1
-    //                                                              C2
-    //                                                              C3
-    //                                                              C4
-    //                                                              A1
-    //                                                              A2
-    //                                                              _ <-check_up_to
+    /* check if vertex was already accounted for in the "seen_vertex" list
 
+    we don't need to go over all the vertices: as we iterate
+    over the current layer, building the next one,
+    we can only encounter neighbors that are new vertices, 
+    vertices from the layer we're building, vertices from the currnet layer, 
+    and vertice from the previous layers
+
+    For example if we're checking neighbors of C2, we only encounter
+    P1 and P2 from the previous layer, C1 and C3 from the current layer,
+    A1 which we collected through C1 already in the next layer, and
+    N2 and N3 in the next layer which which we haven't seen and want to add
+    ..............
+     A1 --  N2 --  O1     O-not added yet               seen_vtx[]:
+    /  \  /  |  \  / \    N-next layer, not added yet          [...
+    C1--C2--N3--O1 - O1   A-next layer, already added            Q1
+    | / | \ | \ |  \ |    C-current, neighbor iterated layer     Q2
+    P1--P2--C3--N4 - O1   P-previous layer                       P1  <-check_from
+    | \ | \ | \ |  \ |    Q-previous previous layer              P2
+    Q1--Q2--P3--C4 - N5                                          P3
+    ..............                                               C1
+                                                                 C2
+                                                                 C3
+                                                                 C4
+                                                                 A1
+                                                                  _ <-check_up_to
+    */
 
     for (k=check_from; k<check_up_to; k++){
         if (seen_vtx[k]==vtx) return 1;

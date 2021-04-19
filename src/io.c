@@ -1174,6 +1174,7 @@ ts_tape *parsetape(char *filename){
 
     // absolutly horrible but works:
     // fix the tape that is recorded to the .vtu
+    // with the new command line arguments
     update_tapetxt(tapetxt, command_line_args.tape_opts);
 
 	ts_tape *tape=parsetapebuffer(tapetxt);
@@ -1275,10 +1276,10 @@ ts_tape *parsetapebuffer(char *buffer){
 	fatal("Invalid tape!",100);
 	}
 
-    // this bit is not needed, since we re-wrote the tape directly for .vtu reasons
-    // and new variable compatibility
+    // this bit is not needed, since we re-wrote the tape directly
+    // due to for .vtu reasons and new variable compatibility
 
-    /* here we override all values read from tape with values from commandline*/
+    /* here we used to override all values read from tape with values from commandline*/
     //getcmdline_tape(cfg,command_line_args.tape_opts);
     cfg_free(cfg);
 
