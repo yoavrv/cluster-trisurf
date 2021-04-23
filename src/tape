@@ -110,7 +110,7 @@ plane_d=10
 plane_F=1.0
 
 #Vicsek: force direction is sum of own normal + (nearest neighbor normals * vicsek_strength)
-# model- 0 for no vicsek, 1 (or else): connected to neighbors up to radius
+# model- 0: no vicsek, 1: connected neighbors up to radius, 2: 1 with weight 1/neighbor dist
 vicsek_model=1
 #interaction strength parameter: 1: weight of neighbors
 vicsek_strength=0.1

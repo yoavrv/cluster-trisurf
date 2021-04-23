@@ -228,9 +228,9 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
     //stupid loop variables don't go in stupid for loop due to stupid C89 compiler
     ts_uint i;ts_uint j; ts_uint k; ts_uint curr_dist;
     
-    // initial mallocation size should be subject to change: roughly ~pi*r^2
+    // estimated mallocation size for the cluster: roughly ~pi*r^2
     ts_uint max_vtx_seen=3*(( (int) vesicle->tape->vicsek_radius)+1)*(( (int) vesicle->tape->vicsek_radius)+1);
-    // allocate the struct
+    // allocate the struct for the "seen vertex" (defined in general.h, functions in vertex.c)
     ts_seen_vertex *seen_vtx = init_seen_vertex(max_vtx_seen);
 
 
@@ -278,7 +278,7 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 
         
         // we have now seen the prime vertex
-        insert_vtx_to_seen(seen_vtx, vtx);
+        add_vtx_to_seen(seen_vtx, vtx);
         
     
         // Breadth first search using seen_vtx, layer by layer,
@@ -321,13 +321,13 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
                     // has this neighbor been seen?
                     if (is_in_seen_vertex(seen_vtx,seen_vtx->vtx[i]->neigh[j]) && (curr_dist!=1)){
                         // if seen, skip to next neighbor in the j loop
-                        // 1st layer are all new, so we can skip the check
+                        // 1st layer is always new, so we can skip the check
                         continue;
                     }
                     else {
                         //new vertex! add to the next layer
 
-                        insert_vtx_to_seen(seen_vtx,seen_vtx->vtx[i]->neigh[j]);
+                        add_vtx_to_seen(seen_vtx,seen_vtx->vtx[i]->neigh[j]);
 
                         //calculate normal and add to the sum
                         xnorm = 0.0;
@@ -340,6 +340,8 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
                         }
                         /*normalize, and add to normal sum with weight by Vicsek strength*/
                         norml = sqrt(xnorm * xnorm + ynorm * ynorm + znorm * znorm);
+                        // Vicsek model 2: weight by 1/distance
+                        if (vesicle->tape->vicsek_model == 2) norml *= curr_dist;
                         vixnorm += vesicle->tape->vicsek_strength * xnorm / norml;
                         viynorm += vesicle->tape->vicsek_strength * ynorm / norml;
                         viznorm += vesicle->tape->vicsek_strength * znorm / norml;

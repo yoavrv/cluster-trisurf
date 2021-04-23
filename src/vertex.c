@@ -312,7 +312,7 @@ inline ts_bool vtx_remove_tristar(ts_vertex *vtx, ts_triangle *tristar){
 }
 
 
-ts_bool insert_vtx_to_seen(ts_seen_vertex *seen_vtx, ts_vertex *vtx){
+ts_bool add_vtx_to_seen(ts_seen_vertex *seen_vtx, ts_vertex *vtx){
     if (seen_vtx->n_top == seen_vtx->size)
     {
         seen_vtx->size *= 2;

@@ -31,7 +31,7 @@ inline ts_double vtx_direct(ts_vertex *vtx1, ts_vertex *vtx2, ts_vertex *vtx3);
 inline ts_bool vertex_add_tristar(ts_vertex *vtx, ts_triangle *tristarmem);
 inline ts_bool vtx_insert_neighbour(ts_vertex *vtx, ts_vertex *nvtx, ts_vertex *vtxm);
 inline ts_bool vtx_remove_tristar(ts_vertex *vtx, ts_triangle *tristar);
-ts_bool insert_vtx_to_seen(ts_seen_vertex *seen_vtx, ts_vertex *vtx);
+ts_bool add_vtx_to_seen(ts_seen_vertex *seen_vtx, ts_vertex *vtx);
 ts_bool vtx_copy(ts_vertex *cvtx,ts_vertex *ovtx);
 ts_bool vtx_duplicate(ts_vertex *cvtx, ts_vertex *ovtx);
 ts_vertex **vtx_neigh_copy(ts_vertex_list *vlist,ts_vertex *ovtx);
