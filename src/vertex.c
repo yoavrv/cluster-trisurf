@@ -48,6 +48,24 @@ ts_vertex_list *init_vertex_list(ts_uint N){
 	return vlist;
 }
 
+ts_seen_vertex *init_seen_vertex(ts_uint max_size){
+    ts_seen_vertex *seen_vtx = (ts_seen_vertex *) malloc(sizeof(ts_seen_vertex));
+    if (seen_vtx==NULL){
+        fatal("Fatal error reserving memory space for seen_vertex!", 100);
+        return NULL;
+    }
+    seen_vtx->size = max_size;
+    seen_vtx->n_prev = 0;
+    seen_vtx->n_curr = 0;
+    seen_vtx->n_next = 0;
+    seen_vtx->n_top = 0;
+    seen_vtx->vtx=(ts_vertex **) malloc(max_size*sizeof(ts_vertex *));
+    if (seen_vtx->vtx==NULL){
+        fatal("Fatal error reserving memory space for vertex list in seen_vertex!", 100);
+    }
+    return seen_vtx;
+}
+
 ts_bool vtx_add_neighbour(ts_vertex *vtx, ts_vertex *nvtx){
     ts_uint i;
     /* no neighbour can be null! */
@@ -175,6 +193,12 @@ ts_bool vtx_list_free(ts_vertex_list *vlist){
     return TS_SUCCESS;
 }
 
+ts_bool seen_vertex_free(ts_seen_vertex *seen_vtx){
+    free(seen_vtx->vtx);
+    free(seen_vtx);
+    return TS_SUCCESS;
+}
+
 inline ts_double vtx_distance_sq(ts_vertex *vtx1, ts_vertex *vtx2){
     ts_double dist;
 #ifdef TS_DOUBLE_DOUBLE
@@ -288,6 +312,17 @@ inline ts_bool vtx_remove_tristar(ts_vertex *vtx, ts_triangle *tristar){
 }
 
 
+ts_bool insert_vtx_to_seen(ts_seen_vertex *seen_vtx, ts_vertex *vtx){
+    if (seen_vtx->n_top == seen_vtx->size)
+    {
+        seen_vtx->size *= 2;
+        seen_vtx->vtx = realloc(seen_vtx->vtx, sizeof(ts_vertex *) * seen_vtx->size);
+        if (seen_vtx->vtx == NULL)
+            fatal("Cannot reallocate memory to extend seen_vertex.", 100);
+    }
+    seen_vtx->vtx[seen_vtx->n_top] = vtx;
+    seen_vtx->n_top++;
+}
 
 /* ****************************************************************** */
 /* ***** New vertex copy operations. Inherently they are slow.  ***** */
@@ -332,4 +367,46 @@ ts_vertex_list *vertex_list_copy(ts_vertex_list *ovlist){
     }
 
     return vlist;
+}
+
+ts_bool is_in_seen_vertex(ts_seen_vertex *seen_vertex, ts_vertex *vtx){
+    /* check if vertex was already accounted for in the "seen_vertex" list
+
+    we don't need to go over all the vertices: as we iterate
+    over the current layer, building the next one,
+    we can only encounter neighbors that are new vertices, 
+    vertices from the layer we're building, vertices from the currnet layer, 
+    and vertice from the previous layers
+
+    For example if we're checking neighbors of C2, we only encounter
+    P1 and P2 from the previous layer, C1 and C3 from the current layer,
+    A1 which we collected through C1 already in the next layer, and
+    N2 and N3 in the next layer which which we haven't seen and want to add
+    ..............
+     A1 --  N2 --  O1     O-not added yet               seen_vtx[]:
+    /  \  /  |  \  / \    N-next layer, not added yet          [...
+    C1--C2--N3--O1 - O1   A-next layer, already added            Q1
+    | / | \ | \ |  \ |    C-current, neighbor iterated layer     Q2
+    P1--P2--C3--N4 - O1   P-previous layer                       P1  <-check_from
+    | \ | \ | \ |  \ |    Q-previous previous layer              P2
+    Q1--Q2--P3--C4 - N5                                          P3
+    ..............                                               C1
+                                                                 C2
+                                                                 C3
+                                                                 C4
+                                                                 A1
+                                                                  _ <-check_up_to
+    */
+    ts_uint i;
+    for ( i=seen_vertex->n_prev ; i < seen_vertex->n_top ; i++){
+        if (seen_vertex->vtx[i] == vtx) return 1;
+    }
+    return 0;
+}
+
+ts_bool move_seen_vertex_to_next_layer(ts_seen_vertex *seen_vertex){
+    seen_vertex->n_prev = seen_vertex->n_curr;
+    seen_vertex->n_curr = seen_vertex->n_next;
+    seen_vertex->n_next = seen_vertex->n_top;
+    return TS_SUCCESS;
 }

@@ -365,6 +365,20 @@ typedef struct{
 	ts_cluster **cluster;
 } ts_cluster_list;
 
+typedef struct {
+	// "seen" vertex list for breadth-first search
+    // a vertex list, with 4 locations: 
+    // * n_top, the top of the list, where new vertices are added
+    // * n_next, first vertex of the layer under construction
+    // * n_curr, first vertex of the last completed layer, used to construct the next
+    // * n_prev, first vertex of the completed layer before the current one
+	ts_uint n_prev;
+	ts_uint n_curr;
+	ts_uint n_next;
+	ts_uint n_top;
+	ts_uint size;
+	ts_vertex **vtx;
+} ts_seen_vertex;
 
 /* GLOBAL VARIABLES */
 
