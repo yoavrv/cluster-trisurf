@@ -215,6 +215,7 @@ inline ts_bool attraction_bond_energy(ts_bond *bond, ts_double w){
 
 ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_old){
 	// modified to include Vicsek Interaction
+    // modifeid for HIV_Gag model: see non-Vicsek
     
     // quit if this is a non-active vertex (or no vertex is active)
     if(fabs(vesicle->tape->F)<1e-15) return 0.0;
@@ -226,7 +227,7 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 	ts_double vixnorm=0.0,viynorm=0.0,viznorm=0.0;
 
     //stupid loop variables don't go in stupid for loop due to stupid C89 compiler
-    ts_uint i;ts_uint j; ts_uint k; ts_uint curr_dist;
+    ts_uint i;ts_uint j; ts_uint k; ts_uint curr_dist; ts_uint n_neigh_bare;
     
     // estimated mallocation size for the cluster: roughly ~pi*r^2
     ts_uint max_vtx_seen=3*(( (int) vesicle->tape->vicsek_radius)+1)*(( (int) vesicle->tape->vicsek_radius)+1);
@@ -238,8 +239,19 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
     // if (no point in calculating vicsek model)
     if (!vesicle->tape->vicsek_model || fabs(vesicle->tape->vicsek_strength)<1e-15 || fabs(vesicle->tape->vicsek_radius)<1e-15) {//no vicsek
         //regular "force in normal direction"
+        // Modified for HIV_Gag model
+        // Force only comes from the edges (viral protein recruits filament at edges)
+        // force = regular * n_neighbors_bare
 
-	
+        n_neigh_bare = 0;
+        for (i=0; i<vtx->neigh_no; i++){
+            n_neigh_bare += (vtx->neigh[i]->c < 1e-15); // count non-protein neighbors
+        }
+        if (n_neigh_bare == 0){
+            return 0; // skip if all neighbors are protein
+        }
+        //else
+ 
         //vertex normal
 	    /*find normal of the vertex as sum of all the normals of the triangles surrounding it. */
 	    for(i=0;i<vtx->tristar_no;i++){
@@ -255,13 +267,19 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 
 	    /*calculate ddp, normal force directed displacement*/
 	    ddp=xnorm*(vtx->x-vtx_old->x)+ynorm*(vtx->y-vtx_old->y)+znorm*(vtx->z-vtx_old->z);
+        ddp *= n_neigh_bare;
 
     }
     else {
         //vicsek model
         //force directed by Vicsek sum-over-neighbors-normals
+        // Modified for HIV_Gag model (see non-vicsek)
 
-	
+        n_neigh_bare = 0;
+        for (i=0; i<vtx->neigh_no; i++){
+            n_neigh_bare += (vtx->neigh[i]->c < 1e-15); // count non-protein neighbors
+        }
+ 
         //prime vertex normal
 	    /*find normal of the vertex as sum of all the
         normals of the triangles surrounding it. */
@@ -272,9 +290,9 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 	    }
 	    /*normalize*/
 	    norml=sqrt(xnorm*xnorm+ynorm*ynorm+znorm*znorm);
-	    vixnorm=xnorm/norml;
-	    viynorm=ynorm/norml;
-	    viznorm=znorm/norml;
+	    vixnorm=n_neigh_bare * xnorm/norml;
+	    viynorm=n_neigh_bare * ynorm/norml;
+	    viznorm=n_neigh_bare * znorm/norml;
 
         
         // we have now seen the prime vertex
@@ -329,6 +347,11 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 
                         add_vtx_to_seen(seen_vtx,seen_vtx->vtx[i]->neigh[j]);
 
+                        n_neigh_bare = 0;
+                        for (k=0; k<seen_vtx->vtx[i]->neigh[j]->neigh_no; k++){
+                            // count non-protein neighbors
+                            n_neigh_bare += (seen_vtx->vtx[i]->neigh[j]->neigh[k]->c < 1e-15);
+                        }
                         //calculate normal and add to the sum
                         xnorm = 0.0;
                         ynorm = 0.0;
@@ -342,9 +365,9 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
                         norml = sqrt(xnorm * xnorm + ynorm * ynorm + znorm * znorm);
                         // Vicsek model 2: weight by 1/distance
                         if (vesicle->tape->vicsek_model == 2) norml *= curr_dist;
-                        vixnorm += vesicle->tape->vicsek_strength * xnorm / norml;
-                        viynorm += vesicle->tape->vicsek_strength * ynorm / norml;
-                        viznorm += vesicle->tape->vicsek_strength * znorm / norml;
+                        vixnorm += n_neigh_bare * vesicle->tape->vicsek_strength * xnorm / norml;
+                        viynorm += n_neigh_bare * vesicle->tape->vicsek_strength * ynorm / norml;
+                        viznorm += n_neigh_bare * vesicle->tape->vicsek_strength * znorm / norml;
 
                     }
                 }
