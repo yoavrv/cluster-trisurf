@@ -233,7 +233,7 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
     ts_uint max_vtx_seen=3*(( (int) vesicle->tape->vicsek_radius)+1)*(( (int) vesicle->tape->vicsek_radius)+1);
     // allocate the struct for the "seen vertex" (defined in general.h, functions in vertex.c)
     ts_seen_vertex *seen_vtx = init_seen_vertex(max_vtx_seen);
-    ts_seen_vertex *seen_bare_vtx = init_seen_vertex(max_vtx_seen); //for bare neighbors
+    ts_seen_vertex *seen_bare_vtx; //for bare neighbors, init later
 
 
 
@@ -378,6 +378,7 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 	    viznorm/=norml;
 
         // find neighbors of cluster
+        seen_bare_vtx = init_seen_vertex(seen_vtx->n_top); //init now
         n_neigh = 0;
         n_bare_neigh= 0;
 
@@ -399,6 +400,7 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
                 if (seen_vtx->vtx[i]->neigh[j]->c > 1e-15) n_bare_neigh += 1;
             }
         }
+        seen_vertex_free(seen_bare_vtx);
 
 	    /*calculate ddp, Viscek force directed displacement*/
 	    ddp=vixnorm*(vtx->x-vtx_old->x)+viynorm*(vtx->y-vtx_old->y)+viznorm*(vtx->z-vtx_old->z);
@@ -410,7 +412,6 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
     
     //don't forget to free! 
     seen_vertex_free(seen_vtx);
-    
     /*calculate dE*/
     //	printf("ddp=%e",ddp);
     return vesicle->tape->F*ddp;
