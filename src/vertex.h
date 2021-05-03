@@ -37,6 +37,6 @@ ts_bool vtx_duplicate(ts_vertex *cvtx, ts_vertex *ovtx);
 ts_vertex **vtx_neigh_copy(ts_vertex_list *vlist,ts_vertex *ovtx);
 ts_vertex_list *vertex_list_copy(ts_vertex_list *ovlist);
 ts_bool is_in_seen_vertex(ts_seen_vertex *seen_vertex, ts_vertex *vtx);
-ts_bool move_seen_vertex_to_next_layer(ts_seen_vertex *seen_vertex);
+ts_bool advance_seen_vertex_to_next_layer(ts_seen_vertex *seen_vertex);
 
 #endif

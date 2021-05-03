@@ -231,7 +231,7 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
     // estimated mallocation size for the cluster: roughly ~pi*r^2
     ts_uint max_vtx_seen=3*(( (int) vesicle->tape->vicsek_radius)+1)*(( (int) vesicle->tape->vicsek_radius)+1);
     // allocate the struct for the "seen vertex" (defined in general.h, functions in vertex.c)
-    ts_seen_vertex *seen_vtx = init_seen_vertex(max_vtx_seen);
+    ts_seen_vertex *seen_vtx; //initalize in vicsek
 
 
 
@@ -276,7 +276,8 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 	    viynorm=ynorm/norml;
 	    viznorm=znorm/norml;
 
-        
+        //initialize seen_vtx
+        seen_vtx = init_seen_vertex(max_vtx_seen);
         // we have now seen the prime vertex
         add_vtx_to_seen(seen_vtx, vtx);
         
@@ -284,7 +285,7 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
         // Breadth first search using seen_vtx, layer by layer,
         // until reaching layer that is outside the maximum radius
         for (curr_dist=1 ; curr_dist<=vesicle->tape->vicsek_radius; curr_dist++){
-            move_seen_vertex_to_next_layer(seen_vtx);
+            advance_seen_vertex_to_next_layer(seen_vtx);
             
             // The for loops are split by layers
             // The new "next" layer is being built from
@@ -363,13 +364,13 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 	    /*calculate ddp, Viscek force directed displacement*/
 	    ddp=vixnorm*(vtx->x-vtx_old->x)+viynorm*(vtx->y-vtx_old->y)+viznorm*(vtx->z-vtx_old->z);
 
-	    
+	    //don't forget to free! 
+        seen_vertex_free(seen_vtx);
+
     //end else from if (!Vicsek)
     }
     // we got a ddp from either a normal calculation or vicsek calculation
     
-    //don't forget to free! 
-    seen_vertex_free(seen_vtx);
     
     /*calculate dE*/
     //	printf("ddp=%e",ddp);

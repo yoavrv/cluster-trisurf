@@ -404,7 +404,7 @@ ts_bool is_in_seen_vertex(ts_seen_vertex *seen_vertex, ts_vertex *vtx){
     return 0;
 }
 
-ts_bool move_seen_vertex_to_next_layer(ts_seen_vertex *seen_vertex){
+ts_bool advance_seen_vertex_to_next_layer(ts_seen_vertex *seen_vertex){
     seen_vertex->n_prev = seen_vertex->n_curr;
     seen_vertex->n_curr = seen_vertex->n_next;
     seen_vertex->n_next = seen_vertex->n_top;
