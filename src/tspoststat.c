@@ -66,9 +66,7 @@ int count_bonds_with_energy(ts_bond_list *blist){
 
 
 
-ts_bool write_histogram_data(ts_uint timestep_no, ts_vesicle *vesicle){
-	ts_cluster_list *cstlist=init_cluster_list();
-	clusterize_vesicle(vesicle,cstlist);
+ts_bool write_histogram_data(ts_uint timestep_no, ts_vesicle *vesicle, ts_cluster_list* cstlist){
 	//printf("No clusters=%d\n",cstlist->n);
 	int k,i,cnt, test=0;
 	int max_nvtx=0;
@@ -93,9 +91,30 @@ ts_bool write_histogram_data(ts_uint timestep_no, ts_vesicle *vesicle){
 	fclose(fd);
 //	printf("*Sum of all vertices in clusters: %d\n", test);
 //	write_vertex_xml_file(vesicle,timestep_no,cstlist);
-	cluster_list_free(cstlist);
 	
 	return TS_SUCCESS;
+}
+
+ts_double mean_cluster_size(ts_vesicle *vesicle, ts_cluster_list* cstlist){
+	// get mean size of cluster
+	ts_double s=0;
+	ts_uint k=0;
+	for (k=0; k<cstlist->n; k++){
+		s += cstlist->cluster[k]->nvtx;
+	}
+	s = s/cstlist->n;
+	return s;
+}
+
+ts_double var_cluster_size(ts_vesicle *vesicle, ts_cluster_list* cstlist, ts_double mean_size){
+	// get mean size of cluster
+	ts_double s=0;
+	ts_uint k=0;
+	for (k=0; k<cstlist->n; k++){
+		s += (cstlist->cluster[k]->nvtx-mean_size)*(cstlist->cluster[k]->nvtx-mean_size);
+	}
+	s = s/(cstlist->n+1); //bessel correction
+	return s;
 }
 
 
@@ -105,10 +124,12 @@ int main(){
 	ts_uint tstep,n;
     	ts_char *number;
 	struct dirent **list;
-	ts_double l1,l2,l3,hbar;
+	ts_double l1,l2,l3,hbar,Nbw_Nb;
 	int count;
+	ts_cluster_list *cstlist;
+	ts_double mean_size, var_size;
 
-	fprintf(stdout, "OuterLoop Volume Area lamdba1 lambda2 lambda3 Nbw/Nb hbar\n");
+	fprintf(stdout, "OuterLoop,Volume,Area,lamdba1,lambda2,lambda3,Nbw/Nb,hbar,mean_cluster_size,std_cluster_size,\n");
 
 
 	count=scandir(".",&list,0,alphasort);
@@ -119,27 +140,38 @@ int main(){
 	for(n=0;n<count;n++){
 		struct dirent *ent;
 		ent=list[n];	
-            	i=rindex(ent->d_name,'.');
-            	if(i==NULL) {
-				continue;
+        i=rindex(ent->d_name,'.');
+        if(i==NULL) {
+			continue;
 		}
-            	if(strcmp(i+1,"vtu")==0){
-                    j=rindex(ent->d_name,'_');
-                    if(j==NULL) continue;
-                    number=strndup(j+1,j-i); 
+        if(strcmp(i+1,"vtu")==0){
+            j=rindex(ent->d_name,'_');
+            if(j==NULL) continue;
+            number=strndup(j+1,j-i); 
 			quiet=1;
-                    ts_fprintf(stdout,"timestep: %u filename: %s\n",atoi(number),ent->d_name);
-//			printf("%u ",atoi(number));
+            ts_fprintf(stdout,"timestep: %u filename: %s\n",atoi(number),ent->d_name);
+			
+			//prepare vesicle for timestep
 			vesicle=restoreVesicle(ent->d_name);
-//			vesicle_calculate_ulm2(vesicle);
+			cstlist=init_cluster_list();
+			clusterize_vesicle(vesicle,cstlist);
+
+			//calculate quantities
+			//vesicle_calculate_ulm2(vesicle);
 			vesicle_volume(vesicle);
 			vesicle_area(vesicle);
 			gyration_eigen(vesicle,&l1,&l2,&l3);
-			hbar=vesicle_meancurvature(vesicle)/vesicle->area;			
-			fprintf(stdout,"%d %.17e %.17e %.17e %.17e %.17e %.17e %.17e\n",atoi(number),vesicle->volume, vesicle->area,l1,l2,l3, (ts_double)count_bonds_with_energy(vesicle->blist)/(ts_double)vesicle->blist->n,hbar);
+			Nbw_Nb= (ts_double)count_bonds_with_energy(vesicle->blist)/(ts_double)vesicle->blist->n;
+			hbar=vesicle_meancurvature(vesicle)/vesicle->area;	
+			mean_size = mean_cluster_size(vesicle,cstlist);
+			var_size = var_cluster_size(vesicle,cstlist,mean_size);
+			fprintf(stdout,"%d,%.17e,%.17e,%.17e,%.17e,%.17e,%.17e,%.17e,%.17e,%.17e,\n",
+					atoi(number),vesicle->volume, vesicle->area,l1,l2,l3, 
+					Nbw_Nb,hbar, mean_size, sqrt(var_size));
                     	tstep++;
-			write_histogram_data(atoi(number), vesicle);
-                    free(number);
+			write_histogram_data(atoi(number), vesicle, cstlist);
+            free(number);
+			cluster_list_free(cstlist);
 			tape_free(vesicle->tape);
 			vesicle_free(vesicle);
             	}
