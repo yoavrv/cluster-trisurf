@@ -117,6 +117,121 @@ ts_double var_cluster_size(ts_vesicle *vesicle, ts_cluster_list* cstlist, ts_dou
 	return s;
 }
 
+inline ts_bool is_active(ts_vertex *vtx){
+	// simple helper function: is vertex active
+	if (fabs(vtx->c)>1e-16) return 1;
+	return 0;
+}
+
+inline ts_double vtx_distance_sq(ts_vertex *vtx1, ts_vertex *vtx2){
+    ts_double dist;
+#ifdef TS_DOUBLE_DOUBLE
+    dist=pow(vtx1->x-vtx2->x,2) + pow(vtx1->y-vtx2->y,2) + pow(vtx1->z-vtx2->z,2);
+#endif
+#ifdef TS_DOUBLE_LONGDOUBLE
+    dist=powl(vtx1->x-vtx2->x,2) + powl(vtx1->y-vtx2->y,2) + powl(vtx1->z-vtx2->z,2);
+#endif
+#ifdef TS_DOUBLE_FLOAT
+    dist=powf(vtx1->x-vtx2->x,2) + powf(vtx1->y-vtx2->y,2) + powf(vtx1->z-vtx2->z,2);
+#endif
+    return(dist);
+}
+
+ts_double perimeter_tvvv(ts_vertex* prime, ts_vertex* v1, ts_vertex* v2){
+	// helper function for get_perimeter_triangle()
+	/*perimeter caluclation is very similar to the mean curvature: 
+	similar to the mean curvature:			  v2
+	we need the same cotan(theta),			 / \
+	except we take both	halfs in the		/	\
+	same triangle instead the two		   /\	 \
+	sides of the bond					  /	  0   \
+									prime ____|_<-_first part of sigma_ij
+											  | <- second part of sigma_ij
+	
+	*/
+	ts_double pv_dot_pv,vv_dot_vv,pv_dot_vv,cotan_theta,perim;
+	//part attached to pv1
+	pv_dot_pv=vtx_distance_sq(prime,v1); //shouldn't be zero!
+    vv_dot_vv=vtx_distance_sq(v1,v2); // shouldn't be zero!
+    pv_dot_vv=(prime->x-v1->x)*(v2->x-v1->x)+ //carefull with the order!
+           	  (prime->y-v1->y)*(v2->y-v1->y)+ //don't want -|pv1||v1v2|cos(theta)
+              (prime->z-v1->z)*(v2->z-v1->z);
+	cotan_theta=pv_dot_pv/sqrt(pv_dot_pv*vv_dot_vv-pv_dot_vv*pv_dot_vv);
+	perim=0.5*cotan_theta*pv_dot_pv;
+	//part attached to pv2
+	pv_dot_pv=vtx_distance_sq(prime,v2); //shouldn't be zero!
+	pv_dot_vv=(prime->x-v2->x)*(v1->x-v2->x)+ //flipped 
+           	  (prime->y-v2->y)*(v1->y-v2->y)+
+              (prime->z-v2->z)*(v1->z-v2->z);
+	cotan_theta=pv_dot_pv/sqrt(pv_dot_pv*vv_dot_vv-pv_dot_vv*pv_dot_vv);
+	perim+=0.5*cotan_theta*pv_dot_pv;
+	return perim;
+}
+
+ts_double get_perimeter_from_triangle(ts_triangle* triangle){
+	/* Get protein-bare vertex boundary length
+	a boundary goes through the triangle if one of the vertices is different
+	lots of annoying combinations to go through 000,100,110,111,010,011,001 */
+
+	// big, disgusting if tree to get the combinations: nasty
+	if (is_active(triangle->vertex[0])){
+		if (is_active(triangle->vertex[1])){
+			if (is_active(triangle->vertex[2])){
+				// 111: inside some cluster
+				return 0;
+			}
+			else{
+				// 110: 2 is different
+				return perimeter_tvvv(triangle->vertex[2],triangle->vertex[0],triangle->vertex[1]);
+			}
+		}
+		else{ 
+			if (is_active(triangle->vertex[2])){
+				// 101: 1 is different
+				return perimeter_tvvv(triangle->vertex[1],triangle->vertex[2],triangle->vertex[0]);
+			}
+			else{ 
+				// 100: 0 is different
+				return perimeter_tvvv(triangle->vertex[0],triangle->vertex[1],triangle->vertex[2]);
+			}
+		}
+	}
+	else{
+		if (is_active(triangle->vertex[1])){
+			if (is_active(triangle->vertex[2])){
+				// 011: 0 is different
+				return perimeter_tvvv(triangle->vertex[0],triangle->vertex[1],triangle->vertex[2]);
+			}
+			else{
+				// 010: 1 is different
+				return perimeter_tvvv(triangle->vertex[1],triangle->vertex[2],triangle->vertex[0]);
+			}
+		}
+		else{ 
+			if (is_active(triangle->vertex[2])){
+				// 001: 2 is different
+				return perimeter_tvvv(triangle->vertex[2],triangle->vertex[0],triangle->vertex[1]);
+			}
+			else{ 
+				// 000: inside bare area
+				return 0;
+			}
+		}
+	}
+}
+
+
+ts_double get_full_perimeter(ts_vesicle* vesicle){
+	// get the sum total line length 
+	// of the boudaries of the clusters
+	ts_uint k, perim=0;
+	for (k=0;k<vesicle->tlist->n; k++){
+		perim+=get_perimeter_from_triangle(vesicle->tlist->tria[k]);
+	}
+	return perim;
+}
+
+
 
 int main(){
 	ts_vesicle *vesicle;
@@ -128,8 +243,9 @@ int main(){
 	int count;
 	ts_cluster_list *cstlist;
 	ts_double mean_size, var_size;
+	ts_double perim;
 
-	fprintf(stdout, "OuterLoop,Volume,Area,lamdba1,lambda2,lambda3,Nbw/Nb,hbar,mean_cluster_size,std_cluster_size,\n");
+	fprintf(stdout, "OuterLoop,Volume,Area,lamdba1,lambda2,lambda3,Nbw/Nb,hbar,mean_cluster_size,std_cluster_size,line_length,\n");
 
 
 	count=scandir(".",&list,0,alphasort);
@@ -163,11 +279,12 @@ int main(){
 			gyration_eigen(vesicle,&l1,&l2,&l3);
 			Nbw_Nb= (ts_double)count_bonds_with_energy(vesicle->blist)/(ts_double)vesicle->blist->n;
 			hbar=vesicle_meancurvature(vesicle)/vesicle->area;	
-			mean_size = mean_cluster_size(vesicle,cstlist);
-			var_size = var_cluster_size(vesicle,cstlist,mean_size);
-			fprintf(stdout,"%d,%.17e,%.17e,%.17e,%.17e,%.17e,%.17e,%.17e,%.17e,%.17e,\n",
+			mean_size=mean_cluster_size(vesicle,cstlist);
+			var_size=var_cluster_size(vesicle,cstlist,mean_size);
+			perim=get_full_perimeter(vesicle);
+			fprintf(stdout,"%d,%.17e,%.17e,%.17e,%.17e,%.17e,%.17e,%.17e,%.17e,%.17e,%.17e,\n",
 					atoi(number),vesicle->volume, vesicle->area,l1,l2,l3, 
-					Nbw_Nb,hbar, mean_size, sqrt(var_size));
+					Nbw_Nb,hbar, mean_size, sqrt(var_size),perim);
                     	tstep++;
 			write_histogram_data(atoi(number), vesicle, cstlist);
             free(number);
