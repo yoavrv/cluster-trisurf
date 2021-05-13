@@ -113,7 +113,7 @@ ts_double var_cluster_size(ts_vesicle *vesicle, ts_cluster_list* cstlist, ts_dou
 	for (k=0; k<cstlist->n; k++){
 		s += (cstlist->cluster[k]->nvtx-mean_size)*(cstlist->cluster[k]->nvtx-mean_size);
 	}
-	s = s/(cstlist->n+1); //bessel correction
+	if (cstlist->n>1) s = s/(cstlist->n-1); //bessel correction
 	return s;
 }
 
