@@ -25,6 +25,7 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_uint mcsweeps, ts_uint inititer, 
 	ts_double l1,l2,l3,vmsr,bfsr, vmsrt, bfsrt;
 	ts_ulong epochtime;
 	ts_double max_z;
+	ts_double time_1, time_2;
 	FILE *fd3=NULL;
  	char filename[10000];
 	//struct stat st;
@@ -91,6 +92,8 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_uint mcsweeps, ts_uint inititer, 
 	for(i=start_iteration;i<inititer+iterations;i++){
 		vmsr=0.0;
 		bfsr=0.0;
+		time_1=0;
+		time_2=0;
 
 	//plane confinement
 	if(vesicle->tape->plane_confinement_switch){
@@ -122,7 +125,7 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_uint mcsweeps, ts_uint inititer, 
 /*    vesicle_volume(vesicle);
     fprintf(stderr,"Volume before TS=%1.16e\n", vesicle->volume); */
 		for(j=0;j<mcsweeps;j++){
-			single_timestep(vesicle, &vmsrt, &bfsrt);
+			single_timestep(vesicle, &vmsrt, &bfsrt, &time_1, &time_2);
 			vmsr+=vmsrt;
 			bfsr+=bfsrt;
 		}
@@ -131,6 +134,8 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_uint mcsweeps, ts_uint inititer, 
     fprintf(stderr,"Volume after TS=%1.16e\n", vesicle->volume); */
 		vmsr/=(ts_double)mcsweeps;
 		bfsr/=(ts_double)mcsweeps;
+		time_1/=(ts_double)mcsweeps;
+		time_2/=(ts_double)mcsweeps;
 		if(vesicle->tape->allow_xy_plane_movement==0){
 			centermass(vesicle);
 		}
@@ -203,6 +208,7 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_uint mcsweeps, ts_uint inititer, 
 		fprintf(fd3,"%d",i);
 		fclose(fd3);
 		ts_fprintf(stdout,"Done %d out of %d iterations (x %d MC sweeps).\n",i+1,inititer+iterations,mcsweeps);
+		ts_fprintf(stdout,"time1: %f time2: %f (x %d MC sweeps).\n",1000*time_1,1000*time_2,mcsweeps);
 
 	}
 	fclose(fd);
@@ -210,7 +216,7 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_uint mcsweeps, ts_uint inititer, 
 	return TS_SUCCESS;
 }
 
-ts_bool single_timestep(ts_vesicle *vesicle,ts_double *vmsr, ts_double *bfsr){
+ts_bool single_timestep(ts_vesicle *vesicle,ts_double *vmsr, ts_double *bfsr, ts_double *time_1, ts_double *time_2){
 //    vesicle_volume(vesicle);
 //    fprintf(stderr,"Volume before TS=%1.16e\n", vesicle->volume);
     ts_bool retval;
@@ -219,16 +225,16 @@ ts_bool single_timestep(ts_vesicle *vesicle,ts_double *vmsr, ts_double *bfsr){
     ts_uint vmsrcnt=0;
 
     for(i=0;i<vesicle->vlist->n;i++){
-        rnvec[0]=drand48();
-        rnvec[1]=drand48();
-        rnvec[2]=drand48();
-        retval=single_verticle_timestep(vesicle,vesicle->vlist->vtx[i],rnvec);
-	if(retval==TS_SUCCESS) vmsrcnt++;        
+        //rnvec[0]=drand48();
+        //rnvec[1]=drand48();
+        //rnvec[2]=drand48();
+        retval=single_verticle_timestep(vesicle,vesicle->vlist->vtx[i], time_1, time_2);
+		if(retval==TS_SUCCESS) vmsrcnt++;
     }
 
 	ts_int bfsrcnt=0;
     for(i=0;i<3*vesicle->vlist->n;i++){
-	b=rand() % vesicle->blist->n;
+		b=rand() % vesicle->blist->n;
         //find a bond and return a pointer to a bond...
         //call single_bondflip_timestep...
         retval=single_bondflip_timestep(vesicle,vesicle->blist->bond[b],rnvec);

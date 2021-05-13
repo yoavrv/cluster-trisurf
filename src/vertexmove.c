@@ -15,14 +15,16 @@
 #include "vertexmove.h"
 #include <string.h>
 #include "constvol.h"
+#include <time.h>
 
-ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx,ts_double *rn){
+ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx,ts_double *time_1, ts_double *time_2){
     ts_uint i;
     ts_double dist;
     ts_bool retval; 
     ts_uint cellidx; 
     ts_double delta_energy, delta_energy_cv,oenergy,dvol=0.0, darea=0.0, dstretchenergy=0.0;
-    ts_double costheta,sintheta,phi,r;
+    ts_double costheta,sintheta,phi,cosphi,r;
+	clock_t clock_1, clock_2;
 	//This will hold all the information of vtx and its neighbours
 	ts_vertex backupvtx[20], *constvol_vtx_moved=NULL, *constvol_vtx_backup=NULL;
 	memcpy((void *)&backupvtx[0],(void *)vtx,sizeof(ts_vertex));
@@ -42,16 +44,29 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx,ts_double *r
 //    	vtx->y=vtx->y+vesicle->stepsize*(2.0*rn[1]-1.0);
 //    	vtx->z=vtx->z+vesicle->stepsize*(2.0*rn[2]-1.0);
 
+	//measure how long does the pick-movement phase takes
+	clock_1 = clock();
+
 //random move in a sphere with radius stepsize:
-	r=vesicle->stepsize*rn[0];
-	phi=rn[1]*2*M_PI;
-	costheta=2*rn[2]-1;
+	//rnvec[0]=drand48();
+    //rnvec[1]=drand48();
+	//rnvec[2]=drand48();
+	r=vesicle->stepsize*drand48();
+	phi=drand48()*2*M_PI;
+	costheta=2*drand48()-1;
 	sintheta=sqrt(1-pow(costheta,2));
-	vtx->x=vtx->x+r*sintheta*cos(phi);
-	vtx->y=vtx->y+r*sintheta*sin(phi);
+	cosphi=cos(phi);
+	vtx->x=vtx->x+r*sintheta*cosphi;
+	if (phi<M_PI){
+		vtx->y=vtx->y+r*sintheta*sqrt(1-pow(cosphi,2));
+	}
+	else {
+		vtx->y=vtx->y-r*sintheta*sqrt(1-pow(cosphi,2));
+	}
 	vtx->z=vtx->z+r*costheta;
 
-
+	clock_1 = clock()-clock_1;
+	*time_1 += clock_1;
 //distance with neighbours check
     for(i=0;i<vtx->neigh_no;i++){
         dist=vtx_distance_sq(vtx,vtx->neigh[i]);
@@ -137,6 +152,9 @@ if(vesicle->R_nucleus>0.0){
 	memcpy((void *)&backupvtx[i+1],(void *)vtx->neigh[i],sizeof(ts_vertex));
 	}
 
+	//start clock
+	clock_2 = clock();
+
 	if(vesicle->pswitch == 1 || vesicle->tape->constvolswitch>0){
 		for(i=0;i<vtx->tristar_no;i++) dvol-=vtx->tristar[i]->volume;
 	}
@@ -183,6 +201,8 @@ if(vesicle->R_nucleus>0.0){
 	        	}
             		for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]); 
             		//fprintf(stderr,"fajlam!\n");
+					clock_2 = clock()-clock_2;
+					*time_2 += clock_2;
             		return TS_FAIL;
 		}
 
@@ -200,6 +220,10 @@ if(vesicle->R_nucleus>0.0){
 	        	}
             		for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]); 
             		//fprintf(stderr,"fajlam!\n");
+
+					//exit, stop clock
+					clock_2 = clock()-clock_2;
+					*time_2 += clock_2;
             		return TS_FAIL;
 		}
 
@@ -215,6 +239,9 @@ if(vesicle->R_nucleus>0.0){
 	        }
             for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]); 
  //           fprintf(stderr,"fajlam!\n");
+			//exit, stop clock
+ 			clock_2 = clock()-clock_2;
+			*time_2 += clock_2;
             return TS_FAIL;
         }
 //    vesicle_volume(vesicle);
@@ -346,6 +373,9 @@ if(vesicle->tape->adhesion_switch){
 //    fprintf(stderr, "after vtx(x,y,z)=%e,%e,%e\n",constvol_vtx_moved->x, constvol_vtx_moved->y, constvol_vtx_moved->z);
 //    vesicle_volume(vesicle);
 //    fprintf(stderr,"Volume after fail=%1.16e\n", vesicle->volume);
+	//exit, stop clock
+	clock_2 = clock()-clock_2;
+	*time_2 += clock_2;
     return TS_FAIL; 
     }
 }
@@ -373,6 +403,10 @@ if(vesicle->tape->adhesion_switch){
     //END MONTE CARLOOOOOOO
 //    vesicle_volume(vesicle);
 //    fprintf(stderr,"Volume after success=%1.16e\n", vesicle->volume);
+	
+	//exit, stop clock
+	clock_2 = clock()-clock_2;
+	*time_2 += clock_2;
     return TS_SUCCESS;
 }
 
