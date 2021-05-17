@@ -224,7 +224,8 @@ ts_double get_perimeter_from_triangle(ts_triangle* triangle){
 ts_double get_full_perimeter(ts_vesicle* vesicle){
 	// get the sum total line length 
 	// of the boudaries of the clusters
-	ts_uint k, perim=0;
+	ts_uint k;
+	ts_double perim=0;
 	for (k=0;k<vesicle->tlist->n; k++){
 		perim+=get_perimeter_from_triangle(vesicle->tlist->tria[k]);
 	}
