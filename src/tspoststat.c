@@ -157,14 +157,14 @@ ts_double perimeter_tvvv(ts_vertex* prime, ts_vertex* v1, ts_vertex* v2){
            	  (prime->y-v1->y)*(v2->y-v1->y)+ //don't want -|pv1||v1v2|cos(theta)
               (prime->z-v1->z)*(v2->z-v1->z);
 	cotan_theta=pv_dot_pv/sqrt(pv_dot_pv*vv_dot_vv-pv_dot_vv*pv_dot_vv);
-	perim=0.5*cotan_theta*pv_dot_pv;
+	perim=0.5*cotan_theta*sqrt(pv_dot_pv);
 	//part attached to pv2
 	pv_dot_pv=vtx_distance_sq(prime,v2); //shouldn't be zero!
 	pv_dot_vv=(prime->x-v2->x)*(v1->x-v2->x)+ //flipped 
            	  (prime->y-v2->y)*(v1->y-v2->y)+
               (prime->z-v2->z)*(v1->z-v2->z);
 	cotan_theta=pv_dot_pv/sqrt(pv_dot_pv*vv_dot_vv-pv_dot_vv*pv_dot_vv);
-	perim+=0.5*cotan_theta*pv_dot_pv;
+	perim+=0.5*cotan_theta*sqrt(pv_dot_pv);
 	return perim;
 }
 
