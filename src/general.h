@@ -158,6 +158,20 @@ struct ts_vertex {
         ts_double solAngle;
 		struct ts_poly *grafted_poly;
 		struct ts_cluster *cluster;
+		// new stuff
+		ts_bool type; // type for ifs: 1st bit: active, 2nd bit: curved, 3rd bit:
+		ts_double nx; // normal vector
+		ts_double ny;
+		ts_double nz;
+		ts_double f;  // force
+		ts_double fx; // force vector
+		ts_double fy;
+		ts_double fz;
+		ts_double d;  // spontaneous curvature deviator
+		ts_double tx; // director vector
+		ts_double ty;
+		ts_double tz;
+
 };
 typedef struct ts_vertex ts_vertex;
 
