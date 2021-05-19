@@ -410,3 +410,22 @@ ts_bool advance_seen_vertex_to_next_layer(ts_seen_vertex *seen_vertex){
     seen_vertex->n_next = seen_vertex->n_top;
     return TS_SUCCESS;
 }
+
+ts_bool update_vertex_normal(ts_vertex *vtx){
+    ts_uint i;
+    ts_double norml, xnorm, ynorm, znorm;
+    xnorm=0;
+    ynorm=0;
+    znorm=0;
+    //*find normal of the vertex as sum of all the normals of the triangles surrounding it. */
+	for(i=0;i<vtx->tristar_no;i++){
+		xnorm+=vtx->tristar[i]->xnorm;
+		ynorm+=vtx->tristar[i]->ynorm;
+		znorm+=vtx->tristar[i]->znorm;
+    }
+	/*normalize*/
+    norml=sqrt(xnorm*xnorm+ynorm*ynorm+znorm*znorm);
+    vtx->nx=xnorm/norml;
+	vtx->ny=ynorm/norml;
+	vtx->nz=znorm/norml;
+}

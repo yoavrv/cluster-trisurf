@@ -175,6 +175,11 @@ if(vesicle->R_nucleus>0.0){
 
     //update the normals of triangles that share bead i.
     for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]);
+	// update the normals of the vertices
+	update_vertex_normal(vtx);
+	for(i=0; i<vtx->neigh_no; i++) update_vertex_normal(vtx->neigh[i]);
+
+	// bending energy of the vertex
 	oenergy=vtx->energy;
     energy_vertex(vtx);
     delta_energy=vtx->xk*(vtx->energy - oenergy);
@@ -199,11 +204,11 @@ if(vesicle->R_nucleus>0.0){
 	        	for(i=0;i<vtx->neigh_no;i++){
 		        	vtx->neigh[i]=memcpy((void *)vtx->neigh[i],(void *)&backupvtx[i+1],sizeof(ts_vertex));
 	        	}
-            		for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]); 
-            		//fprintf(stderr,"fajlam!\n");
-					clock_2 = clock()-clock_2;
-					*time_2 += clock_2;
-            		return TS_FAIL;
+            	for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]); 
+
+				clock_2 = clock()-clock_2;
+				*time_2 += clock_2;
+            	return TS_FAIL;
 		}
 
 
@@ -211,7 +216,6 @@ if(vesicle->R_nucleus>0.0){
 
 	if(vesicle->tape->constvolswitch==2){
 		/*check whether the dvol is gt than epsvol */
-			//fprintf(stderr,"DVOL=%1.16e\n",dvol);
 		if(fabs(vesicle->volume+dvol-V0)>epsvol){
 			//restore old state.
  			vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
@@ -219,7 +223,6 @@ if(vesicle->R_nucleus>0.0){
 		        	vtx->neigh[i]=memcpy((void *)vtx->neigh[i],(void *)&backupvtx[i+1],sizeof(ts_vertex));
 	        	}
             		for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]); 
-            		//fprintf(stderr,"fajlam!\n");
 
 					//exit, stop clock
 					clock_2 = clock()-clock_2;
@@ -237,8 +240,8 @@ if(vesicle->R_nucleus>0.0){
 	        for(i=0;i<vtx->neigh_no;i++){
 		        vtx->neigh[i]=memcpy((void *)vtx->neigh[i],(void *)&backupvtx[i+1],sizeof(ts_vertex));
 	        }
-            for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]); 
- //           fprintf(stderr,"fajlam!\n");
+            for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]);
+
 			//exit, stop clock
  			clock_2 = clock()-clock_2;
 			*time_2 += clock_2;
@@ -254,13 +257,15 @@ if(vesicle->R_nucleus>0.0){
     }
 	
 	// vertices may be active, and have force applied on them
-	delta_energy+=direct_force_energy(vesicle,vtx,backupvtx);
+	// to do: think hard on stratonovich/ito approach
+	if (vtx->type&2) delta_energy+=direct_force_energy(vesicle,vtx,backupvtx);
 	
 	// additionally, vesicle may have force balance, applying additional force
 	// this is doen separately here (since we can split the F)
 	if (vesicle->tape->force_balance_along_z_axis==1){
 		delta_energy+=direct_force_from_Fz_balance(vesicle,vtx,backupvtx);
 	}
+	
 
 	//stretching energy 2 of 3
 	if(vesicle->tape->stretchswitch==1){
@@ -291,6 +296,7 @@ if(vesicle->R_nucleus>0.0){
 		}
 	}
 // change in energy due to adhesion
+// later!
 if(vesicle->tape->adhesion_switch){
 //1 for step potential
 	if(vesicle->tape->type_of_adhesion_model==1){

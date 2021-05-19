@@ -57,9 +57,8 @@ c
     neip=nei+1;  // I don't like it.. Smells like I must have it in correct order
     neim=nei-1;
     if(neip>=it->neigh_no) neip=0;
-    if((ts_int)neim<0) neim=it->neigh_no-1; /* casting is essential... If not
-there the neim is never <0 !!! */
-  //  fprintf(stderr,"The numbers are: %u %u\n",neip, neim);
+    if((ts_int)neim<0) neim=it->neigh_no-1; /* casting is essential... If not there the neim is never <0 !!! */
+    //  fprintf(stderr,"The numbers are: %u %u\n",neip, neim);
     km=it->neigh[neim];  // We located km and kp
     kp=it->neigh[neip];
 
@@ -67,26 +66,25 @@ there the neim is never <0 !!! */
         fatal("In bondflip, cannot determine km and kp!",999);
     }
 
-  //  fprintf(stderr,"I WAS HERE! after the 4 vertices are known!\n");
+    //  fprintf(stderr,"I WAS HERE! after the 4 vertices are known!\n");
 
-/* test if the membrane is wrapped too much, so that kp is nearest neighbour of
- * km. If it is true, then don't flip! */
+    /* test if the membrane is wrapped too much, so that kp is nearest neighbour of
+    * km. If it is true, then don't flip! */
     for(i=0;i<km->neigh_no;i++){
         if(km->neigh[i] == kp) return TS_FAIL;
     }
- //   fprintf(stderr,"Membrane didn't wrap too much.. Continue.\n");
-/* if bond would be too long, return... */
+    //   fprintf(stderr,"Membrane didn't wrap too much.. Continue.\n");
+    /* if bond would be too long, return... */
     if(vtx_distance_sq(km,kp) > vesicle->dmax ) return TS_FAIL;
- //   fprintf(stderr,"Bond will not be too long.. Continue.\n");
+    //   fprintf(stderr,"Bond will not be too long.. Continue.\n");
 
-/* we make a bond flip. this is different than in original fortran */
-// find lm, lp
-// 1. step. We find lm and lp from k->tristar !
+    /* we make a bond flip. this is different than in original fortran */
+    // find lm, lp
+    // 1. step. We find lm and lp from k->tristar !
     for(i=0;i<it->tristar_no;i++){
         for(j=0;j<k->tristar_no;j++){
             if((it->tristar[i] == k->tristar[j])){ //ce gre za skupen trikotnik
-                if((it->tristar[i]->vertex[0] == km || it->tristar[i]->vertex[1]
-== km || it->tristar[i]->vertex[2]== km )){
+                if((it->tristar[i]->vertex[0] == km || it->tristar[i]->vertex[1]== km || it->tristar[i]->vertex[2]== km )){
                 lm=it->tristar[i];
          //       lmidx=i;
                 }
@@ -99,19 +97,19 @@ there the neim is never <0 !!! */
             }
         }
     }
-if(lm==NULL || lp==NULL) fatal("ts_flip_bond: Cannot find triangles lm and lp!",999);
+    if(lm==NULL || lp==NULL) fatal("ts_flip_bond: Cannot find triangles lm and lp!",999);
 
-//we look for important triangles lp1 and lm2.
+    //we look for important triangles lp1 and lm2.
 
- for(i=0;i<k->tristar_no;i++){
+    for(i=0;i<k->tristar_no;i++){
         for(j=0;j<kp->tristar_no;j++){
-                if((k->tristar[i] == kp->tristar[j]) && k->tristar[i]!=lp){ //ce gre za skupen trikotnik
+                if((k->tristar[i] == kp->tristar[j]) && k->tristar[i]!=lp){ // אם זה משולש משותף
                     lp1=k->tristar[i];
             }
         }
-}
+    }
 
- for(i=0;i<it->tristar_no;i++){
+    for(i=0;i<it->tristar_no;i++){
         for(j=0;j<km->tristar_no;j++){
             if((it->tristar[i] == km->tristar[j]) && it->tristar[i]!=lm){ //ce gre za skupen trikotnik
                     lm2=it->tristar[i];
@@ -119,74 +117,77 @@ if(lm==NULL || lp==NULL) fatal("ts_flip_bond: Cannot find triangles lm and lp!",
         }
     }
 
-if(lm2==NULL || lp1==NULL) fatal("ts_flip_bond: Cannot find triangles lm2 and lp1!",999);
+    if(lm2==NULL || lp1==NULL) fatal("ts_flip_bond: Cannot find triangles lm2 and lp1!",999);
 
+    
+    // ####### Passed all base tests #######
 
-/* backup old structure */
-/* need to backup:
- * vertices k, kp, km, it
- * triangles lm, lp, lm2, lp1
- * bond
- */
-ts_vertex *bck_vtx[4];
-ts_triangle *bck_tria[4];
-ts_bond *bck_bond;
-ts_vertex *orig_vtx[]={k,it,kp,km};
-ts_triangle *orig_tria[]={lm,lp,lm2,lp1};
+    /* backup old structure */
+    /* need to backup:
+    * vertices k, kp, km, it
+    * triangles lm, lp, lm2, lp1
+    * bond
+    */
+    ts_vertex *bck_vtx[4];
+    ts_triangle *bck_tria[4];
+    ts_bond *bck_bond;
+    ts_vertex *orig_vtx[]={k,it,kp,km};
+    ts_triangle *orig_tria[]={lm,lp,lm2,lp1};
 
-//fprintf(stderr,"Backuping!!!\n");
+    //fprintf(stderr,"Backuping!!!\n");
 	bck_bond=(ts_bond *)malloc(sizeof(ts_bond));
-for(i=0;i<4;i++){
-/*	fprintf(stderr,"vtx neigh[%d]=",i);
-	for(j=0;j<orig_vtx[i]->neigh_no;j++) fprintf(stderr," %d", orig_vtx[i]->neigh[j]->idx);
-	fprintf(stderr,"\n");
-*/
-	bck_vtx[i]=(ts_vertex *)malloc(sizeof(ts_vertex));
-	bck_tria[i]=(ts_triangle *)malloc(sizeof(ts_triangle));
-	memcpy((void *)bck_vtx[i],(void *)orig_vtx[i],sizeof(ts_vertex));
-	memcpy((void *)bck_tria[i],(void *)orig_tria[i],sizeof(ts_triangle));
-	/* level 2 pointers */
+    for(i=0;i<4;i++){
+    /*	fprintf(stderr,"vtx neigh[%d]=",i);
+	    for(j=0;j<orig_vtx[i]->neigh_no;j++) fprintf(stderr," %d", orig_vtx[i]->neigh[j]->idx);
+	    fprintf(stderr,"\n");
+    */
+	    bck_vtx[i]=(ts_vertex *)malloc(sizeof(ts_vertex));
+	    bck_tria[i]=(ts_triangle *)malloc(sizeof(ts_triangle));
+    	memcpy((void *)bck_vtx[i],(void *)orig_vtx[i],sizeof(ts_vertex));
+    	memcpy((void *)bck_tria[i],(void *)orig_tria[i],sizeof(ts_triangle));
+	    /* level 2 pointers */
 
-	bck_vtx[i]->neigh=(ts_vertex **)malloc(orig_vtx[i]->neigh_no*sizeof(ts_vertex *));
-	bck_vtx[i]->tristar=(ts_triangle **)malloc(orig_vtx[i]->tristar_no*sizeof(ts_triangle *));
-	bck_vtx[i]->bond=(ts_bond **)malloc(orig_vtx[i]->bond_no*sizeof(ts_bond *));
-	bck_tria[i]->neigh=(ts_triangle **)malloc(orig_tria[i]->neigh_no*sizeof(ts_triangle *));
+    	bck_vtx[i]->neigh=(ts_vertex **)malloc(orig_vtx[i]->neigh_no*sizeof(ts_vertex *));
+    	bck_vtx[i]->tristar=(ts_triangle **)malloc(orig_vtx[i]->tristar_no*sizeof(ts_triangle *));
+    	bck_vtx[i]->bond=(ts_bond **)malloc(orig_vtx[i]->bond_no*sizeof(ts_bond *));
+    	bck_tria[i]->neigh=(ts_triangle **)malloc(orig_tria[i]->neigh_no*sizeof(ts_triangle *));
 
-	memcpy((void *)bck_vtx[i]->neigh,(void *)orig_vtx[i]->neigh,orig_vtx[i]->neigh_no*sizeof(ts_vertex *));
-	memcpy((void *)bck_vtx[i]->tristar,(void *)orig_vtx[i]->tristar,orig_vtx[i]->tristar_no*sizeof(ts_triangle *));
-	memcpy((void *)bck_vtx[i]->bond,(void *)orig_vtx[i]->bond,orig_vtx[i]->bond_no*sizeof(ts_bond *));
-	
-	memcpy((void *)bck_tria[i]->neigh,(void *)orig_tria[i]->neigh,orig_tria[i]->neigh_no*sizeof(ts_triangle *));	
-}
+    	memcpy((void *)bck_vtx[i]->neigh,(void *)orig_vtx[i]->neigh,orig_vtx[i]->neigh_no*sizeof(ts_vertex *));
+    	memcpy((void *)bck_vtx[i]->tristar,(void *)orig_vtx[i]->tristar,orig_vtx[i]->tristar_no*sizeof(ts_triangle *));
+    	memcpy((void *)bck_vtx[i]->bond,(void *)orig_vtx[i]->bond,orig_vtx[i]->bond_no*sizeof(ts_bond *));
+    
+    	memcpy((void *)bck_tria[i]->neigh,(void *)orig_tria[i]->neigh,orig_tria[i]->neigh_no*sizeof(ts_triangle *));	
+    }
 	memcpy(bck_bond,bond,sizeof(ts_bond));
-//fprintf(stderr,"Backup complete!!!\n");
-/* end backup vertex */
+    //fprintf(stderr,"Backup complete!!!\n");
+    /* end backup vertex */
 
-/* Save old energy */
-  oldenergy=0;
-  oldenergy+=k->xk* k->energy;
-  oldenergy+=kp->xk* kp->energy;
-  oldenergy+=km->xk* km->energy;
-  oldenergy+=it->xk* it->energy;
-  oldenergy+=bond->energy; /* attraction with neighboring vertices, that have spontaneous curvature */
-  //Neigbours of k, it, km, kp don't change its energy.
+
+    /* Save old energy */
+    oldenergy=0;
+    oldenergy+=k->xk* k->energy;
+    oldenergy+=kp->xk* kp->energy;
+    oldenergy+=km->xk* km->energy;
+    oldenergy+=it->xk* it->energy;
+    oldenergy+=bond->energy; /* attraction with neighboring vertices, that have spontaneous curvature */
+    //Neigbours of k, it, km, kp don't change its energy.
 
 	if(vesicle->pswitch == 1 || vesicle->tape->constvolswitch>0){dvol = -lm->volume - lp->volume;}
     if(vesicle->tape->constareaswitch==2){darea=-lm->area-lp->area;} 
-/*    vesicle_volume(vesicle);
+    /*    vesicle_volume(vesicle);
     fprintf(stderr,"Volume in the beginning=%1.16e\n", vesicle->volume);
-*/
-/* fix data structure for flipped bond */
-    ts_flip_bond(k,it,km,kp, bond,lm, lp, lm2, lp1, vesicle->tape->w);
+    */
+    /* fix data structure for flipped bond */
+    ts_flip_bond(k,it,km,kp, bond,lm, lp, lm2, lp1);
 
 
-/* Calculating the new energy */
-  delta_energy=0;
-  delta_energy+=k->xk* k->energy;
-  delta_energy+=kp->xk* kp->energy;
-  delta_energy+=km->xk* km->energy;
-  delta_energy+=it->xk* it->energy;
-  delta_energy+=bond->energy; /* attraction with neighboring vertices, that have spontaneous curvature */
+    /* Calculating the new energy */
+    delta_energy=0;
+    delta_energy+=k->xk* k->energy;
+    delta_energy+=kp->xk* kp->energy;
+    delta_energy+=km->xk* km->energy;
+    delta_energy+=it->xk* it->energy;
+    delta_energy+=bond->energy; /* attraction with neighboring vertices, that have spontaneous curvature */
   //Neigbours of k, it, km, kp don't change its energy.
 	if(vesicle->tape->stretchswitch==1){
 		oldenergy+=lm->energy+lp->energy;
@@ -360,16 +361,12 @@ for(i=0;i<4;i++){
     }
 	// delete all backups
 	for(i=0;i<4;i++){
-	free(bck_vtx[i]->neigh);
-	free(bck_vtx[i]->bond);
-	free(bck_vtx[i]->tristar);
-	free(bck_vtx[i]);
- 	free(bck_tria[i]->neigh);
+	    free(bck_vtx[i]->neigh);
+	    free(bck_vtx[i]->bond);
+	    free(bck_vtx[i]->tristar);
+	    free(bck_vtx[i]);
+ 	    free(bck_tria[i]->neigh);
         free(bck_tria[i]);
-/*	fprintf(stderr,"Afret backup deletion vtx neigh[%d]=",i);
-	for(j=0;j<orig_vtx[i]->neigh_no;j++) fprintf(stderr," %d", orig_vtx[i]->neigh[j]->idx);
-	fprintf(stderr,"\n");
-*/	
 	}
 	free(bck_bond);
 
@@ -379,53 +376,48 @@ for(i=0;i<4;i++){
 }
 
 
-ts_bool ts_flip_bond(ts_vertex *k,ts_vertex *it,ts_vertex *km, ts_vertex *kp,
-ts_bond *bond, ts_triangle *lm, ts_triangle *lp, ts_triangle *lm2, ts_triangle *lp1, ts_double w_energy){
+ts_bool ts_flip_bond(ts_vertex *k,ts_vertex *it,ts_vertex *km, ts_vertex *kp, ts_bond *bond,
+                     ts_triangle *lm, ts_triangle *lp, ts_triangle *lm2, ts_triangle *lp1){
 
     ts_uint i; //lmidx, lpidx;
-if(k==NULL || it==NULL || km==NULL || kp==NULL){
-    fatal("ts_flip_bond: You called me with invalid pointers to vertices",999);
-}
-// 2. step. We change the triangle vertices... (actual bond flip)
+    if(k==NULL || it==NULL || km==NULL || kp==NULL){
+        fatal("ts_flip_bond: You called me with invalid pointers to vertices",999);
+    }
+    
+    // 2. step. We change the triangle vertices... (actual bond flip)
     for(i=0;i<3;i++) if(lm->vertex[i]== it) lm->vertex[i]= kp;
     for(i=0;i<3;i++) if(lp->vertex[i]== k) lp->vertex[i]= km;
-//fprintf(stderr,"2. step: actual bondflip made\n");
-// 2a. step. If any changes in triangle calculations must be done, do it here!
-//   * normals are recalculated here
+
+    // 2a. step. If any changes in triangle calculations must be done, do it here!
+    //   * normals are recalculated here
     triangle_normal_vector(lp);
     triangle_normal_vector(lm);
-//fprintf(stderr,"2a. step: triangle normals recalculated\n");
-// 3. step. Correct neighbours in vertex_list
 
+    // 3. step. Correct neighbours in vertex_list
 
-            vtx_remove_neighbour(k,it);
-//            vtx_remove_neighbour(it,k);
-//fprintf(stderr,"3. step (PROGRESS): removed k and it neighbours\n");
+    vtx_remove_neighbour(k,it);
+
     
-            //Tukaj pa nastopi tezava... Kam dodati soseda?
-            vtx_insert_neighbour(km,kp,k);
-            vtx_insert_neighbour(kp,km,it);
-//            vertex_add_neighbour(km,kp); //pazi na vrstni red.
-//            vertex_add_neighbour(kp,km);
-//fprintf(stderr,"3. step: vertex neighbours corrected\n");
-
-// 3a. step. If any changes to ts_vertex, do it here!
-//   bond_length calculatons not required for it is done in energy.c
-
-// 4. step. Correct bond_list (don't know why I still have it!)
-            bond->vtx1=km;
-            bond->vtx2=kp;
-//fprintf(stderr,"4. step: bondlist corrected\n");
+    //Tukaj pa nastopi tezava... Kam dodati soseda?
+    vtx_insert_neighbour(km,kp,k);
+    vtx_insert_neighbour(kp,km,it);
+    //pazi na vrstni red.
 
 
-// 5. step. Correct neighbouring triangles 
+    // 3a. step. If any changes to ts_vertex, do it here!
+    //   bond_length calculatons not required for it is done in energy.c
+
+    // 4. step. Correct bond_list (don't know why I still have it!)
+    bond->vtx1=km;
+    bond->vtx2=kp;
+    //fprintf(stderr,"4. step: bondlist corrected\n");
+
+
+    // 5. step. Correct neighbouring triangles 
    
     triangle_remove_neighbour(lp,lp1);
-  //  fprintf(stderr,".\n");
     triangle_remove_neighbour(lp1,lp);
-  //  fprintf(stderr,".\n");
     triangle_remove_neighbour(lm,lm2);
-  //  fprintf(stderr,".\n");
     triangle_remove_neighbour(lm2,lm);
    
     triangle_add_neighbour(lm,lp1);    
@@ -433,20 +425,28 @@ if(k==NULL || it==NULL || km==NULL || kp==NULL){
     triangle_add_neighbour(lp,lm2);  //Vrstni red?!
     triangle_add_neighbour(lm2,lp);
 
-//fprintf(stderr,"5. step: triangle neigbours corrected\n");
 
 
-// 6. step. Correct tristar for vertices km, kp, k and it
-            vertex_add_tristar(km,lp);  // Preveri vrstni red!
-            vertex_add_tristar(kp,lm);
-            vtx_remove_tristar(it,lm);
-            vtx_remove_tristar(k,lp);
-//fprintf(stderr,"6. step: tristar corrected\n");
-  energy_vertex(k);
-  energy_vertex(kp);
-  energy_vertex(km);
-  energy_vertex(it);
-  attraction_bond_energy(bond, w_energy);
-// END modifications to data structure!
+    // 6. step. Correct tristar for vertices km, kp, k and it
+    vertex_add_tristar(km,lp);  // Preveri vrstni red!
+    vertex_add_tristar(kp,lm);
+    vtx_remove_tristar(it,lm);
+    vtx_remove_tristar(k,lp);
+
+    // END modifications to data structure!
+
+    // 7. step. Update energy
+    energy_vertex(k);
+    energy_vertex(kp);
+    energy_vertex(km);
+    energy_vertex(it);
+
+    // Yoav: need to update the normals. Do we need to update force?
+    update_vertex_normal(k);
+    update_vertex_normal(k);
+    update_vertex_normal(k);
+    update_vertex_normal(k);
+    // and also no more sense in giving w to the energy: it's in the vertices now
+    attraction_bond_energy(bond);
     return TS_SUCCESS;
 }

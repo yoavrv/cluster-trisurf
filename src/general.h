@@ -151,7 +151,6 @@ struct ts_vertex {
         struct ts_bond **bond; /**< Array of pointers of lenght bond_no that stores information on bonds. */
         struct ts_cell *cell; /**< Which cell do we belong to? */
         ts_double xk;
-        ts_double c;
         ts_uint id;
         ts_double projArea;
         ts_double relR;
@@ -159,7 +158,14 @@ struct ts_vertex {
 		struct ts_poly *grafted_poly;
 		struct ts_cluster *cluster;
 		// new stuff
-		ts_bool type; // type for ifs: 1st bit: active, 2nd bit: curved, 3rd bit:
+
+		/* 1st bit: bonds, 2nd bit: active, 
+		3rd bit: adhesive, 4th bit: anisotropic, 
+		5th bit: reserved, 6th bit: vicsek 
+		7th bit: reserved, 8th bit: reserved*/
+		ts_bool type; // type for ifs: 
+		ts_double w;
+		ts_double c;
 		ts_double nx; // normal vector
 		ts_double ny;
 		ts_double nz;
@@ -167,6 +173,7 @@ struct ts_vertex {
 		ts_double fx; // force vector
 		ts_double fy;
 		ts_double fz;
+		ts_double ad_w; // adhesive surface bonding
 		ts_double d;  // spontaneous curvature deviator
 		ts_double tx; // director vector
 		ts_double ty;

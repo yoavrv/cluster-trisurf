@@ -195,16 +195,17 @@ inline ts_bool energy_vertex(ts_vertex *vtx){
 ts_bool sweep_attraction_bond_energy(ts_vesicle *vesicle){
 	int i;
 	for(i=0;i<vesicle->blist->n;i++){
-		attraction_bond_energy(vesicle->blist->bond[i], vesicle->tape->w);
+		attraction_bond_energy(vesicle->blist->bond[i]);
 	}
 	return TS_SUCCESS;
 }
 
 
-inline ts_bool attraction_bond_energy(ts_bond *bond, ts_double w){
+inline ts_bool attraction_bond_energy(ts_bond *bond){
 
-	if(fabs(bond->vtx1->c)>1e-16 && fabs(bond->vtx2->c)>1e-16){
-		bond->energy=-w;
+	if((bond->vtx1->type&1 && bond->vtx2->type&1)){
+        // f(w1,w2)
+		bond->energy=-bond->vtx1->w;
 	}
 	else {
 		bond->energy=0.0;
@@ -216,9 +217,8 @@ inline ts_bool attraction_bond_energy(ts_bond *bond, ts_double w){
 ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_old){
 	// modified to include Vicsek Interaction
     
-    // quit if this is a non-active vertex (or no vertex is active)
-    if(fabs(vesicle->tape->F)<1e-15) return 0.0;
-    if(vtx->c<1e-15) return 0.0;
+    // quit if there is no point
+    if(fabs(vtx->f)<1e-15) return 0.0;
 
 
     ts_double norml,ddp=0.0;
@@ -235,26 +235,12 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 
 
 
-    // if (no point in calculating vicsek model)
-    if (!vesicle->tape->vicsek_model || fabs(vesicle->tape->vicsek_strength)<1e-15 || fabs(vesicle->tape->vicsek_radius)<1e-15) {//no vicsek
+    // if not vicsek type, or vicsek model is not relevant
+    if ( !(vtx->type&32) || !vesicle->tape->vicsek_model || fabs(vesicle->tape->vicsek_strength)<1e-15 || fabs(vesicle->tape->vicsek_radius)<1e-15) {//no vicsek
         //regular "force in normal direction"
-
-	
-        //vertex normal
-	    /*find normal of the vertex as sum of all the normals of the triangles surrounding it. */
-	    for(i=0;i<vtx->tristar_no;i++){
-	    	xnorm+=vtx->tristar[i]->xnorm;
-	    	ynorm+=vtx->tristar[i]->ynorm;
-	    	znorm+=vtx->tristar[i]->znorm;
-    	}
-	    /*normalize*/
-        norml=sqrt(xnorm*xnorm+ynorm*ynorm+znorm*znorm);
-        xnorm/=norml;
-	    ynorm/=norml;
-	    znorm/=norml;
-
-	    /*calculate ddp, normal force directed displacement*/
-	    ddp=xnorm*(vtx->x-vtx_old->x)+ynorm*(vtx->y-vtx_old->y)+znorm*(vtx->z-vtx_old->z);
+        vtx->fx = vtx->nx;
+        vtx->fy = vtx->ny;
+        vtx->fz = vtx->nz;
 
     }
     else {
@@ -263,18 +249,9 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 
 	
         //prime vertex normal
-	    /*find normal of the vertex as sum of all the
-        normals of the triangles surrounding it. */
-	    for(i=0;i<vtx->tristar_no;i++){
-	    	xnorm+=vtx->tristar[i]->xnorm;
-	    	ynorm+=vtx->tristar[i]->ynorm;
-	    	znorm+=vtx->tristar[i]->znorm;
-	    }
-	    /*normalize*/
-	    norml=sqrt(xnorm*xnorm+ynorm*ynorm+znorm*znorm);
-	    vixnorm=xnorm/norml;
-	    viynorm=ynorm/norml;
-	    viznorm=znorm/norml;
+	    vixnorm=vtx->nx;
+	    viynorm=vtx->ny;
+	    viznorm=vtx->nz;
 
         //initialize seen_vtx
         seen_vtx = init_seen_vertex(max_vtx_seen);
@@ -315,8 +292,8 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
                 for (j=0; j<seen_vtx->vtx[i]->neigh_no; j++) {
                     //loop over their neighbors: seen_vtx[i]->neigh[j]
 
-                    // is this neighbor is a bare vertex, skip to next neighbor
-                    if (seen_vtx->vtx[i]->neigh[j]->c<1e-15) continue;
+                    // is this neighbor is not vicsek, skip to next neighbor
+                    if (!(seen_vtx->vtx[i]->neigh[j]->type&32)) continue;
                     //else{ rest of the j loop }
 
                     // has this neighbor been seen?
@@ -330,22 +307,18 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 
                         add_vtx_to_seen(seen_vtx,seen_vtx->vtx[i]->neigh[j]);
 
-                        //calculate normal and add to the sum
-                        xnorm = 0.0;
-                        ynorm = 0.0;
-                        znorm = 0.0;
-                        for (k = 0; k < seen_vtx->vtx[i]->neigh[j]->tristar_no; k++){
-                            xnorm += seen_vtx->vtx[i]->neigh[j]->tristar[k]->xnorm;
-                            ynorm += seen_vtx->vtx[i]->neigh[j]->tristar[k]->ynorm;
-                            znorm += seen_vtx->vtx[i]->neigh[j]->tristar[k]->znorm;
-                        }
-                        /*normalize, and add to normal sum with weight by Vicsek strength*/
-                        norml = sqrt(xnorm * xnorm + ynorm * ynorm + znorm * znorm);
+                        //add normal to the sum
                         // Vicsek model 2: weight by 1/distance
-                        if (vesicle->tape->vicsek_model == 2) norml *= curr_dist;
-                        vixnorm += vesicle->tape->vicsek_strength * xnorm / norml;
-                        viynorm += vesicle->tape->vicsek_strength * ynorm / norml;
-                        viznorm += vesicle->tape->vicsek_strength * znorm / norml;
+                        if (vesicle->tape->vicsek_model == 2) {
+                            vixnorm += vesicle->tape->vicsek_strength * seen_vtx->vtx[i]->neigh[j]->nx / curr_dist;
+                            viynorm += vesicle->tape->vicsek_strength * seen_vtx->vtx[i]->neigh[j]->ny / curr_dist;
+                            viznorm += vesicle->tape->vicsek_strength * seen_vtx->vtx[i]->neigh[j]->nz / curr_dist;
+                        }
+                        else {
+                            vixnorm += vesicle->tape->vicsek_strength * seen_vtx->vtx[i]->neigh[j]->nx;
+                            viynorm += vesicle->tape->vicsek_strength * seen_vtx->vtx[i]->neigh[j]->ny;
+                            viznorm += vesicle->tape->vicsek_strength * seen_vtx->vtx[i]->neigh[j]->nz;
+                        }
 
                     }
                 }
@@ -362,32 +335,34 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 	    viznorm/=norml;
 
 	    /*calculate ddp, Viscek force directed displacement*/
-	    ddp=vixnorm*(vtx->x-vtx_old->x)+viynorm*(vtx->y-vtx_old->y)+viznorm*(vtx->z-vtx_old->z);
+	    vtx->fx=vixnorm;
+        vtx->fy=viynorm;
+        vtx->fz=viznorm;
 
 	    //don't forget to free! 
         seen_vertex_free(seen_vtx);
 
     //end else from if (!Vicsek)
     }
-    // we got a ddp from either a normal calculation or vicsek calculation
     
+    /*calculate ddp, normal force directed displacement*/
+	ddp=vtx->fx*(vtx->x-vtx_old->x)+vtx->fy*(vtx->y-vtx_old->y)+vtx->fz*(vtx->z-vtx_old->z);
     
     /*calculate dE*/
-    //	printf("ddp=%e",ddp);
-    return vesicle->tape->F*ddp;
+    return vtx->f*ddp;
 //end function
 }
 
 ts_double direct_force_from_Fz_balance(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_old){
-	if(fabs(vesicle->tape->F)<1e-15) return 0.0;
+    // Cache the force? on the vesicle, function? need to sort out force update 
     // calculate the Fz force balance
     //     separated from direct_force_energy()
     //     since F_direct(old) = F_direct + Fz_balance \hat{z}
     //     -- Yoav
     //   W = F_direct * dX + Fz_balance * dz
 	ts_double ddp=0.0;
-	ts_double Fz;
-	force_per_vertex(vesicle, &Fz);
+    ts_double Fz;
+	Fz = force_per_vertex(vesicle);
 
 	ddp=-Fz*(vtx->z-vtx_old->z);
 
@@ -395,36 +370,74 @@ ts_double direct_force_from_Fz_balance(ts_vesicle *vesicle, ts_vertex *vtx, ts_v
 	
 }
 
-void force_per_vertex(ts_vesicle *vesicle, ts_double *Fz){
-    // !! Not adapted to use the Vicsek model !! -- yoav 
-    ts_double norml;
-	ts_uint i,j;
-	ts_double fz=0.0;
-	ts_double xnorm,ynorm,znorm;
+inline ts_double force_per_vertex(ts_vesicle *vesicle){
+	ts_uint i;
+	ts_double fz=0;
 	/*find normal of the vertex as sum of all the normals of the triangles surrounding it. */
-    for (j=0;j<vesicle->vlist->n;j++){
-		if(vesicle->vlist->vtx[j]->c > 1e-15){
-			xnorm=0.0;ynorm=0.0;znorm=0.0;
-			for(i=0;i<vesicle->vlist->vtx[j]->tristar_no;i++){
-				xnorm+=vesicle->vlist->vtx[j]->tristar[i]->xnorm;
-				ynorm+=vesicle->vlist->vtx[j]->tristar[i]->ynorm;
-				znorm+=vesicle->vlist->vtx[j]->tristar[i]->znorm;
-			}
-			/*normalize*/
-			norml=sqrt(xnorm*xnorm+ynorm*ynorm+znorm*znorm);
-			znorm/=norml;
-
-			fz+=znorm;
+    for (i=0;i<vesicle->vlist->n;i++){
+		if(vesicle->vlist->vtx[i]->type&2){
+			fz+=vesicle->vlist->vtx[i]->fz;
 		}
 	}
 	fz/=vesicle->vlist->n;
-	if(fz<0.0000){
-		*Fz=fz;
+	if(fz<0){
+		return fz;
 	}
 	else if (fz>=0){
-		*Fz=0.0;
+		return 0;
 	}
 	
+}
+
+ts_double adhesion_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_old){
+    ts_double delta_energy=0;
+    ts_double z=vtx->z, z_old=vtx_old->z;
+    ts_double z0=vesicle->tape->z_adhesion, dz=vesicle->tape->adhesion_cuttoff;
+    ts_double c0=vesicle->adhesion_center, r=vesicle->tape->adhesion_radius;
+    //1 for step potential
+	if(vesicle->tape->type_of_adhesion_model==1){
+
+		if( ((vtx->type&4)) && (abs(z-z0)<dz)){
+				delta_energy-=vtx->ad_w;
+		}
+		if((vtx_old->type&4) &&(abs(z_old-z0)<dz)){
+				delta_energy+=vtx_old->ad_w;
+		}
+	}
+
+    //2 for parabolic potential
+	else if(vesicle->tape->type_of_adhesion_model==2){
+
+        // can't combine them well: each has (theoretically) different adhesion
+		if((z-z0)<=dz){
+				delta_energy-=(vtx->ad_w/pow(dz,2))*pow(z - dz,2);
+		}
+		if((z-z0)>dz){
+				delta_energy+=(vtx_old->ad_w/pow(dz,2))*pow(z_old - dz,2);
+		}
+	}
+
+    //3 for sphrerical adhesion substrate with constant potential
+	else if(vesicle->tape->type_of_adhesion_model==3){
+		if(pow(pow(c0 -z,2) + pow(vtx->x,2) + pow(vtx->y,2),0.5) - r < dz){
+			delta_energy-=vtx->ad_w;
+		}
+		if(pow(pow(c0 - z_old,2) + pow(vtx_old->x,2) + pow(vtx_old->y,2),0.5) - r < dz){
+			delta_energy+=vtx_old->ad_w;
+		}
+	}
+    
+    //4 for cylindrical adhesive substrate with constant potential
+	else if(vesicle->tape->type_of_adhesion_model==4){
+		if(pow(pow(c0 -z,2) + pow(vtx->x,2),0.5) - r < dz){
+			delta_energy-=vtx->ad_w;
+		}
+		if(pow(pow(c0 - z_old,2) + pow(vtx_old->x,2),0.5) - r < dz){
+			delta_energy+=vtx_old->ad_w;
+		}
+	}
+
+    return delta_energy;
 }
 
 void stretchenergy(ts_vesicle *vesicle, ts_triangle *triangle){

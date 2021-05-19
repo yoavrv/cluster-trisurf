@@ -46,7 +46,7 @@ ts_vesicle *create_vesicle_from_tape(ts_tape *tape){
 	vesicle->clist->dmin_interspecies = tape->dmin_interspecies*tape->dmin_interspecies;
 	vesicle->poly_list=init_poly_list(tape->npoly,tape->nmono, vesicle->vlist, vesicle);
 	set_vesicle_values_from_tape(vesicle);
-		initial_population_with_c0(vesicle,tape);
+	initial_population(vesicle,tape);
 	return vesicle;
 }
 
@@ -129,28 +129,77 @@ ts_bool set_vesicle_values_from_tape(ts_vesicle *vesicle){
 }
 
 
-ts_bool initial_population_with_c0(ts_vesicle *vesicle, ts_tape *tape){
-	int rndvtx,i,j;
-	if(tape->number_of_vertices_with_c0>0){
-//		ts_fprintf(stderr,"Setting values for spontaneous curvature as defined in tape\n");
-		j=0;
-		for(i=0;i<tape->number_of_vertices_with_c0;i++){
-			rndvtx=rand() % vesicle->vlist->n;
-			if(fabs(vesicle->vlist->vtx[rndvtx]->c-tape->c0)<1e-15){
-				j++;
-				i--;
-				if(j>10*vesicle->vlist->n){
-					fatal("cannot populate vesicle with vertices with spontaneous curvature. Too many spontaneous curvature vertices?",100);
-				}
-				continue;
-			}
-			vesicle->vlist->vtx[rndvtx]->c=tape->c0;
-		}
-		mean_curvature_and_energy(vesicle);
-		if(fabs(tape->w)>1e-16){ //if nonzero energy
-//			ts_fprintf(stderr,"Setting attraction between vertices with spontaneous curvature\n");
-			sweep_attraction_bond_energy(vesicle);
-		}
+ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
+	// modified by Yoav: initialize possibly heterogeneous vertices population
+	ts_uint i,j, rndvtx, temp, n;
+	ts_uint *indices;
+	ts_vertex* vtx;
+	n = vesicle->vlist->n;
+	indices = (ts_uint*) malloc(n * sizeof(ts_uint));
+	// create an array fo indices; copied a bunch from wikipedia "FIsher-Yates shuffle"
+	for (i=0; i<n; i++){
+		indices[i] = i;
+	} // shuffle
+	for(i=n-1; i>0 ; i--){
+		rndvtx = rand() % (i+1);
+		temp = indices[i];
+		indices[i] = indices[rndvtx];
+		indices[rndvtx] = temp;
+	}
+	// now we have an array of random indices: we can use it to populate the vertices however we like
+	j=0;
+	
+	if (tape->number_of_vertices_with_c0>n) fatal("number of vertices with c0 larger than number of vertices!",100);
+	for(i=j;i<j+tape->number_of_vertices_with_c0;i++){
+		vtx = vesicle->vlist->vtx[indices[i]];
+		vtx->type=7; // bonds, active, adhesive, isotropic
+		vtx->w=tape->w;
+		vtx->c=tape->c0;
+		vtx->f=tape->F;
+		vtx->ad_w=tape->adhesion_strength;
+		vtx->d=0;  // curvature deviator
+		vtx->nx=0; //normal
+		vtx->ny=0;
+		vtx->nz=0;
+		vtx->fx=0; //force
+		vtx->fy=0;
+		vtx->fz=0;
+		vtx->tx=0; //director
+		vtx->ty=0;
+		vtx->tz=0;
+	}
+	j=i;
+	// add however many types with for(i=j, i<j+n_next_type; i++){} j=i;
+
+	//finally, regular non-protein vertices
+	for(i=j; i<n; i++){
+		vtx = vesicle->vlist->vtx[indices[i]];
+		vtx->type=4; // nonbonding, passive, adhesive, isotropic
+		vtx->w=0;
+		vtx->c=0;
+		vtx->f=0;
+		vtx->ad_w=tape->adhesion_strength;
+		vtx->d=0;  // curvature deviator
+		vtx->nx=0; //normal
+		vtx->ny=0;
+		vtx->nz=0;
+		vtx->fx=0; //force
+		vtx->fy=0;
+		vtx->fz=0;
+		vtx->tx=0; //director
+		vtx->ty=0;
+		vtx->tz=0;
+	}
+	free(indices);
+
+	// just sweep everything anyway, we only do this once
+	for (i=0; i<n; i++){
+		update_vertex_normal(vesicle->vlist->vtx[i]);
+	}
+	mean_curvature_and_energy(vesicle);
+	if(fabs(tape->w)>1e-16){ //if nonzero energy
+		//	ts_fprintf(stderr,"Setting attraction between vertices with spontaneous curvature\n");
+		sweep_attraction_bond_energy(vesicle);
 	}
 	return TS_SUCCESS;
 }

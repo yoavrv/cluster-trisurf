@@ -16,7 +16,7 @@ ts_vesicle *initial_distribution_dipyramid(ts_uint nshell, ts_uint ncmax1, ts_ui
 ts_vesicle *create_vesicle_from_tape(ts_tape *tape);
 ts_bool set_vesicle_values_from_tape(ts_vesicle *vesicle);
 
-ts_bool initial_population_with_c0(ts_vesicle *vesicle, ts_tape *tape);
+ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape);
 /** Sets the initial position of the vertexes to dipyramid
  *
  *      @param *vlist is a pointer to list of vertices

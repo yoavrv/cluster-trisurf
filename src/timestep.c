@@ -20,12 +20,12 @@
 
 
 ts_bool run_simulation(ts_vesicle *vesicle, ts_uint mcsweeps, ts_uint inititer, ts_uint iterations, ts_uint start_iteration){
-	ts_uint i, j,k; //,l,m;
+	ts_uint i,j,k;
 	ts_double kc1=0,kc2=0,kc3=0,kc4=0;
-	ts_double l1,l2,l3,vmsr,bfsr, vmsrt, bfsrt;
+	ts_double l1,l2,l3,vmsr,bfsr, vmsrt, bfsrt; //gyration eigenvalues, statistics succsess rate
 	ts_ulong epochtime;
 	ts_double max_z;
-	ts_double time_1, time_2;
+	ts_double time_1, time_2; // benchmarking clocks
 	FILE *fd3=NULL;
  	char filename[10000];
 	//struct stat st;
@@ -46,7 +46,7 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_uint mcsweeps, ts_uint inititer, 
 /*	 if(vesicle->sphHarmonics!=NULL){
         strcpy(filename,command_line_args.path);
         strcat(filename,"ulm2.csv"); 
-//	int result = stat(filename, &st);
+	//	int result = stat(filename, &st);
 	if(start_iteration==0)
 		fd2=fopen(filename,"w");
 	else
@@ -60,7 +60,7 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_uint mcsweeps, ts_uint inititer, 
 	}
 */
 
-/* RANDOM SEED SET BY CURRENT TIME */
+	/* RANDOM SEED SET BY CURRENT TIME */
 	epochtime=get_epoch();	
 	if (vesicle->tape->random_seed!=0){
 		srand48(vesicle->tape->random_seed);
@@ -89,49 +89,52 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_uint mcsweeps, ts_uint inititer, 
 	epsarea=A0/(ts_double)vesicle->tlist->n;
 
 	if(start_iteration<inititer) ts_fprintf(stdout, "Starting simulation (first %d x %d MC sweeps will not be recorded on disk)\n", inititer, mcsweeps);
+	
+	//PRIMARY SIMULATION LOOP
 	for(i=start_iteration;i<inititer+iterations;i++){
 		vmsr=0.0;
 		bfsr=0.0;
 		time_1=0;
 		time_2=0;
 
-	//plane confinement
-	if(vesicle->tape->plane_confinement_switch){
-		max_z=-1e10;
-		for(k=0;k<vesicle->vlist->n;k++){
-			if(vesicle->vlist->vtx[k]->z > max_z) max_z=vesicle->vlist->vtx[k]->z;
+		//plane confinement
+		if(vesicle->tape->plane_confinement_switch){
+			max_z=-1e10;
+			for(k=0;k<vesicle->vlist->n;k++){
+				if(vesicle->vlist->vtx[k]->z > max_z) max_z=vesicle->vlist->vtx[k]->z;
+			}
+			vesicle->confinement_plane.force_switch=0;
+			if(max_z>=vesicle->tape->plane_d){
+				ts_fprintf(stdout, "Max vertex out of bounds (z>=%e). Plane set to max_z = %e.\n",vesicle->tape->plane_d,max_z);
+				vesicle->confinement_plane.z_max = max_z;
+				vesicle->confinement_plane.force_switch=1;
+			} else {
+				vesicle->confinement_plane.z_max=vesicle->tape->plane_d;
+			}
+
+		    vesicle->confinement_plane.z_min=vesicle->tape->z_adhesion - 2*vesicle->tape->adhesion_radius;
+
+			if(vesicle->confinement_plane.force_switch) ts_fprintf(stdout,"Squeezing with force %e.\n",vesicle->tape->plane_F);
 		}
-		vesicle->confinement_plane.force_switch=0;
-		if(max_z>=vesicle->tape->plane_d){
-			ts_fprintf(stdout, "Max vertex out of bounds (z>=%e). Plane set to max_z = %e.\n",vesicle->tape->plane_d,max_z);
-			vesicle->confinement_plane.z_max = max_z;
-			vesicle->confinement_plane.force_switch=1;
-		} else {
-			vesicle->confinement_plane.z_max=vesicle->tape->plane_d;
+		//end plane confinement
+
+		//adhesion
+		if(vesicle->tape->type_of_adhesion_model==3 || vesicle->tape->type_of_adhesion_model==4){	
+			vesicle->adhesion_center = vesicle->tape->z_adhesion - vesicle->tape->adhesion_radius;
 		}
+		//end of adhesion
 
-	    vesicle->confinement_plane.z_min=vesicle->tape->z_adhesion - 2*vesicle->tape->adhesion_radius;
-		
-		if(vesicle->confinement_plane.force_switch) ts_fprintf(stdout,"Squeezing with force %e.\n",vesicle->tape->plane_F);
-	}
-	//end plane confinement
 
-//adhesion
-	if(vesicle->tape->type_of_adhesion_model==3 || vesicle->tape->type_of_adhesion_model==4){	
-		vesicle->adhesion_center = vesicle->tape->z_adhesion - vesicle->tape->adhesion_radius;
-	}
-//end of adhesion
-
-/*    vesicle_volume(vesicle);
-    fprintf(stderr,"Volume before TS=%1.16e\n", vesicle->volume); */
+		// MAIN INNER LOOP
+		// MONTE CARLO SWEEP
 		for(j=0;j<mcsweeps;j++){
 			single_timestep(vesicle, &vmsrt, &bfsrt, &time_1, &time_2);
 			vmsr+=vmsrt;
 			bfsr+=bfsrt;
 		}
-/*
-    vesicle_volume(vesicle);
-    fprintf(stderr,"Volume after TS=%1.16e\n", vesicle->volume); */
+
+		
+		//post sweep processing: statistics, save state
 		vmsr/=(ts_double)mcsweeps;
 		bfsr/=(ts_double)mcsweeps;
 		time_1/=(ts_double)mcsweeps;
@@ -140,15 +143,17 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_uint mcsweeps, ts_uint inititer, 
 			centermass(vesicle);
 		}
 		cell_occupation(vesicle);
-            	dump_state(vesicle,i);
-			vesicle_volume(vesicle); //calculates just volume. 
-            		vesicle_area(vesicle); //calculates area.
+        dump_state(vesicle,i);
+		vesicle_volume(vesicle); //calculates just volume. 
+        vesicle_area(vesicle); //calculates area.
 		if(vesicle->tape->constvolswitch==0){
 			V0=vesicle->volume;
 		}
 		if(vesicle->tape->constareaswitch==0){
 			A0=vesicle->area;
 		}
+
+		//update status file
 		if(i>=inititer){
 			write_vertex_xml_file(vesicle,i-inititer,NULL);
 			write_master_xml_file(command_line_args.output_fullfilename);
@@ -201,27 +206,26 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_uint mcsweeps, ts_uint inititer, 
 		//	sprintf(filename,"timestep-%05d.pov",i-inititer);
 		//	write_pov_file(vesicle,filename);
 		} //end if(inititer....)
-		fd3=fopen(".status","w"); //write status file when everything is written to disk.
-		if(fd3==NULL){
-			fatal("Cannot open .status file for writing",1);
+			fd3=fopen(".status","w"); //write status file when everything is written to disk.
+			if(fd3==NULL){
+				fatal("Cannot open .status file for writing",1);
 		}
 		fprintf(fd3,"%d",i);
 		fclose(fd3);
+
 		ts_fprintf(stdout,"Done %d out of %d iterations (x %d MC sweeps).\n",i+1,inititer+iterations,mcsweeps);
 		ts_fprintf(stdout,"time1: %f time2: %f (x %d MC sweeps).\n",1000*time_1,1000*time_2,mcsweeps);
 
 	}
 	fclose(fd);
-//	if(fd2!=NULL) fclose(fd2);
+	//	if(fd2!=NULL) fclose(fd2);
 	return TS_SUCCESS;
 }
 
 ts_bool single_timestep(ts_vesicle *vesicle,ts_double *vmsr, ts_double *bfsr, ts_double *time_1, ts_double *time_2){
-//    vesicle_volume(vesicle);
-//    fprintf(stderr,"Volume before TS=%1.16e\n", vesicle->volume);
     ts_bool retval;
     ts_double rnvec[3];
-    ts_uint i,j, b;
+    ts_uint i,j,b;
     ts_uint vmsrcnt=0;
 
     for(i=0;i<vesicle->vlist->n;i++){

@@ -22,12 +22,15 @@ ts_bool vtx_add_neighbour(ts_vertex *vtx, ts_vertex *nvtx);
 ts_bool vtx_add_cneighbour(ts_bond_list *blist,ts_vertex *vtx1,ts_vertex *vtx2);
 ts_bool vtx_add_bond(ts_bond_list *blist,ts_vertex *vtx1,ts_vertex *vtx2);
 ts_bool vtx_remove_neighbour(ts_vertex *vtx, ts_vertex *nvtx);
+
 ts_bool vtx_free(ts_vertex *vtx);
 ts_bool vtx_list_free(ts_vertex_list *vlist);
 ts_bool seen_vertex_free(ts_seen_vertex *seen_vertex);
+
 inline ts_double vtx_distance_sq(ts_vertex *vtx1, ts_vertex *vtx2);
 ts_bool vtx_set_global_values(ts_vesicle *vesicle);
 inline ts_double vtx_direct(ts_vertex *vtx1, ts_vertex *vtx2, ts_vertex *vtx3);
+
 inline ts_bool vertex_add_tristar(ts_vertex *vtx, ts_triangle *tristarmem);
 inline ts_bool vtx_insert_neighbour(ts_vertex *vtx, ts_vertex *nvtx, ts_vertex *vtxm);
 inline ts_bool vtx_remove_tristar(ts_vertex *vtx, ts_triangle *tristar);
@@ -36,7 +39,9 @@ ts_bool vtx_copy(ts_vertex *cvtx,ts_vertex *ovtx);
 ts_bool vtx_duplicate(ts_vertex *cvtx, ts_vertex *ovtx);
 ts_vertex **vtx_neigh_copy(ts_vertex_list *vlist,ts_vertex *ovtx);
 ts_vertex_list *vertex_list_copy(ts_vertex_list *ovlist);
+
 ts_bool is_in_seen_vertex(ts_seen_vertex *seen_vertex, ts_vertex *vtx);
 ts_bool advance_seen_vertex_to_next_layer(ts_seen_vertex *seen_vertex);
+ts_bool update_vertex_normal(ts_vertex *vtx);
 
 #endif
