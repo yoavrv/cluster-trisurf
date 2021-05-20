@@ -140,8 +140,6 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_uint mcsweeps, ts_uint inititer, 
 		//post sweep processing: statistics, save state
 		vmsr/=(ts_double)mcsweeps;
 		bfsr/=(ts_double)mcsweeps;
-		time_1/=(ts_double)mcsweeps;
-		time_2/=(ts_double)mcsweeps;
 		if(vesicle->tape->allow_xy_plane_movement==0){
 			centermass(vesicle);
 		}

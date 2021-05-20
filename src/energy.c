@@ -103,8 +103,12 @@ inline ts_bool energy_vertex(ts_vertex *vtx){
         jp=vtx->neigh[jjp-1];
         jm=vtx->neigh[jjm-1];
         jt=vtx->tristar[jj-1];
-        x1=vtx_distance_sq(vtx,jp); //shouldn't be zero!
-        x2=vtx_distance_sq(j,jp); // shouldn't be zero!
+        // testing testing
+        //x1=vtx_distance_sq(vtx,jp); //shouldn't be zero!
+        //x2=vtx_distance_sq(j,jp); // shouldn't be zero!
+        x1=pow(vtx->x-jp->x,2)+pow(vtx->y-jp->y,2)+pow(vtx->z-jp->z,2);
+        x2=pow(j->x-jp->x,2)+pow(j->y-jp->y,2)+pow(j->z-jp->z,2);
+        //
         x3=(j->x-jp->x)*(vtx->x-jp->x)+
            (j->y-jp->y)*(vtx->y-jp->y)+
            (j->z-jp->z)*(vtx->z-jp->z);
@@ -118,8 +122,12 @@ inline ts_bool energy_vertex(ts_vertex *vtx){
 #ifdef TS_DOUBLE_LONGDOUBLE
         ctp=x3/sqrtl(x1*x2-x3*x3);
 #endif
-        x1=vtx_distance_sq(vtx,jm);
-        x2=vtx_distance_sq(j,jm);
+        // testing testing
+        //x1=vtx_distance_sq(vtx,jm);
+        //x2=vtx_distance_sq(j,jm);
+        x1=pow(vtx->x-jm->x,2)+pow(vtx->y-jm->y,2)+pow(vtx->z-jm->z,2);
+        x2=pow(j->x-jm->x,2)+pow(j->y-jm->y,2)+pow(j->z-jm->z,2);
+        //
         x3=(j->x-jm->x)*(vtx->x-jm->x)+
            (j->y-jm->y)*(vtx->y-jm->y)+
            (j->z-jm->z)*(vtx->z-jm->z);
@@ -135,7 +143,9 @@ inline ts_bool energy_vertex(ts_vertex *vtx){
         tot=ctp+ctm;
         tot=0.5*tot;
 
-        xlen=vtx_distance_sq(j,vtx);
+        //testing
+        //xlen=vtx_distance_sq(j,vtx);
+        xlen=pow(vtx->x-j->x,2)+pow(vtx->y-j->y,2)+pow(vtx->z-j->z,2);
 /*
 #ifdef  TS_DOUBLE_DOUBLE 
         vtx->bond[jj-1]->bond_length=sqrt(xlen); 
