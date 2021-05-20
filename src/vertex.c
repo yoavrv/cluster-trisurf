@@ -322,6 +322,7 @@ ts_bool add_vtx_to_seen(ts_seen_vertex *seen_vtx, ts_vertex *vtx){
     }
     seen_vtx->vtx[seen_vtx->n_top] = vtx;
     seen_vtx->n_top++;
+    return TS_SUCCESS;
 }
 
 /* ****************************************************************** */
