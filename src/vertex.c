@@ -322,6 +322,7 @@ ts_bool add_vtx_to_seen(ts_seen_vertex *seen_vtx, ts_vertex *vtx){
     }
     seen_vtx->vtx[seen_vtx->n_top] = vtx;
     seen_vtx->n_top++;
+    return TS_SUCCESS;
 }
 
 /* ****************************************************************** */
@@ -428,4 +429,5 @@ ts_bool update_vertex_normal(ts_vertex *vtx){
     vtx->nx=xnorm/norml;
 	vtx->ny=ynorm/norml;
 	vtx->nz=znorm/norml;
+    return TS_SUCCESS;
 }

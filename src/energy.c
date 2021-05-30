@@ -232,11 +232,11 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 
 
     ts_double norml,ddp=0.0;
-	ts_double xnorm=0.0,ynorm=0.0,znorm=0.0;
+	//ts_double xnorm=0.0,ynorm=0.0,znorm=0.0;
 	ts_double vixnorm=0.0,viynorm=0.0,viznorm=0.0;
 
     //stupid loop variables don't go in stupid for loop due to stupid C89 compiler
-    ts_uint i;ts_uint j; ts_uint k; ts_uint curr_dist;
+    ts_uint i, j, curr_dist;
     
     // estimated mallocation size for the cluster: roughly ~pi*r^2
     ts_uint max_vtx_seen=3*(( (int) vesicle->tape->vicsek_radius)+1)*(( (int) vesicle->tape->vicsek_radius)+1);
@@ -393,7 +393,7 @@ inline ts_double force_per_vertex(ts_vesicle *vesicle){
 	if(fz<0){
 		return fz;
 	}
-	else if (fz>=0){
+	else{
 		return 0;
 	}
 	

@@ -2,7 +2,7 @@
 bin_PROGRAMS = trisurf tsmeasure tspoststat
 trisurf_SOURCES = main.c
 GITVERSION:=$(shell git --no-pager describe --tags --always --dirty)
-AM_CFLAGS = -DTS_VERSION=\"$(GITVERSION)\"
+AM_CFLAGS = -Wall -Werror -DTS_VERSION=\"$(GITVERSION)\" -Wno-error=date-time
 AM_CPPFLAGS = ${libxml2_CFLAGS} -fgnu89-inline
 trisurf_LDADD = libtrisurf.la ${libcurl_LIBS} ${libxml2_LIBS}
 
