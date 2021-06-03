@@ -42,6 +42,6 @@ ts_vertex_list *vertex_list_copy(ts_vertex_list *ovlist);
 
 ts_bool is_in_seen_vertex(ts_seen_vertex *seen_vertex, ts_vertex *vtx);
 ts_bool advance_seen_vertex_to_next_layer(ts_seen_vertex *seen_vertex);
-ts_bool update_vertex_normal(ts_vertex *vtx);
+
 
 #endif

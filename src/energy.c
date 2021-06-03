@@ -93,7 +93,7 @@ inline ts_bool energy_vertex(ts_vertex *vtx){
     ts_triangle *jt;
     ts_double s=0.0,xh=0.0,yh=0.0,zh=0.0,txn=0.0,tyn=0.0,tzn=0.0;
     ts_double x1,x2,x3,ctp,ctm,tot,xlen;
-    ts_double h,ht;
+    ts_double h,ht,norml;
     for(jj=1; jj<=vtx->neigh_no;jj++){
         jjp=jj+1;
         if(jjp>vtx->neigh_no) jjp=1;
@@ -188,10 +188,16 @@ inline ts_bool energy_vertex(ts_vertex *vtx){
         vtx->curvature=-sqrtl(h);
     }
 #endif
+    //also great point to update normal
+    norml=sqrt(txn*txn+tyn*tyn+tzn*tzn);
+    vtx->nx=txn/norml;
+	vtx->ny=tyn/norml;
+	vtx->nz=tzn/norml;
 // c is forced curvature energy for each vertex. Should be set to zero for
 // normal circumstances.
 /* the following statement is an expression for $\frac{1}{2}\int(c_1+c_2-c_0^\prime)^2\mathrm{d}A$, where $c_0^\prime=2c_0$ (twice the spontaneous curvature)  */
     vtx->energy=0.5*s*(vtx->curvature/s-vtx->c)*(vtx->curvature/s-vtx->c);
+
 
     return TS_SUCCESS;
 }

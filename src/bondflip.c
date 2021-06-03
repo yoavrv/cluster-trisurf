@@ -435,17 +435,14 @@ ts_bool ts_flip_bond(ts_vertex *k,ts_vertex *it,ts_vertex *km, ts_vertex *kp, ts
 
     // END modifications to data structure!
 
-    // Yoav: need to update the normals.
-    update_vertex_normal(k);
-    update_vertex_normal(kp);
-    update_vertex_normal(km);
-    update_vertex_normal(it);
+
 
     // 7. step. Update energy
     energy_vertex(k);
     energy_vertex(kp);
     energy_vertex(km);
     energy_vertex(it);
+    // Yoav: this also updates the normals
 
     // Yoav: Do we need to update force?
 

@@ -192,10 +192,7 @@ ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
 	}
 	free(indices);
 
-	// just sweep everything anyway, we only do this once
-	for (i=0; i<n; i++){
-		update_vertex_normal(vesicle->vlist->vtx[i]);
-	}
+	// This updates the normals using the energy_vertex
 	mean_curvature_and_energy(vesicle);
 	if(fabs(tape->w)>1e-16){ //if nonzero energy
 		//	ts_fprintf(stderr,"Setting attraction between vertices with spontaneous curvature\n");

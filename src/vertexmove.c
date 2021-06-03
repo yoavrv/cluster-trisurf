@@ -187,9 +187,7 @@ if(vesicle->R_nucleus>0.0){
 
     //update the normals of triangles that share bead i.
     for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]);
-	// update the normals of the vertices
-	update_vertex_normal(vtx);
-	for(i=0; i<vtx->neigh_no; i++) update_vertex_normal(vtx->neigh[i]);
+	// update the normals of the vertices is in the energy
 
 	// bending energy of the vertex
 	oenergy=vtx->energy;
