@@ -395,7 +395,7 @@ inline ts_double force_per_vertex(ts_vesicle *vesicle){
 	
 }
 
-ts_double adhesion_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_old){
+ts_double adhesion_energy_diff(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_old){
     ts_double delta_energy=0;
     ts_double z=vtx->z, z_old=vtx_old->z;
     ts_double z0=vesicle->tape->z_adhesion, dz=vesicle->tape->adhesion_cuttoff;
@@ -418,7 +418,7 @@ ts_double adhesion_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_ol
 		if( (vtx->type&is_adhesive_vtx) && ((z-z0)<=dz )){
 				delta_energy-=(vtx->ad_w/pow(dz,2))*pow(z - dz,2);
 		}
-		if( (vtx_old->type&is_adhesive_vtx) && ((z-z0)>dz) ){
+		if( (vtx_old->type&is_adhesive_vtx) && ((z_old-z0)>dz) ){
 				delta_energy+=(vtx_old->ad_w/pow(dz,2))*pow(z_old - dz,2);
 		}
 	}

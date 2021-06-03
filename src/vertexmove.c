@@ -305,51 +305,7 @@ if(vesicle->R_nucleus>0.0){
 		}
 	}
 // change in energy due to adhesion
-// later!
-if(vesicle->tape->adhesion_switch){
-//1 for step potential
-	if(vesicle->tape->type_of_adhesion_model==1){
-
-		if(abs(vtx->z-vesicle->tape->z_adhesion)<vesicle->tape->adhesion_cuttoff){
-				delta_energy-=vesicle->tape->adhesion_strength;
-		}
-		if(abs(backupvtx[0].z-vesicle->tape->z_adhesion)<vesicle->tape->adhesion_cuttoff){
-				delta_energy+=vesicle->tape->adhesion_strength;
-		}
-	}
-//2 for parabolic potential
-	else if(vesicle->tape->type_of_adhesion_model==2){
-
-		if((vtx->z-vesicle->tape->z_adhesion)<=vesicle->tape->adhesion_cuttoff && (backupvtx[0].z-vesicle->tape->z_adhesion)<=vesicle->tape->adhesion_cuttoff){
-				delta_energy-=(vesicle->tape->adhesion_strength/pow(vesicle->tape->adhesion_cuttoff,2))*(vtx->z - backupvtx[0].z)*(vtx->z + backupvtx[0].z - 2*vesicle->tape->adhesion_cuttoff);
-		}
-		else if((vtx->z-vesicle->tape->z_adhesion)<=vesicle->tape->adhesion_cuttoff && (backupvtx[0].z-vesicle->tape->z_adhesion)>vesicle->tape->adhesion_cuttoff){
-				delta_energy-=(vesicle->tape->adhesion_strength/pow(vesicle->tape->adhesion_cuttoff,2))*pow(vtx->z - vesicle->tape->adhesion_cuttoff,2);
-		}
-		else if((vtx->z-vesicle->tape->z_adhesion)>vesicle->tape->adhesion_cuttoff && (backupvtx[0].z-vesicle->tape->z_adhesion)<=vesicle->tape->adhesion_cuttoff){
-				delta_energy+=(vesicle->tape->adhesion_strength/pow(vesicle->tape->adhesion_cuttoff,2))*pow(backupvtx[0].z - vesicle->tape->adhesion_cuttoff,2);
-		}
-	}
-//3 for sphrerical adhesion substrate with constant potential
-	else if(vesicle->tape->type_of_adhesion_model==3){
-		if(pow(pow(vesicle->adhesion_center - vtx->z,2) + pow(vtx->x,2) + pow(vtx->y,2),0.5) - vesicle->tape->adhesion_radius < vesicle->tape->adhesion_cuttoff){
-			delta_energy-=vesicle->tape->adhesion_strength;
-		}
-		if(pow(pow(vesicle->adhesion_center - backupvtx[0].z,2) + pow(backupvtx[0].x,2) + pow(backupvtx[0].y,2),0.5) - vesicle->tape->adhesion_radius < vesicle->tape->adhesion_cuttoff){
-			delta_energy+=vesicle->tape->adhesion_strength;
-		}
-	}
-//4 for cylindrical adhesive substrate with constant potential
-	else if(vesicle->tape->type_of_adhesion_model==4){
-		if(pow(pow(vesicle->adhesion_center - vtx->z,2) + pow(vtx->x,2),0.5) - vesicle->tape->adhesion_radius < vesicle->tape->adhesion_cuttoff){
-			delta_energy-=vesicle->tape->adhesion_strength;
-		}
-		if(pow(pow(vesicle->adhesion_center - backupvtx[0].z,2) + pow(backupvtx[0].x,2),0.5) - vesicle->tape->adhesion_radius < vesicle->tape->adhesion_cuttoff){
-			delta_energy+=vesicle->tape->adhesion_strength;
-		}
-	}
-
-}
+	delta_energy+=adhesion_energy_diff(vesicle, vtx, backupvtx);
 
 //   fprintf(stderr, "DE=%f\n",delta_energy);
     //MONTE CARLOOOOOOOO
@@ -402,9 +358,9 @@ if(vesicle->tape->adhesion_switch){
 	}
 
     if(vesicle->tape->constvolswitch == 2){
-	vesicle->volume+=dvol;
-    } else
-    if(vesicle->tape->constvolswitch == 1){
+		vesicle->volume+=dvol;
+    } 
+	else if(vesicle->tape->constvolswitch == 1){
         constvolumeaccept(vesicle,constvol_vtx_moved,constvol_vtx_backup);
     }
 

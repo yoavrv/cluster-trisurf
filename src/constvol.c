@@ -125,6 +125,8 @@ ts_bool constvolume(ts_vesicle *vesicle, ts_vertex *vtx_avoid, ts_double Vol, ts
                 energy_vertex(vtx_moved->neigh[j]);
                 delta_energy+=vtx_moved->neigh[j]->xk*(vtx_moved->neigh[j]->energy-oenergy);
             }
+            //adhesion energy
+            delta_energy+=adhesion_energy_diff(vesicle,vtx_moved,backupvtx);
             *retEnergy=delta_energy;
             *vtx_backup=backupvtx;
             *vtx_moved_retval=vtx_moved;
