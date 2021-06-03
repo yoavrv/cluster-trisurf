@@ -403,10 +403,10 @@ ts_double adhesion_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_ol
     //1 for step potential
 	if(vesicle->tape->type_of_adhesion_model==1){
 
-		if( ((vtx->type&is_adhesive_vtx)) && (abs(z-z0)<dz)){
+		if( (vtx->type&is_adhesive_vtx) && (abs(z-z0)<dz) ){
 				delta_energy-=vtx->ad_w;
 		}
-		if((vtx_old->type&is_adhesive_vtx) &&(abs(z_old-z0)<dz)){
+		if( (vtx_old->type&is_adhesive_vtx) &&(abs(z_old-z0)<dz) ){
 				delta_energy+=vtx_old->ad_w;
 		}
 	}
@@ -415,30 +415,30 @@ ts_double adhesion_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_ol
 	else if(vesicle->tape->type_of_adhesion_model==2){
 
         // can't combine them well: each has (theoretically) different adhesion
-		if((z-z0)<=dz){
+		if( (vtx->type&is_adhesive_vtx) && ((z-z0)<=dz )){
 				delta_energy-=(vtx->ad_w/pow(dz,2))*pow(z - dz,2);
 		}
-		if((z-z0)>dz){
+		if( (vtx_old->type&is_adhesive_vtx) && ((z-z0)>dz) ){
 				delta_energy+=(vtx_old->ad_w/pow(dz,2))*pow(z_old - dz,2);
 		}
 	}
 
     //3 for sphrerical adhesion substrate with constant potential
 	else if(vesicle->tape->type_of_adhesion_model==3){
-		if(pow(pow(c0 -z,2) + pow(vtx->x,2) + pow(vtx->y,2),0.5) - r < dz){
+		if( (vtx->type&is_adhesive_vtx) && (pow(pow(c0-z,2) + pow(vtx->x,2) + pow(vtx->y,2),0.5) - r < dz)){
 			delta_energy-=vtx->ad_w;
 		}
-		if(pow(pow(c0 - z_old,2) + pow(vtx_old->x,2) + pow(vtx_old->y,2),0.5) - r < dz){
+		if( (vtx_old->type&is_adhesive_vtx) && (pow(pow(c0-z_old,2) + pow(vtx_old->x,2) + pow(vtx_old->y,2),0.5) - r < dz)){
 			delta_energy+=vtx_old->ad_w;
 		}
 	}
     
     //4 for cylindrical adhesive substrate with constant potential
 	else if(vesicle->tape->type_of_adhesion_model==4){
-		if(pow(pow(c0 -z,2) + pow(vtx->x,2),0.5) - r < dz){
+		if( (vtx->type&is_adhesive_vtx) && (pow(pow(c0 -z,2) + pow(vtx->x,2),0.5) - r < dz)){
 			delta_energy-=vtx->ad_w;
 		}
-		if(pow(pow(c0 - z_old,2) + pow(vtx_old->x,2),0.5) - r < dz){
+		if( (vtx_old->type&is_adhesive_vtx) && (pow(pow(c0 - z_old,2) + pow(vtx_old->x,2),0.5) - r < dz)){
 			delta_energy+=vtx_old->ad_w;
 		}
 	}
