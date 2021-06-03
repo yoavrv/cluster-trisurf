@@ -38,7 +38,7 @@ if test "x$enable_debug" = "xyes"; then
 CFLAGS="-g -O2 -DDEBUG"
 AC_MSG_RESULT(yes)
 else
-CFLAGS="-O3 -ffast-math"
+CFLAGS="-O3 -ffast-math -flto"
 AC_MSG_RESULT(no)
 fi
 
