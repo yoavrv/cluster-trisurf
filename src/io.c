@@ -444,104 +444,106 @@ ts_bool parse_args(int argc, char **argv){
     sprintf(command_line_args.dump_fullfilename,"dump.bin");
     sprintf(command_line_args.tape_fullfilename,"tape");
     sprintf(command_line_args.tape_templatefull,"./tape");
-            FILE *file;
-    
-while (1)
-     {
-       static struct option long_options[] =
-         {
-           {"force-from-tape", no_argument,       &(command_line_args.force_from_tape), 1},
-	   {"reset-iteration-count", no_argument, &(command_line_args.reset_iteration_count), 1},
-           {"tape",     no_argument,       0, 't'},
-	   {"version", no_argument, 0, 'v'},
-           {"output-file",  required_argument, 0, 'o'},
-           {"directory",  required_argument, 0, 'd'},
-           {"dump-filename", required_argument,0, 'f'},
-           {"tape-options",required_argument,0,'c'},
-           {"tape-template", required_argument,0,0},
-            {"restore-from-vtk",required_argument,0,0},
-           {0, 0, 0, 0}
-         };
-       /* getopt_long stores the option index here. */
-       int option_index = 0;
+    FILE *file;
 
-       c = getopt_long (argc, argv, "d:f:o:t:c:v",
+    while (1){
+        static struct option long_options[] =
+            {
+                {"force-from-tape", no_argument, &(command_line_args.force_from_tape), 1},
+                {"reset-iteration-count", no_argument, &(command_line_args.reset_iteration_count), 1},
+                {"tape", no_argument, 0, 't'},
+                {"version", no_argument, 0, 'v'},
+                {"output-file", required_argument, 0, 'o'},
+                {"directory", required_argument, 0, 'd'},
+                {"dump-filename", required_argument, 0, 'f'},
+                {"tape-options", required_argument, 0, 'c'},
+                {"tape-template", required_argument, 0, 0},
+                {"restore-from-vtk", required_argument, 0, 'r'},
+                {0, 0, 0, 0}
+            };
+        /* getopt_long stores the option index here. */
+        int option_index = 0;
+
+        c = getopt_long(argc, argv, "d:f:o:t:c:r:v",
                         long_options, &option_index);
 
-       /* Detect the end of the options. */
-       if (c == -1)
-         break;
+        /* Detect the end of the options. */
+        if (c == -1)
+            break;
 
-       switch (c)
-         {
-         case 0:
-           /* If this option set a flag, do nothing else now. */
-           if (long_options[option_index].flag != 0)
-             break;
-/*           printf ("option %s", long_options[option_index].name);
+        switch (c){
+        case 0:
+            /* If this option set a flag, do nothing else now. */
+            if (long_options[option_index].flag != 0)
+                break;
+            /*           printf ("option %s", long_options[option_index].name);
            if (optarg)
              printf (" with arg %s", optarg); 
            printf ("\n"); */
             //TODO: find a better way.
-            if(strcmp(long_options[option_index].name,"tape-template")==0){
-                strcpy(command_line_args.tape_templatefull,optarg);
+            if (strcmp(long_options[option_index].name, "tape-template") == 0){
+                strcpy(command_line_args.tape_templatefull, optarg);
             }
-            if(strcmp(long_options[option_index].name,"restore-from-vtk")==0){
-                strcpy(command_line_args.dump_from_vtk,optarg);
-            }
-           break;
-	 case 'v':
-     		fprintf(stdout,"TRISURF-NG v. %s, compiled on: %s %s.\n", TS_VERSION, __DATE__, __TIME__);
-        	fprintf(stdout,"Programming done by: Samo Penic and Miha Fosnaric\n");
-        	fprintf(stdout,"Released under terms of GPLv3\n");
-		exit(0);
-
-         case 'c':
-              strcpy(command_line_args.tape_opts,optarg);
             break;
-         case 't': //tape
-                strcpy(command_line_args.tape_fullfilename,optarg);
-           break;
+        case 'v':
+            fprintf(stdout, "TRISURF-NG v. %s, compiled on: %s %s.\n", TS_VERSION, __DATE__, __TIME__);
+            fprintf(stdout, "Programming done by: Samo Penic and Miha Fosnaric\n");
+            fprintf(stdout, "Released under terms of GPLv3\n");
+            exit(0);
 
-         case 'o':  //set filename of master pvd output file
+        case 'c':
+            strcpy(command_line_args.tape_opts, optarg);
+            break;
+        case 't': //tape
+            strcpy(command_line_args.tape_fullfilename, optarg);
+            break;
+
+        case 'o': //set filename of master pvd output file
             strcpy(command_line_args.output_fullfilename, optarg);
             break;
 
-         case 'd':
+        case 'd':
             //check if directory exists. If not create one. If creation is
             //successful, set directory for output files.
             //printf ("option -d with value `%s'\n", optarg);
-            if (stat(optarg, &sb) == -1) {
+            if (stat(optarg, &sb) == -1)
+            {
                 //directory does not exist
-                retval=mkdir(optarg, 0700);
-                if(retval){
-                    fatal("Could not create requested directory. Check if you have permissions",1);
+                retval = mkdir(optarg, 0700);
+                if (retval)
+                {
+                    fatal("Could not create requested directory. Check if you have permissions", 1);
                 }
             }
             //check if is a proper directory
-            else if((sb.st_mode & S_IFMT) != S_IFDIR) {
+            else if ((sb.st_mode & S_IFMT) != S_IFDIR)
+            {
                 //it is not a directory. fatal error.
-                ts_fprintf(stderr,"%s is not a directory!\n",optarg);
-                fatal("Cannot continue",1);
+                ts_fprintf(stderr, "%s is not a directory!\n", optarg);
+                fatal("Cannot continue", 1);
             }
             strcpy(command_line_args.path, optarg);
-           break;
+            break;
 
         case 'f':
             strcpy(command_line_args.dump_fullfilename, optarg);
             break;
 
-         case '?':
-           /* getopt_long already printed an error message. */
-            print_help(stdout);
-//ts_fprintf(stderr,"\n\nhere comes the help.\n\n");
-            fatal("Ooops, read help first",1);
-           break;
+        case 'r':
+            strcpy(command_line_args.dump_from_vtk, optarg);
+            break;
 
-         default:
-           exit (1);
-         }
-     }
+        case '?':
+            /* getopt_long already printed an error message. */
+            print_help(stdout);
+            //ts_fprintf(stderr,"\n\nhere comes the help.\n\n");
+            fatal("Ooops, read help first", 1);
+            break;
+
+        default:
+            exit(1);
+        }
+    }
 
 //Here we set correct values for full filenames!
     char *buffer=(char *)malloc(10000*sizeof(char));
@@ -1186,95 +1188,94 @@ ts_tape *parsetape(char *filename){
 ts_tape *parsetapebuffer(char *buffer){
     ts_tape *tape=(ts_tape *)calloc(1,sizeof(ts_tape));
     tape->multiprocessing=calloc(255,sizeof(char));
-
+    
     cfg_opt_t opts[] = {
         CFG_SIMPLE_INT("nshell", &tape->nshell),
         CFG_SIMPLE_INT("npoly", &tape->npoly),
         CFG_SIMPLE_INT("nmono", &tape->nmono),
-	CFG_SIMPLE_INT("nfil",&tape->nfil),
-	CFG_SIMPLE_INT("nfono",&tape->nfono),
-	CFG_SIMPLE_INT("internal_poly",&tape->internal_poly),
-	CFG_SIMPLE_INT("R_nucleus",&tape->R_nucleus),
-	CFG_SIMPLE_FLOAT("R_nucleusX",&tape->R_nucleusX),
-	CFG_SIMPLE_FLOAT("R_nucleusY",&tape->R_nucleusY),
-	CFG_SIMPLE_FLOAT("R_nucleusZ",&tape->R_nucleusZ),
-	CFG_SIMPLE_FLOAT("dmax", &tape->dmax),
-	CFG_SIMPLE_FLOAT("dmin_interspecies", &tape->dmin_interspecies),
+        CFG_SIMPLE_INT("nfil",&tape->nfil),
+        CFG_SIMPLE_INT("nfono",&tape->nfono),
+        CFG_SIMPLE_INT("internal_poly",&tape->internal_poly),
+        CFG_SIMPLE_INT("R_nucleus",&tape->R_nucleus),
+        CFG_SIMPLE_FLOAT("R_nucleusX",&tape->R_nucleusX),
+        CFG_SIMPLE_FLOAT("R_nucleusY",&tape->R_nucleusY),
+        CFG_SIMPLE_FLOAT("R_nucleusZ",&tape->R_nucleusZ),
+        CFG_SIMPLE_FLOAT("dmax", &tape->dmax),
+        CFG_SIMPLE_FLOAT("dmin_interspecies", &tape->dmin_interspecies),
         CFG_SIMPLE_FLOAT("xk0",&tape->xk0),
-	CFG_SIMPLE_INT("pswitch",&tape->pswitch),
-	CFG_SIMPLE_INT("constvolswitch",&tape->constvolswitch),
-	CFG_SIMPLE_INT("constareaswitch",&tape->constareaswitch),
-	CFG_SIMPLE_FLOAT("constvolprecision",&tape->constvolprecision),
-	CFG_SIMPLE_INT("stretchswitch",&tape->stretchswitch),
-	CFG_SIMPLE_FLOAT("xkA0",&tape->xkA0),	
-	CFG_SIMPLE_FLOAT("pressure",&tape->pressure),
-	CFG_SIMPLE_FLOAT("k_spring",&tape->kspring),
-	CFG_SIMPLE_FLOAT("xi",&tape->xi),
+	    CFG_SIMPLE_INT("pswitch",&tape->pswitch),
+        CFG_SIMPLE_INT("constvolswitch",&tape->constvolswitch),
+        CFG_SIMPLE_INT("constareaswitch",&tape->constareaswitch),
+        CFG_SIMPLE_FLOAT("constvolprecision",&tape->constvolprecision),
+        CFG_SIMPLE_INT("stretchswitch",&tape->stretchswitch),
+        CFG_SIMPLE_FLOAT("xkA0",&tape->xkA0),	
+        CFG_SIMPLE_FLOAT("pressure",&tape->pressure),
+        CFG_SIMPLE_FLOAT("k_spring",&tape->kspring),
+        CFG_SIMPLE_FLOAT("xi",&tape->xi),
         CFG_SIMPLE_FLOAT("stepsize",&tape->stepsize),
         CFG_SIMPLE_INT("nxmax", &tape->ncxmax),
         CFG_SIMPLE_INT("nymax", &tape->ncymax),
         CFG_SIMPLE_INT("nzmax", &tape->nczmax),
         CFG_SIMPLE_INT("iterations",&tape->iterations),
-	CFG_SIMPLE_INT("mcsweeps",&tape->mcsweeps),
-	CFG_SIMPLE_INT("inititer", &tape->inititer),
-				CFG_SIMPLE_BOOL("quiet",(cfg_bool_t *)&tape->quiet),
+        CFG_SIMPLE_INT("mcsweeps",&tape->mcsweeps),
+        CFG_SIMPLE_INT("inititer", &tape->inititer),
+        CFG_SIMPLE_BOOL("quiet",(cfg_bool_t *)&tape->quiet),
         CFG_SIMPLE_STR("multiprocessing",&tape->multiprocessing),
         CFG_SIMPLE_INT("smp_cores",&tape->brezveze0),
         CFG_SIMPLE_INT("cluster_nodes",&tape->brezveze1),
         CFG_SIMPLE_INT("distributed_processes",&tape->brezveze2),
-	CFG_SIMPLE_INT("spherical_harmonics_coefficients",&tape->shc),
-	CFG_SIMPLE_INT("number_of_vertices_with_c0", &tape->number_of_vertices_with_c0),
-	CFG_SIMPLE_INT("type_of_adhesion_model", &tape->type_of_adhesion_model),
-	CFG_SIMPLE_INT("allow_xy_plane_movement", &tape->allow_xy_plane_movement),
-	CFG_SIMPLE_INT("force_balance_along_z_axis", &tape->force_balance_along_z_axis),
-	CFG_SIMPLE_FLOAT("c0",&tape->c0),
-	CFG_SIMPLE_FLOAT("w",&tape->w),
-	CFG_SIMPLE_FLOAT("F",&tape->F),
+        CFG_SIMPLE_INT("spherical_harmonics_coefficients",&tape->shc),
+        CFG_SIMPLE_INT("number_of_vertices_with_c0", &tape->number_of_vertices_with_c0),
+        CFG_SIMPLE_INT("type_of_adhesion_model", &tape->type_of_adhesion_model),
+        CFG_SIMPLE_INT("allow_xy_plane_movement", &tape->allow_xy_plane_movement),
+        CFG_SIMPLE_INT("force_balance_along_z_axis", &tape->force_balance_along_z_axis),
+        CFG_SIMPLE_FLOAT("c0",&tape->c0),
+        CFG_SIMPLE_FLOAT("w",&tape->w),
+        CFG_SIMPLE_FLOAT("F",&tape->F),
 /* Variables related to plane confinement */
-	CFG_INT("plane_confinement_switch", 0, CFGF_NONE),
-    CFG_FLOAT("plane_d", 15, CFGF_NONE),
-	CFG_FLOAT("plane_F", 1000, CFGF_NONE),
+        CFG_INT("plane_confinement_switch", 0, CFGF_NONE),
+        CFG_FLOAT("plane_d", 15, CFGF_NONE),
+        CFG_FLOAT("plane_F", 1000, CFGF_NONE),
 /* Variables related to adhesion */
-	CFG_INT("adhesion_switch", 0, CFGF_NONE),
-	CFG_FLOAT("adhesion_cuttoff", 15, CFGF_NONE),
-	CFG_FLOAT("adhesion_strength", 1000, CFGF_NONE),
-	CFG_FLOAT("adhesion_radius", 1000, CFGF_NONE),
-	CFG_FLOAT("z_adhesion", 1000, CFGF_NONE),
+        CFG_INT("adhesion_switch", 0, CFGF_NONE),
+        CFG_FLOAT("adhesion_cuttoff", 15, CFGF_NONE),
+        CFG_FLOAT("adhesion_strength", 1000, CFGF_NONE),
+        CFG_FLOAT("adhesion_radius", 1000, CFGF_NONE),
+        CFG_FLOAT("z_adhesion", 1000, CFGF_NONE),
 /* Variables related to stretching */
 //	CFG_FLOAT("stretchswitch", 0, CFGF_NONE),
 //	CFG_FLOAT("xkA0",0,CFGF_NONE),
 
 /* variables for Vicsek interaction*/
-    CFG_INT("vicsek_model", 0, CFGF_NONE),
-    CFG_FLOAT("vicsek_strength", 0.1, CFGF_NONE),
-    CFG_FLOAT("vicsek_radius", 1.0, CFGF_NONE),
-    CFG_INT("random_seed",0,CFGF_NONE),
+        CFG_INT("vicsek_model", 0, CFGF_NONE),
+        CFG_FLOAT("vicsek_strength", 0.1, CFGF_NONE),
+        CFG_FLOAT("vicsek_radius", 1.0, CFGF_NONE),
+        CFG_INT("random_seed",0,CFGF_NONE),
         CFG_END()
     };
     cfg_t *cfg;    
     ts_uint retval;
-    cfg = cfg_init(opts, 0);
-    retval=cfg_parse_buf(cfg, buffer);
-	tape->plane_confinement_switch=cfg_getint(cfg,"plane_confinement_switch");
-	tape->plane_d=cfg_getfloat(cfg,"plane_d");
-	tape->plane_F=cfg_getfloat(cfg,"plane_F");
-    tape->vicsek_model=cfg_getint(cfg,"vicsek_model");
-    tape->vicsek_strength=cfg_getfloat(cfg,"vicsek_strength");
-    tape->vicsek_radius=cfg_getfloat(cfg,"vicsek_radius");
-	tape->adhesion_switch=cfg_getint(cfg,"adhesion_switch");
-	tape->adhesion_cuttoff=cfg_getfloat(cfg,"adhesion_cuttoff");
-	tape->adhesion_strength=cfg_getfloat(cfg,"adhesion_strength");
-	tape->adhesion_radius=cfg_getfloat(cfg,"adhesion_radius");
-	tape->z_adhesion=cfg_getfloat(cfg,"z_adhesion");
-    tape->random_seed=cfg_getint(cfg,"random_seed");
+    cfg = cfg_init(opts, 0); //consider using CFGFG_IGNORE_UNKNOWN
+    retval = cfg_parse_buf(cfg, buffer);
+    tape->plane_confinement_switch = cfg_getint(cfg, "plane_confinement_switch");
+    tape->plane_d = cfg_getfloat(cfg, "plane_d");
+    tape->plane_F = cfg_getfloat(cfg, "plane_F");
+    tape->vicsek_model = cfg_getint(cfg, "vicsek_model");
+    tape->vicsek_strength = cfg_getfloat(cfg, "vicsek_strength");
+    tape->vicsek_radius = cfg_getfloat(cfg, "vicsek_radius");
+    tape->adhesion_switch = cfg_getint(cfg, "adhesion_switch");
+    tape->adhesion_cuttoff = cfg_getfloat(cfg, "adhesion_cuttoff");
+    tape->adhesion_strength = cfg_getfloat(cfg, "adhesion_strength");
+    tape->adhesion_radius = cfg_getfloat(cfg, "adhesion_radius");
+    tape->z_adhesion = cfg_getfloat(cfg, "z_adhesion");
+    tape->random_seed = cfg_getint(cfg, "random_seed");
 
-
-    if(retval==CFG_FILE_ERROR){
-	fatal("No tape file.",100);
-	}
-    else if(retval==CFG_PARSE_ERROR){
-	fatal("Invalid tape!",100);
-	}
+    if (retval==CFG_FILE_ERROR){
+        fatal("No tape file.", 100);
+    }
+    else if (retval == CFG_PARSE_ERROR){
+        fatal("Invalid tape!", 100);
+    }
 
     // this bit is not needed, since we re-wrote the tape directly
     // due to for .vtu reasons and new variable compatibility
@@ -1283,10 +1284,9 @@ ts_tape *parsetapebuffer(char *buffer){
     //getcmdline_tape(cfg,command_line_args.tape_opts);
     cfg_free(cfg);
 
-
-	/* global variables are set automatically */
-	quiet=tape->quiet;
-	return tape;
+    /* global variables are set automatically */
+    quiet = tape->quiet;
+    return tape;
 }
 
 ts_bool tape_free(ts_tape *tape){

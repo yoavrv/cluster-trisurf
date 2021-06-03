@@ -180,6 +180,18 @@ struct ts_vertex {
 		ts_double tz;
 
 };
+enum vertex_type {
+	is_bonding_vtx=1,
+	is_active_vtx=2,
+	is_adhesive_vtx=4,
+	is_anisotropic_vtx=8,
+	is_reserved_0_vtx=16,
+	is_vicsek_vtx=32,
+	is_reserved_1_vtx=64,
+	reserved_2_vtx=128
+}; 
+
+
 typedef struct ts_vertex ts_vertex;
 
 typedef struct {

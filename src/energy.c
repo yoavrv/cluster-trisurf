@@ -103,12 +103,10 @@ inline ts_bool energy_vertex(ts_vertex *vtx){
         jp=vtx->neigh[jjp-1];
         jm=vtx->neigh[jjm-1];
         jt=vtx->tristar[jj-1];
-        // testing testing
-        //x1=vtx_distance_sq(vtx,jp); //shouldn't be zero!
-        //x2=vtx_distance_sq(j,jp); // shouldn't be zero!
-        x1=pow(vtx->x-jp->x,2)+pow(vtx->y-jp->y,2)+pow(vtx->z-jp->z,2);
-        x2=pow(j->x-jp->x,2)+pow(j->y-jp->y,2)+pow(j->z-jp->z,2);
-        //
+        x1=vtx_distance_sq(vtx,jp); //shouldn't be zero!
+        x2=vtx_distance_sq(j,jp); // shouldn't be zero!
+        //x1=pow(vtx->x-jp->x,2)+pow(vtx->y-jp->y,2)+pow(vtx->z-jp->z,2);
+        //x2=pow(j->x-jp->x,2)+pow(j->y-jp->y,2)+pow(j->z-jp->z,2);
         x3=(j->x-jp->x)*(vtx->x-jp->x)+
            (j->y-jp->y)*(vtx->y-jp->y)+
            (j->z-jp->z)*(vtx->z-jp->z);
@@ -122,12 +120,10 @@ inline ts_bool energy_vertex(ts_vertex *vtx){
 #ifdef TS_DOUBLE_LONGDOUBLE
         ctp=x3/sqrtl(x1*x2-x3*x3);
 #endif
-        // testing testing
-        //x1=vtx_distance_sq(vtx,jm);
-        //x2=vtx_distance_sq(j,jm);
-        x1=pow(vtx->x-jm->x,2)+pow(vtx->y-jm->y,2)+pow(vtx->z-jm->z,2);
-        x2=pow(j->x-jm->x,2)+pow(j->y-jm->y,2)+pow(j->z-jm->z,2);
-        //
+        x1=vtx_distance_sq(vtx,jm);
+        x2=vtx_distance_sq(j,jm);
+        //x1=pow(vtx->x-jm->x,2)+pow(vtx->y-jm->y,2)+pow(vtx->z-jm->z,2);
+        //x2=pow(j->x-jm->x,2)+pow(j->y-jm->y,2)+pow(j->z-jm->z,2);
         x3=(j->x-jm->x)*(vtx->x-jm->x)+
            (j->y-jm->y)*(vtx->y-jm->y)+
            (j->z-jm->z)*(vtx->z-jm->z);
@@ -144,8 +140,8 @@ inline ts_bool energy_vertex(ts_vertex *vtx){
         tot=0.5*tot;
 
         //testing
-        //xlen=vtx_distance_sq(j,vtx);
-        xlen=pow(vtx->x-j->x,2)+pow(vtx->y-j->y,2)+pow(vtx->z-j->z,2);
+        xlen=vtx_distance_sq(j,vtx);
+        //xlen=pow(vtx->x-j->x,2)+pow(vtx->y-j->y,2)+pow(vtx->z-j->z,2);
 /*
 #ifdef  TS_DOUBLE_DOUBLE 
         vtx->bond[jj-1]->bond_length=sqrt(xlen); 
@@ -213,9 +209,9 @@ ts_bool sweep_attraction_bond_energy(ts_vesicle *vesicle){
 
 inline ts_bool attraction_bond_energy(ts_bond *bond){
 
-	if((bond->vtx1->type&1 && bond->vtx2->type&1)){
+	if((bond->vtx1->type&is_bonding_vtx && bond->vtx2->type&is_bonding_vtx)){
         // f(w1,w2)
-		bond->energy=-bond->vtx1->w;
+		bond->energy=-0.5*(bond->vtx1->w+bond->vtx2->w);
 	}
 	else {
 		bond->energy=0.0;
@@ -246,7 +242,7 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 
 
     // if not vicsek type, or vicsek model is not relevant
-    if ( !(vtx->type&32) || !vesicle->tape->vicsek_model || fabs(vesicle->tape->vicsek_strength)<1e-15 || fabs(vesicle->tape->vicsek_radius)<1e-15) {//no vicsek
+    if ( !(vtx->type&is_vicsek_vtx) || !vesicle->tape->vicsek_model || fabs(vesicle->tape->vicsek_strength)<1e-15 || fabs(vesicle->tape->vicsek_radius)<1e-15) {//no vicsek
         //regular "force in normal direction"
         vtx->fx = vtx->nx;
         vtx->fy = vtx->ny;
@@ -303,7 +299,7 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
                     //loop over their neighbors: seen_vtx[i]->neigh[j]
 
                     // is this neighbor is not vicsek, skip to next neighbor
-                    if (!(seen_vtx->vtx[i]->neigh[j]->type&32)) continue;
+                    if (!(seen_vtx->vtx[i]->neigh[j]->type&is_vicsek_vtx)) continue;
                     //else{ rest of the j loop }
 
                     // has this neighbor been seen?
@@ -385,7 +381,7 @@ inline ts_double force_per_vertex(ts_vesicle *vesicle){
 	ts_double fz=0;
 	/*find normal of the vertex as sum of all the normals of the triangles surrounding it. */
     for (i=0;i<vesicle->vlist->n;i++){
-		if(vesicle->vlist->vtx[i]->type&2){
+		if(vesicle->vlist->vtx[i]->type&is_active_vtx){
 			fz+=vesicle->vlist->vtx[i]->fz;
 		}
 	}
@@ -407,10 +403,10 @@ ts_double adhesion_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_ol
     //1 for step potential
 	if(vesicle->tape->type_of_adhesion_model==1){
 
-		if( ((vtx->type&4)) && (abs(z-z0)<dz)){
+		if( ((vtx->type&is_adhesive_vtx)) && (abs(z-z0)<dz)){
 				delta_energy-=vtx->ad_w;
 		}
-		if((vtx_old->type&4) &&(abs(z_old-z0)<dz)){
+		if((vtx_old->type&is_adhesive_vtx) &&(abs(z_old-z0)<dz)){
 				delta_energy+=vtx_old->ad_w;
 		}
 	}

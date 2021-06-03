@@ -140,29 +140,29 @@ inline ts_double vtx_distance_sq(ts_vertex *vtx1, ts_vertex *vtx2){
 ts_double perimeter_tvvv(ts_vertex* p, ts_vertex* a, ts_vertex* b){
 	// helper function for get_perimeter_triangle()
 	/*perimeter caluclation is very similar to the mean curvature: 
-	similar to the mean curvature:			  b
-	we need the same cotan(theta),			 / \
-	except we take both	halfs in the		/	\
-	same triangle instead the two		   /\	 \
-	sides of the bond					  /	  0   \
-									prime ____|_<-_first part of sigma_ij
-											  | <- second part of sigma_ij
+	similar to the mean curvature:            b
+	we need the same cotan(theta),           / \
+	except we take both	halfs in the        /   \
+	same triangle instead the two          /\    \
+	sides of the bond                     /	  0   \
+	                                prime ____|_<-_first part of sigma_ij
+	                                          | <- second part of sigma_ij
 	
 	*/
 	ts_double pa_dot_pa,pb_dot_pb,ab_dot_ab,mix_dot,cotan_theta,perim;
 	//part attached to pb, angle pab
 	pa_dot_pa=vtx_distance_sq(p,a); //shouldn't be zero!
 	pb_dot_pb=vtx_distance_sq(p,b); //shouldn't be zero!
-    ab_dot_ab=vtx_distance_sq(a,b); // shouldn't be zero!
-    mix_dot=(p->x-a->x)*(b->x-a->x)+ //carefull with the order!
-           	(p->y-a->y)*(b->y-a->y)+ //don't want -|pa||ab|cos(theta)
-            (p->z-a->z)*(b->z-a->z);
+	ab_dot_ab=vtx_distance_sq(a,b); // shouldn't be zero!
+	mix_dot=(p->x-a->x)*(b->x-a->x)+ //carefull with the order!
+	       	(p->y-a->y)*(b->y-a->y)+ //don't want -|pa||ab|cos(theta)
+	        (p->z-a->z)*(b->z-a->z);
 	cotan_theta=mix_dot/sqrt(pa_dot_pa*ab_dot_ab-mix_dot*mix_dot);
 	perim=0.5*cotan_theta*sqrt(pb_dot_pb);
 	//part attached to pa, angle pba
 	mix_dot=(p->x-b->x)*(a->x-b->x)+ //flipped
-           	(p->y-b->y)*(a->y-b->y)+
-            (p->z-b->z)*(a->z-b->z);
+	       	(p->y-b->y)*(a->y-b->y)+
+	        (p->z-b->z)*(a->z-b->z);
 	cotan_theta=mix_dot/sqrt(pb_dot_pb*ab_dot_ab-mix_dot*mix_dot);
 	perim+=0.5*cotan_theta*sqrt(pa_dot_pa);
 	return perim;

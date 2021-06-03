@@ -242,7 +242,9 @@ if(vesicle->R_nucleus>0.0){
 	} else
 //    vesicle_volume(vesicle);
 //    fprintf(stderr,"Volume before=%1.16e\n", vesicle->volume);
-   if(vesicle->tape->constvolswitch == 1){
+
+	// TODO: wrong! need to update the new vertex moves
+	if(vesicle->tape->constvolswitch == 1){
         retval=constvolume(vesicle, vtx, -dvol, &delta_energy_cv, &constvol_vtx_moved,&constvol_vtx_backup);
         if(retval==TS_FAIL){ // if we couldn't move the vertex to assure constant volume
             vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
@@ -265,7 +267,7 @@ if(vesicle->R_nucleus>0.0){
 	
 	// vertices may be active, and have force applied on them
 	// to do: think hard on stratonovich/ito approach
-	if (vtx->type&2) delta_energy+=direct_force_energy(vesicle,vtx,backupvtx);
+	if (vtx->type&is_active_vtx) delta_energy+=direct_force_energy(vesicle,vtx,backupvtx);
 	
 	// additionally, vesicle may have force balance, applying additional force
 	// this is doen separately here (since we can split the F)

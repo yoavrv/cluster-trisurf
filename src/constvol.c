@@ -172,9 +172,9 @@ ts_bool constvolumerestore(ts_vertex *vtx_moved,ts_vertex *vtx_backup){
     ts_uint j;
 	 memcpy((void *)vtx_moved,(void *)&vtx_backup[0],sizeof(ts_vertex));
     for(j=0;j<vtx_moved->tristar_no;j++) triangle_normal_vector(vtx_moved->tristar[j]);
-     for(j=0;j<vtx_moved->neigh_no;j++){
-        	   // memcpy((void *)vtx_moved->neigh[j],(void *)&vtx_backup[j+1],sizeof(ts_vertex));
-                 energy_vertex(vtx_moved->neigh[j]);
+    for(j=0;j<vtx_moved->neigh_no;j++){
+        // memcpy((void *)vtx_moved->neigh[j],(void *)&vtx_backup[j+1],sizeof(ts_vertex));
+        energy_vertex(vtx_moved->neigh[j]);
 	}
 
     free(vtx_backup);

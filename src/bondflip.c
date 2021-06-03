@@ -435,18 +435,21 @@ ts_bool ts_flip_bond(ts_vertex *k,ts_vertex *it,ts_vertex *km, ts_vertex *kp, ts
 
     // END modifications to data structure!
 
+    // Yoav: need to update the normals.
+    update_vertex_normal(k);
+    update_vertex_normal(kp);
+    update_vertex_normal(km);
+    update_vertex_normal(it);
+
     // 7. step. Update energy
     energy_vertex(k);
     energy_vertex(kp);
     energy_vertex(km);
     energy_vertex(it);
 
-    // Yoav: need to update the normals. Do we need to update force?
-    update_vertex_normal(k);
-    update_vertex_normal(k);
-    update_vertex_normal(k);
-    update_vertex_normal(k);
-    // and also no more sense in giving w to the energy: it's in the vertices now
+    // Yoav: Do we need to update force?
+
+    // Yoav; No more sense in giving w to the energy: it's in the vertices now
     attraction_bond_energy(bond);
     return TS_SUCCESS;
 }

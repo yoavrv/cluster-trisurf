@@ -152,7 +152,7 @@ ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
 	if (tape->number_of_vertices_with_c0>n) fatal("number of vertices with c0 larger than number of vertices!",100);
 	for(i=j;i<j+tape->number_of_vertices_with_c0;i++){
 		vtx = vesicle->vlist->vtx[indices[i]];
-		vtx->type=7; // bonds, active, adhesive, isotropic
+		vtx->type=is_bonding_vtx + is_active_vtx + is_adhesive_vtx; // bonds, active, adhesive, (not an)isotropic
 		vtx->w=tape->w;
 		vtx->c=tape->c0;
 		vtx->f=tape->F;
@@ -174,7 +174,7 @@ ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
 	//finally, regular non-protein vertices
 	for(i=j; i<n; i++){
 		vtx = vesicle->vlist->vtx[indices[i]];
-		vtx->type=4; // nonbonding, passive, adhesive, isotropic
+		vtx->type=is_adhesive_vtx; // nonbonding, passive, adhesive, isotropic
 		vtx->w=0;
 		vtx->c=0;
 		vtx->f=0;
