@@ -268,7 +268,7 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 
 	    /*calculate ddp, normal force directed displacement*/
 	    ddp=xnorm*(vtx->x-vtx_old->x)+ynorm*(vtx->y-vtx_old->y)+znorm*(vtx->z-vtx_old->z);
-        ddp *= n_bare_neigh / vtx->neigh_no; //vtx->neigh_no == n_neigh;
+        ddp *= (double) n_bare_neigh / (double) vtx->neigh_no; //vtx->neigh_no == n_neigh;
 
     }
     else {
@@ -408,7 +408,7 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 
 	    /*calculate ddp, Viscek force directed displacement*/
 	    ddp=vixnorm*(vtx->x-vtx_old->x)+viynorm*(vtx->y-vtx_old->y)+viznorm*(vtx->z-vtx_old->z);
-        ddp *= n_bare_neigh / n_neigh;
+        ddp *= (double) n_bare_neigh / (double) n_neigh;
 	    
     //end else from if (!Vicsek)
     }
