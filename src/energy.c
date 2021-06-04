@@ -372,13 +372,21 @@ ts_double direct_force_from_Fz_balance(ts_vesicle *vesicle, ts_vertex *vtx, ts_v
     //     since F_direct(old) = F_direct + Fz_balance \hat{z}
     //     -- Yoav
     //   W = F_direct * dX + Fz_balance * dz
-	ts_double ddp=0.0;
-    ts_double Fz;
-	Fz = force_per_vertex(vesicle);
-
-	ddp=-Fz*(vtx->z-vtx_old->z);
-
-	return vesicle->tape->F*ddp;		
+    static ts_double Fz;
+    static ts_bool need_init=1;
+    if (need_init){
+        Fz=total_force_on_vesicle(vesicle);
+        need_init=0;
+    }
+    else{
+        Fz+=vtx->fz-vtx_old->fz;
+    }
+    if (Fz<0){
+	    return -Fz*(vtx->z-vtx_old->z)/vesicle->vlist->n;
+    }
+    else{
+        return 0;
+    }	
 	
 }
 
@@ -398,6 +406,19 @@ inline ts_double force_per_vertex(ts_vesicle *vesicle){
 	else{
 		return 0;
 	}
+	
+}
+
+inline ts_double total_force_on_vesicle(ts_vesicle *vesicle){
+	ts_uint i;
+	ts_double fz=0;
+	/*find normal of the vertex as sum of all the normals of the triangles surrounding it. */
+    for (i=0;i<vesicle->vlist->n;i++){
+		if(vesicle->vlist->vtx[i]->type&is_active_vtx){
+			fz+=vesicle->vlist->vtx[i]->fz;
+		}
+	}
+    return fz;
 	
 }
 
