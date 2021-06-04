@@ -366,12 +366,12 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 }
 
 ts_double direct_force_from_Fz_balance(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_old){
-    // Cache the force? on the vesicle, function? need to sort out force update 
     // calculate the Fz force balance
-    //     separated from direct_force_energy()
+    //     We could separat from direct_force_energy()
     //     since F_direct(old) = F_direct + Fz_balance \hat{z}
-    //     -- Yoav
-    //   W = F_direct * dX + Fz_balance * dz
+    //     W = F_direct * dX + Fz_balance * dz
+    // Force is cached once and only once! : not recalculated!
+    // 
     static ts_double Fz;
     static ts_bool need_init=1;
     if (need_init){
@@ -379,7 +379,7 @@ ts_double direct_force_from_Fz_balance(ts_vesicle *vesicle, ts_vertex *vtx, ts_v
         need_init=0;
     }
     else{
-        Fz+=vtx->fz-vtx_old->fz;
+        Fz+=(vtx->type&is_active_vtx)*(vtx->fz)-(vtx_old->type&is_active_vtx)*(vtx_old->fz);
     }
     if (Fz<0){
 	    return -Fz*(vtx->z-vtx_old->z)/vesicle->vlist->n;
@@ -387,25 +387,6 @@ ts_double direct_force_from_Fz_balance(ts_vesicle *vesicle, ts_vertex *vtx, ts_v
     else{
         return 0;
     }	
-	
-}
-
-inline ts_double force_per_vertex(ts_vesicle *vesicle){
-	ts_uint i;
-	ts_double fz=0;
-	/*find normal of the vertex as sum of all the normals of the triangles surrounding it. */
-    for (i=0;i<vesicle->vlist->n;i++){
-		if(vesicle->vlist->vtx[i]->type&is_active_vtx){
-			fz+=vesicle->vlist->vtx[i]->fz;
-		}
-	}
-	fz/=vesicle->vlist->n;
-	if(fz<0){
-		return fz;
-	}
-	else{
-		return 0;
-	}
 	
 }
 

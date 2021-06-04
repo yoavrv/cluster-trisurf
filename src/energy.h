@@ -9,7 +9,6 @@ ts_bool sweep_attraction_bond_energy(ts_vesicle *vesicle);
 inline ts_bool attraction_bond_energy(ts_bond *bond);
 ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_old);
 ts_double direct_force_from_Fz_balance(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_old);
-inline ts_double force_per_vertex(ts_vesicle *vesicle);
 inline ts_double total_force_on_vesicle(ts_vesicle *vesicle);
 ts_double adhesion_energy_diff(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_old);
 
