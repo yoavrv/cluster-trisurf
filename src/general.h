@@ -163,7 +163,7 @@ struct ts_vertex {
 		3rd bit: adhesive, 4th bit: anisotropic, 
 		5th bit: reserved, 6th bit: vicsek 
 		7th bit: reserved, 8th bit: reserved*/
-		ts_bool type; // type for ifs: 
+		ts_bool type; 
 		ts_double w;
 		ts_double c;
 		ts_double nx; // normal vector
@@ -178,6 +178,9 @@ struct ts_vertex {
 		ts_double tx; // director vector
 		ts_double ty;
 		ts_double tz;
+
+		// apparently using a bool for the type flag does nothing, but I don't want to reserve 
+		// flags for all 32 bytes of an int
 
 };
 enum vertex_type {

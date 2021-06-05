@@ -188,11 +188,11 @@ inline ts_bool energy_vertex(ts_vertex *vtx){
         vtx->curvature=-sqrtl(h);
     }
 #endif
-    //also great point to update normal
+    //also great point to update normal: note that the triangle normal is inwards
     norml=sqrt(txn*txn+tyn*tyn+tzn*tzn);
-    vtx->nx=txn/norml;
-	vtx->ny=tyn/norml;
-	vtx->nz=tzn/norml;
+    vtx->nx=-txn/norml;
+	vtx->ny=-tyn/norml;
+	vtx->nz=-tzn/norml;
 // c is forced curvature energy for each vertex. Should be set to zero for
 // normal circumstances.
 /* the following statement is an expression for $\frac{1}{2}\int(c_1+c_2-c_0^\prime)^2\mathrm{d}A$, where $c_0^\prime=2c_0$ (twice the spontaneous curvature)  */
@@ -361,7 +361,7 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 	ddp=vtx->fx*(vtx->x-vtx_old->x)+vtx->fy*(vtx->y-vtx_old->y)+vtx->fz*(vtx->z-vtx_old->z);
     
     /*calculate dE*/
-    return vtx->f*ddp;
+    return -vtx->f*ddp;
 //end function
 }
 
@@ -377,7 +377,7 @@ ts_double direct_force_from_Fz_balance(ts_vesicle *vesicle, ts_vertex *vtx, ts_v
     ts_double f_diff=0;
     static ts_double Fz;
     static ts_char countdown=0;
-    
+
     if (!countdown){
         Fz=total_force_on_vesicle(vesicle);
         countdown=64;//pow(2,20)-1; go back here in 64 steps

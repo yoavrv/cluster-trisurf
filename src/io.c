@@ -878,7 +878,7 @@ ts_bool write_vertex_xml_file(ts_vesicle *vesicle, ts_uint timestepno, ts_cluste
 	xml_trisurf_data(fh,vesicle);
 	fprintf(fh, " <UnstructuredGrid>\n");
     fprintf(fh, "<Piece NumberOfPoints=\"%u\" NumberOfCells=\"%u\">\n",vlist->n+monono*polyno+fonono*filno, blist->n+monono*polyno+filno*(fonono-1)+vesicle->tlist->n);
-    fprintf(fh,"<PointData Scalars=\"vertices_idx\">\n<DataArray type=\"Int64\" Name=\"vertices_idx\" format=\"ascii\">");
+    fprintf(fh,"<PointData Scalars=\"vertices_idx\" Vectors=\"force\">\n<DataArray type=\"Int64\" Name=\"vertices_idx\" format=\"ascii\">");
    	for(i=0;i<vlist->n;i++){
 		fprintf(fh,"%u ",vtx[i]->idx);
     }
@@ -937,30 +937,163 @@ ts_bool write_vertex_xml_file(ts_vesicle *vesicle, ts_uint timestepno, ts_cluste
 
 	}
 
+    //here comes additional data as needed.
+    //Yoav : additional scalar data: type, (spontaneous_curature), bonding_strength (w), direct_force (f), 
+    // adhesion_strength (ad_w), spontaneous_deviator (d, which has nothing at the moment), bending energy
+
+    //type
+	fprintf(fh,"<DataArray type=\"Int64\" Name=\"type\" format=\"ascii\">");
+	for(i=0;i<vlist->n;i++){
+		fprintf(fh,"%u ",vtx[i]->type);
+	}
+	//polymeres
+	if(poly){
+		poly_idx=vlist->n;
+		for(i=0;i<vesicle->poly_list->n;i++){
+			for(j=0;j<vesicle->poly_list->poly[i]->vlist->n;j++,poly_idx++){
+				fprintf(fh,"%u ", vesicle->poly_list->poly[i]->vlist->vtx[j]->type);
+			}
+		}
+	}
+	//filaments
+	if(fil){
+		poly_idx=vlist->n+monono*polyno;
+		for(i=0;i<vesicle->filament_list->n;i++){
+			for(j=0;j<vesicle->filament_list->poly[i]->vlist->n;j++,poly_idx++){
+				fprintf(fh,"%u ",  vesicle->filament_list->poly[i]->vlist->vtx[j]->type);
+			}
+		}
+	}
+    fprintf(fh,"</DataArray>\n");
+
 	//here comes additional data as needed. Currently only spontaneous curvature
 	fprintf(fh,"<DataArray type=\"Float64\" Name=\"spontaneous_curvature\" format=\"ascii\">");
 	for(i=0;i<vlist->n;i++){
 		fprintf(fh,"%.17e ",vtx[i]->c);
 	}
-		//polymeres
-		if(poly){
-			poly_idx=vlist->n;
-			for(i=0;i<vesicle->poly_list->n;i++){
-				for(j=0;j<vesicle->poly_list->poly[i]->vlist->n;j++,poly_idx++){
-					fprintf(fh,"%.17e ", vesicle->poly_list->poly[i]->vlist->vtx[j]->c);
-				}
+	//polymeres
+	if(poly){
+		poly_idx=vlist->n;
+		for(i=0;i<vesicle->poly_list->n;i++){
+			for(j=0;j<vesicle->poly_list->poly[i]->vlist->n;j++,poly_idx++){
+				fprintf(fh,"%.17e ", vesicle->poly_list->poly[i]->vlist->vtx[j]->c);
 			}
 		}
-		//filaments
-		if(fil){
-			poly_idx=vlist->n+monono*polyno;
-			for(i=0;i<vesicle->filament_list->n;i++){
-				for(j=0;j<vesicle->filament_list->poly[i]->vlist->n;j++,poly_idx++){
-		//	fprintf(stderr,"was here\n");
-					fprintf(fh,"%.17e ",  vesicle->filament_list->poly[i]->vlist->vtx[j]->c);
-				}
+	}
+	//filaments
+	if(fil){
+		poly_idx=vlist->n+monono*polyno;
+		for(i=0;i<vesicle->filament_list->n;i++){
+			for(j=0;j<vesicle->filament_list->poly[i]->vlist->n;j++,poly_idx++){
+	//	fprintf(stderr,"was here\n");
+				fprintf(fh,"%.17e ",  vesicle->filament_list->poly[i]->vlist->vtx[j]->c);
 			}
 		}
+	}
+    fprintf(fh,"</DataArray>\n");
+
+	//bonding energy (w)
+	fprintf(fh,"<DataArray type=\"Float64\" Name=\"bonding_strength\" format=\"ascii\">");
+	for(i=0;i<vlist->n;i++){
+		fprintf(fh,"%.17e ",vtx[i]->w);
+	}
+	//polymeres
+	if(poly){
+		poly_idx=vlist->n;
+		for(i=0;i<vesicle->poly_list->n;i++){
+			for(j=0;j<vesicle->poly_list->poly[i]->vlist->n;j++,poly_idx++){
+				fprintf(fh,"%.17e ", vesicle->poly_list->poly[i]->vlist->vtx[j]->w);
+			}
+		}
+	}
+	//filaments
+	if(fil){
+		poly_idx=vlist->n+monono*polyno;
+		for(i=0;i<vesicle->filament_list->n;i++){
+			for(j=0;j<vesicle->filament_list->poly[i]->vlist->n;j++,poly_idx++){
+	//	fprintf(stderr,"was here\n");
+				fprintf(fh,"%.17e ",  vesicle->filament_list->poly[i]->vlist->vtx[j]->w);
+			}
+		}
+	}
+    fprintf(fh,"</DataArray>\n");
+
+	//force
+	fprintf(fh,"<DataArray type=\"Float64\" Name=\"direct_force\" format=\"ascii\">");
+	for(i=0;i<vlist->n;i++){
+		fprintf(fh,"%.17e ",vtx[i]->f);
+	}
+	//polymeres
+	if(poly){
+		poly_idx=vlist->n;
+		for(i=0;i<vesicle->poly_list->n;i++){
+			for(j=0;j<vesicle->poly_list->poly[i]->vlist->n;j++,poly_idx++){
+				fprintf(fh,"%.17e ", vesicle->poly_list->poly[i]->vlist->vtx[j]->f);
+			}
+		}
+	}
+	//filaments
+	if(fil){
+		poly_idx=vlist->n+monono*polyno;
+		for(i=0;i<vesicle->filament_list->n;i++){
+			for(j=0;j<vesicle->filament_list->poly[i]->vlist->n;j++,poly_idx++){
+	//	fprintf(stderr,"was here\n");
+				fprintf(fh,"%.17e ",  vesicle->filament_list->poly[i]->vlist->vtx[j]->f);
+			}
+		}
+	}
+    fprintf(fh,"</DataArray>\n");
+
+    //adhesion_strength (ad_w)
+	fprintf(fh,"<DataArray type=\"Float64\" Name=\"adhesion_strength\" format=\"ascii\">");
+	for(i=0;i<vlist->n;i++){
+		fprintf(fh,"%.17e ",vtx[i]->ad_w);
+	}
+	//polymeres
+	if(poly){
+		poly_idx=vlist->n;
+		for(i=0;i<vesicle->poly_list->n;i++){
+			for(j=0;j<vesicle->poly_list->poly[i]->vlist->n;j++,poly_idx++){
+				fprintf(fh,"%.17e ", vesicle->poly_list->poly[i]->vlist->vtx[j]->ad_w);
+			}
+		}
+	}
+	//filaments
+	if(fil){
+		poly_idx=vlist->n+monono*polyno;
+		for(i=0;i<vesicle->filament_list->n;i++){
+			for(j=0;j<vesicle->filament_list->poly[i]->vlist->n;j++,poly_idx++){
+	//	fprintf(stderr,"was here\n");
+				fprintf(fh,"%.17e ",  vesicle->filament_list->poly[i]->vlist->vtx[j]->ad_w);
+			}
+		}
+	}
+    fprintf(fh,"</DataArray>\n");
+
+	//spontaneous_deviator (d)
+	fprintf(fh,"<DataArray type=\"Float64\" Name=\"spontaneous_deviator\" format=\"ascii\">");
+	for(i=0;i<vlist->n;i++){
+		fprintf(fh,"%.17e ",vtx[i]->d);
+	}
+	//polymeres
+	if(poly){
+		poly_idx=vlist->n;
+		for(i=0;i<vesicle->poly_list->n;i++){
+			for(j=0;j<vesicle->poly_list->poly[i]->vlist->n;j++,poly_idx++){
+				fprintf(fh,"%.17e ", vesicle->poly_list->poly[i]->vlist->vtx[j]->d);
+			}
+		}
+	}
+	//filaments
+	if(fil){
+		poly_idx=vlist->n+monono*polyno;
+		for(i=0;i<vesicle->filament_list->n;i++){
+			for(j=0;j<vesicle->filament_list->poly[i]->vlist->n;j++,poly_idx++){
+	//	fprintf(stderr,"was here\n");
+				fprintf(fh,"%.17e ",  vesicle->filament_list->poly[i]->vlist->vtx[j]->d);
+			}
+		}
+	}
     fprintf(fh,"</DataArray>\n");
 
 	//here comes additional data. Energy!
@@ -968,28 +1101,114 @@ ts_bool write_vertex_xml_file(ts_vesicle *vesicle, ts_uint timestepno, ts_cluste
 	for(i=0;i<vlist->n;i++){
 		fprintf(fh,"%.17e ",vtx[i]->energy*vtx[i]->xk);
 	}
-		//polymeres
-		if(poly){
-			poly_idx=vlist->n;
-			for(i=0;i<vesicle->poly_list->n;i++){
-				for(j=0;j<vesicle->poly_list->poly[i]->vlist->n;j++,poly_idx++){
-					fprintf(fh,"%.17e ", vesicle->poly_list->poly[i]->vlist->vtx[j]->energy* vesicle->poly_list->poly[i]->k);
-				}
+	//polymeres
+	if(poly){
+		poly_idx=vlist->n;
+		for(i=0;i<vesicle->poly_list->n;i++){
+			for(j=0;j<vesicle->poly_list->poly[i]->vlist->n;j++,poly_idx++){
+				fprintf(fh,"%.17e ", vesicle->poly_list->poly[i]->vlist->vtx[j]->energy* vesicle->poly_list->poly[i]->k);
 			}
 		}
-		//filaments
-		if(fil){
-			poly_idx=vlist->n+monono*polyno;
-			for(i=0;i<vesicle->filament_list->n;i++){
-				for(j=0;j<vesicle->filament_list->poly[i]->vlist->n;j++,poly_idx++){
-		//	fprintf(stderr,"was here\n");
-					fprintf(fh,"%.17e ",  vesicle->filament_list->poly[i]->vlist->vtx[j]->energy*  vesicle->filament_list->poly[i]->k);
-				}
+	}
+	//filaments
+	if(fil){
+		poly_idx=vlist->n+monono*polyno;
+		for(i=0;i<vesicle->filament_list->n;i++){
+			for(j=0;j<vesicle->filament_list->poly[i]->vlist->n;j++,poly_idx++){
+	//	fprintf(stderr,"was here\n");
+				fprintf(fh,"%.17e ",  vesicle->filament_list->poly[i]->vlist->vtx[j]->energy*  vesicle->filament_list->poly[i]->k);
 			}
 		}
+	}
     fprintf(fh,"</DataArray>\n");
 
-	
+	// Normals
+	fprintf(fh,"<DataArray type=\"Float64\" Name=\"normal\" NumberOfComponents=\"3\" format=\"ascii\">");
+	for(i=0;i<vlist->n;i++){
+		fprintf(fh,"%.17e %.17e %.17e\n",vtx[i]->nx, vtx[i]->ny, vtx[i]->nz);
+	}
+	//polymeres
+	if(poly){
+		poly_idx=vlist->n;
+		for(i=0;i<vesicle->poly_list->n;i++){
+			for(j=0;j<vesicle->poly_list->poly[i]->vlist->n;j++,poly_idx++){
+				fprintf(fh,"%.17e %.17e %.17e\n", vesicle->poly_list->poly[i]->vlist->vtx[j]->nx,
+                vesicle->poly_list->poly[i]->vlist->vtx[j]->ny, vesicle->poly_list->poly[i]->vlist->vtx[j]->nz);
+			}
+		}
+	}
+	//filaments
+	if(fil){
+		poly_idx=vlist->n+monono*polyno;
+		for(i=0;i<vesicle->filament_list->n;i++){
+			for(j=0;j<vesicle->filament_list->poly[i]->vlist->n;j++,poly_idx++){
+	//	fprintf(stderr,"was here\n");
+				fprintf(fh,"%.17e %.17e %.17e\n",  vesicle->filament_list->poly[i]->vlist->vtx[j]->nx,
+                vesicle->filament_list->poly[i]->vlist->vtx[j]->ny,vesicle->filament_list->poly[i]->vlist->vtx[j]->nz);
+			}
+		}
+	}
+    fprintf(fh,"</DataArray>\n");
+
+    // Vectors: force, director (currently has nothing)
+    //force
+	fprintf(fh,"<DataArray type=\"Float64\" Name=\"force\" NumberOfComponents=\"3\" format=\"ascii\">");
+	for(i=0;i<vlist->n;i++){
+		fprintf(fh,"%.17e %.17e %.17e\n",vtx[i]->fx, vtx[i]->fy, vtx[i]->fz);
+	}
+	//polymeres
+	if(poly){
+		poly_idx=vlist->n;
+		for(i=0;i<vesicle->poly_list->n;i++){
+			for(j=0;j<vesicle->poly_list->poly[i]->vlist->n;j++,poly_idx++){
+				fprintf(fh,"%.17e %.17e %.17e\n", vesicle->poly_list->poly[i]->vlist->vtx[j]->fx,
+                vesicle->poly_list->poly[i]->vlist->vtx[j]->fy, vesicle->poly_list->poly[i]->vlist->vtx[j]->fz);
+			}
+		}
+	}
+	//filaments
+	if(fil){
+		poly_idx=vlist->n+monono*polyno;
+		for(i=0;i<vesicle->filament_list->n;i++){
+			for(j=0;j<vesicle->filament_list->poly[i]->vlist->n;j++,poly_idx++){
+	//	fprintf(stderr,"was here\n");
+				fprintf(fh,"%.17e %.17e %.17e\n",  vesicle->filament_list->poly[i]->vlist->vtx[j]->fx,
+                vesicle->filament_list->poly[i]->vlist->vtx[j]->fy,vesicle->filament_list->poly[i]->vlist->vtx[j]->fz);
+			}
+		}
+	}
+    fprintf(fh,"</DataArray>\n");
+
+    //director
+    fprintf(fh,"<DataArray type=\"Float64\" Name=\"director\" NumberOfComponents=\"3\" format=\"ascii\">");
+	for(i=0;i<vlist->n;i++){
+		fprintf(fh,"%.17e %.17e %.17e\n",vtx[i]->tx, vtx[i]->ty, vtx[i]->tz);
+	}
+	//polymeres
+	if(poly){
+		poly_idx=vlist->n;
+		for(i=0;i<vesicle->poly_list->n;i++){
+			for(j=0;j<vesicle->poly_list->poly[i]->vlist->n;j++,poly_idx++){
+				fprintf(fh,"%.17e %.17e %.17e\n", vesicle->poly_list->poly[i]->vlist->vtx[j]->tx,
+                vesicle->poly_list->poly[i]->vlist->vtx[j]->ty, vesicle->poly_list->poly[i]->vlist->vtx[j]->tz);
+			}
+		}
+	}
+	//filaments
+	if(fil){
+		poly_idx=vlist->n+monono*polyno;
+		for(i=0;i<vesicle->filament_list->n;i++){
+			for(j=0;j<vesicle->filament_list->poly[i]->vlist->n;j++,poly_idx++){
+	//	fprintf(stderr,"was here\n");
+				fprintf(fh,"%.17e %.17e %.17e\n",  vesicle->filament_list->poly[i]->vlist->vtx[j]->tx,
+                vesicle->filament_list->poly[i]->vlist->vtx[j]->ty,vesicle->filament_list->poly[i]->vlist->vtx[j]->tz);
+			}
+		}
+	}
+    fprintf(fh,"</DataArray>\n");
+
+    //end point data: start of cell data
+
 	fprintf(fh,"</PointData>\n<CellData>\n");
 
 	if(vesicle->tape->stretchswitch==1){
