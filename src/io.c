@@ -182,7 +182,7 @@ ts_bool dump_state(ts_vesicle *vesicle, ts_uint iteration){
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 /** RESTORE DUMP FROM DISK **/
-ts_vesicle *restore_state(ts_uint *iteration){
+ts_vesicle *restore_state(ts_uint *iteration, ts_tape* tape){
     ts_uint i,j,k;
     FILE *fh=fopen(command_line_args.dump_fullfilename,"rb");
 
@@ -422,9 +422,9 @@ ts_vesicle *restore_state(ts_uint *iteration){
                 vesicle->filament_list->poly[i]->blist->bond[j]->vtx2=vesicle->filament_list->poly[i]->vlist->vtx[idx];
         }
     }
-    vesicle->tape=parsetape(command_line_args.tape_fullfilename);
+    //vesicle->tape=parsetape(command_line_args.tape_fullfilename); //done outside
 // recreating space for cells // 
-    vesicle->clist=init_cell_list(vesicle->tape->ncxmax, vesicle->tape->ncymax, vesicle->tape->nczmax, vesicle->tape->stepsize);
+    vesicle->clist=init_cell_list(tape->ncxmax, tape->ncymax, tape->nczmax, tape->stepsize);
 	vesicle->clist->max_occupancy=16;
 //    vesicle->tape=(ts_tape *)malloc(sizeof(ts_tape));
 //    retval=fread(vesicle->tape, sizeof(ts_tape),1,fh);
@@ -1397,7 +1397,6 @@ ts_tape *parsetape(char *filename){
     // fix the tape that is recorded to the .vtu
     // with the new command line arguments
     update_tapetxt(tapetxt, command_line_args.tape_opts);
-    fprintf(stdout,tapetxt,100);
 	ts_tape *tape=parsetapebuffer(tapetxt);
 	return tape;
 }

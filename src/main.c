@@ -78,20 +78,19 @@ int main(int argv, char *argc[]){
 		ts_fprintf(stdout,"**** Recreating vesicle from dump file and continuing simulation *****\n");
 		ts_fprintf(stdout,"**********************************************************************\n\n");
 		tape=parsetape(command_line_args.tape_fullfilename);
-		vesicle=restore_state(&start_iteration);
+		vesicle=restore_state(&start_iteration, tape);
         if(vesicle==NULL){
             ts_fprintf(stderr, "Dump file does not exist or is not a regular file! Did you mean to invoke trisurf with --force-from-tape option?\n\n");
             return 1;
         }
 		// nove vrednosti iz tapea...
+		vesicle->tape=tape;
 		vesicle->bending_rigidity=tape->xk0;
 		vtx_set_global_values(vesicle);
 		vesicle->pswitch =tape->pswitch;
 		vesicle->pressure=tape->pressure;
 		vesicle->dmax=tape->dmax*tape->dmax;
 		poly_assign_filament_xi(vesicle,tape);
-        free(vesicle->tape);
-        vesicle->tape=tape;
 		vesicle->clist->dmin_interspecies = tape->dmin_interspecies*tape->dmin_interspecies;
 
 
