@@ -451,7 +451,7 @@ ts_bool parse_args(int argc, char **argv){
             {
                 {"force-from-tape", no_argument, &(command_line_args.force_from_tape), 1},
                 {"reset-iteration-count", no_argument, &(command_line_args.reset_iteration_count), 1},
-                {"tape", no_argument, 0, 't'},
+                {"tape", required_argument, 0, 't'},
                 {"version", no_argument, 0, 'v'},
                 {"output-file", required_argument, 0, 'o'},
                 {"directory", required_argument, 0, 'd'},
@@ -464,7 +464,7 @@ ts_bool parse_args(int argc, char **argv){
         /* getopt_long stores the option index here. */
         int option_index = 0;
 
-        c = getopt_long(argc, argv, "d:f:o:t:c:r:v",
+        c = getopt_long(argc, argv, "d:f:o:c:t:r:v",
                         long_options, &option_index);
 
         /* Detect the end of the options. */
@@ -1397,7 +1397,7 @@ ts_tape *parsetape(char *filename){
     // fix the tape that is recorded to the .vtu
     // with the new command line arguments
     update_tapetxt(tapetxt, command_line_args.tape_opts);
-
+    fprintf(stdout,tapetxt,100);
 	ts_tape *tape=parsetapebuffer(tapetxt);
 	return tape;
 }
