@@ -51,6 +51,12 @@ ts_spharm *complex_sph_init(ts_vertex_list *vlist, ts_uint l){
 
     sph->l=l;   
 
+
+    // move the vertex stuff to sph: doesn't need for every mc step
+    sph->n_vtx=vlist->n;
+    sph->vtx_relR=(ts_double *)calloc(sph->n_vtx,sizeof(ts_double));
+    sph->vtx_solAngle=(ts_double *)calloc(sph->n_vtx,sizeof(ts_double));
+
     /* Calculate coefficients that will remain constant during all the simulation */ 
    precomputeShCoeff(sph);
     
@@ -82,7 +88,8 @@ ts_bool complex_sph_free(ts_spharm *sph){
             }
             free(sph->Ylmi);
         }
-
+    free(sph->vtx_solAngle);
+    free(sph->vtx_relR);
     free(sph);
     return TS_SUCCESS;
 }
@@ -92,6 +99,7 @@ ts_bool calculateUlmComplex(ts_vesicle *vesicle){
     ts_int i,j,k,m,l;
     ts_vertex *cvtx;
     ts_coord coord;
+    ts_double solAngle_x_relR;
 /* set all values to zero */
     for(i=0;i<vesicle->sphHarmonics->l;i++){
         for(j=0;j<2*i+1;j++) GSL_SET_COMPLEX(&(vesicle->sphHarmonics->ulmComplex[i][j]),0.0,0.0);
@@ -99,19 +107,19 @@ ts_bool calculateUlmComplex(ts_vesicle *vesicle){
 
     for(k=0;k<vesicle->vlist->n; k++){
         cvtx=vesicle->vlist->vtx[k];
-	cart2sph(&coord,cvtx->x,cvtx->y,cvtx->z);
+	    cart2sph(&coord,cvtx->x,cvtx->y,cvtx->z);
+        solAngle_x_relR = vesicle->sphHarmonics->vtx_solAngle[k]*vesicle->sphHarmonics->vtx_relR[k];
         for(i=0;i<vesicle->sphHarmonics->l;i++){
             for(j=0;j<2*i+1;j++){
-		m=j-i;
-		l=i;
-		if(m>=0){	
-	//	fprintf(stderr, "Racunam za l=%d, m=%d\n", l,m);
-                vesicle->sphHarmonics->ulmComplex[i][j]=gsl_complex_add(vesicle->sphHarmonics->ulmComplex[i][j], gsl_complex_conjugate(gsl_complex_mul_real(gsl_complex_polar(1.0,(ts_double)m*coord.e2),cvtx->solAngle*cvtx->relR*gsl_sf_legendre_sphPlm(l,m,cos(coord.e3)))) );
-		} else {
-	//	fprintf(stderr, "Racunam za l=%d, abs(m=%d)\n", l,m);
-                vesicle->sphHarmonics->ulmComplex[i][j]=gsl_complex_add(vesicle->sphHarmonics->ulmComplex[i][j], gsl_complex_conjugate(gsl_complex_mul_real(gsl_complex_polar(1.0,(ts_double)m*coord.e2),cvtx->solAngle*cvtx->relR*pow(-1,m)*gsl_sf_legendre_sphPlm(l,-m,cos(coord.e3)))) );
-
-		}
+		        m=j-i;
+		        l=i;
+		        if(m>=0){	
+	            //	fprintf(stderr, "Racunam za l=%d, m=%d\n", l,m);
+                    vesicle->sphHarmonics->ulmComplex[i][j]=gsl_complex_add(vesicle->sphHarmonics->ulmComplex[i][j], gsl_complex_conjugate(gsl_complex_mul_real(gsl_complex_polar(1.0,(ts_double)m*coord.e2),solAngle_x_relR*gsl_sf_legendre_sphPlm(l,m,cos(coord.e3)))) );
+		        } else {
+	            //	fprintf(stderr, "Racunam za l=%d, abs(m=%d)\n", l,m);
+                    vesicle->sphHarmonics->ulmComplex[i][j]=gsl_complex_add(vesicle->sphHarmonics->ulmComplex[i][j], gsl_complex_conjugate(gsl_complex_mul_real(gsl_complex_polar(1.0,(ts_double)m*coord.e2),solAngle_x_relR*pow(-1,m)*gsl_sf_legendre_sphPlm(l,-m,cos(coord.e3)))) );
+		        }
             }
         }
     }

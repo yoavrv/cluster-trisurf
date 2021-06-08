@@ -42,8 +42,13 @@ ts_spharm *sph_init(ts_vertex_list *vlist, ts_uint l){
 
     sph->l=l;   
 
+    // move the vertex stuff to sph: doesn't need for every mc step
+    sph->n_vtx=vlist->n;
+    sph->vtx_relR=(ts_double *)calloc(sph->n_vtx,sizeof(ts_double));
+    sph->vtx_solAngle=(ts_double *)calloc(sph->n_vtx,sizeof(ts_double));
+
     /* Calculate coefficients that will remain constant during all the simulation */ 
-   precomputeShCoeff(sph);
+    precomputeShCoeff(sph);
     
     return sph;
 }
@@ -72,7 +77,8 @@ ts_bool sph_free(ts_spharm *sph){
             }
             free(sph->Ylmi);
         }
-
+    free(sph->vtx_solAngle);
+    free(sph->vtx_relR);
     free(sph);
     return TS_SUCCESS;
 }
@@ -301,8 +307,8 @@ ts_bool preparationSh(ts_vesicle *vesicle, ts_double r0){
 #ifdef TS_DOUBLE_LONGDOUBLE
     r=sqrtl(cvtx->x*cvtx->x+cvtx->y*cvtx->y+cvtx->z*cvtx->z);
 #endif
-    cvtx->relR=(r-r0)/r0;
-    cvtx->solAngle=projArea/r/r;
+    vesicle->sphHarmonics->vtx_relR[i]=(r-r0)/r0;
+    vesicle->sphHarmonics->vtx_solAngle[i]=projArea/r/r;
     }
     return TS_SUCCESS;
 }
@@ -362,7 +368,7 @@ ts_bool calculateYlmi(ts_vesicle *vesicle){
 
 ts_bool calculateUlm(ts_vesicle *vesicle){
     ts_uint i,j,k;
-    ts_vertex *cvtx;
+    ts_double solAngle_x_relR;
     for(i=0;i<vesicle->sphHarmonics->l;i++){
         for(j=0;j<2*i+1;j++) vesicle->sphHarmonics->ulm[i][j]=0.0;
     }
@@ -371,10 +377,10 @@ ts_bool calculateUlm(ts_vesicle *vesicle){
 
 
     for(k=0;k<vesicle->vlist->n; k++){
-        cvtx=vesicle->vlist->vtx[k];
+        solAngle_x_relR = vesicle->sphHarmonics->vtx_solAngle[k]*vesicle->sphHarmonics->vtx_relR[k];
         for(i=0;i<vesicle->sphHarmonics->l;i++){
             for(j=0;j<2*i+1;j++){
-                vesicle->sphHarmonics->ulm[i][j]+= cvtx->solAngle*cvtx->relR*vesicle->sphHarmonics->Ylmi[i][j][k];
+                vesicle->sphHarmonics->ulm[i][j]+= solAngle_x_relR*vesicle->sphHarmonics->Ylmi[i][j][k];
             }
 
         }

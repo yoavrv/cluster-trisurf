@@ -155,8 +155,6 @@ struct ts_vertex {
 		ts_double tx; // director vector
 		ts_double ty;
 		ts_double tz;
-        ts_double relR;
-        ts_double solAngle;
 		struct ts_vertex **neigh; /**< The pointer that holds neigh_no pointers to this structure. */
 		struct ts_triangle **tristar; /**< The list of triangles this vertex belongs to. This is an array of pointers to ts_triangle structure of tristar_no length */
         struct ts_bond **bond; /**< Array of pointers of lenght bond_no that stores information on bonds. */
@@ -254,7 +252,10 @@ typedef struct ts_cell_list{
 
 
 typedef struct {
+	ts_double *vtx_relR;
+	ts_double* vtx_solAngle;
     ts_uint l;
+	ts_uint n_vtx;
     ts_double **ulm;
     gsl_complex **ulmComplex;
     ts_double **sumUlm2;
