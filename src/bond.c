@@ -29,7 +29,6 @@ ts_bond  *bond_add(ts_bond_list *blist, ts_vertex *vtx1, ts_vertex *vtx2){
 	//NOW insert vertices into data!	
 	blist->bond[blist->n - 1]->vtx1=vtx1;	
 	blist->bond[blist->n - 1]->vtx2=vtx2;
-	blist->bond[blist->n - 1]->tainted=0;
 	blist->bond[blist->n - 1]->idx=blist->n-1;
     //Should we calculate bond length NOW?
 	

@@ -617,7 +617,7 @@ ts_bool print_help(FILE *fd){
 	fprintf(fd,"However, if dump.bin is not present, user is notified to specify --force-from-tape flag. The vesicle will be created from specifications in tape.\n\n\n");
 	fprintf(fd,"Flags:\n\n");
 	fprintf(fd,"--force-from-tape\t\t makes initial shape of the vesicle from tape. Ignores already existing binary dump and possible simulation results.\n");
-	fprintf(fd,"--restore-from-vtk\t\t VTK's file ending with '.vtu' are preferred way to make state snapshots for restoration. With this flag the restoration of the vesicle from vtk is possible. The simulation will continue if hidden '.status' file with last iteration done is present. Otherwise it will start simulation from timestep 0.\n");
+	fprintf(fd,"--restore-from-vtk (or -r)\t\t VTK's file ending with '.vtu' are preferred way to make state snapshots for restoration. With this flag the restoration of the vesicle from vtk is possible. The simulation will continue if hidden '.status' file with last iteration done is present. Otherwise it will start simulation from timestep 0.\n");
 	fprintf(fd,"--reset-iteration-count\t\t starts simulation from the beginning (using binary dump).\n");
 	fprintf(fd,"--tape (or -t)\t\t specifies tape filename. For --force-from-tape and restoring from binary dump. Defaults to 'tape'.\n");
 	fprintf(fd,"--version (or -v)\t\t Prints version information.\n");
@@ -729,12 +729,9 @@ tlist->tria[i]->ynorm,tlist->tria[i]->znorm);
 ts_bool fprint_vertex_data(FILE *fh,ts_vertex_list *vlist){
     ts_uint i,j;
     for(i=0;i<vlist->n;i++){
-        fprintf(fh," %.17E\t%.17E\t%.17E\t%.17E\t%.17E\t%u\n",
+        fprintf(fh," %.17E\t%.17E\t%.17E\t%.17E\t%u\n",
         vlist->vtx[i]->xk,vlist->vtx[i]->c,vlist->vtx[i]->energy,
-        vlist->vtx[i]->energy_h, vlist->vtx[i]->curvature, 0);
-        for(j=0;j<vlist->vtx[i]->bond_no;j++){
-            fprintf(fh," %.17E", vlist->vtx[i]->bond[j]->bond_length_dual);
-        }
+        vlist->vtx[i]->curvature, 0);
             fprintf(fh,"\n");
         for(j=0;j<vlist->vtx[i]->bond_no;j++){
             fprintf(fh," %.17E", vlist->vtx[i]->bond[j]->bond_length);
@@ -1408,48 +1405,49 @@ ts_tape *parsetapebuffer(char *buffer){
     tape->multiprocessing=calloc(255,sizeof(char));
     
     cfg_opt_t opts[] = {
-        CFG_SIMPLE_INT("nshell", &tape->nshell),
-        CFG_SIMPLE_INT("npoly", &tape->npoly),
-        CFG_SIMPLE_INT("nmono", &tape->nmono),
-        CFG_SIMPLE_INT("nfil",&tape->nfil),
-        CFG_SIMPLE_INT("nfono",&tape->nfono),
-        CFG_SIMPLE_INT("internal_poly",&tape->internal_poly),
-        CFG_SIMPLE_INT("R_nucleus",&tape->R_nucleus),
-        CFG_SIMPLE_FLOAT("R_nucleusX",&tape->R_nucleusX),
-        CFG_SIMPLE_FLOAT("R_nucleusY",&tape->R_nucleusY),
-        CFG_SIMPLE_FLOAT("R_nucleusZ",&tape->R_nucleusZ),
-        CFG_SIMPLE_FLOAT("dmax", &tape->dmax),
-        CFG_SIMPLE_FLOAT("dmin_interspecies", &tape->dmin_interspecies),
-        CFG_SIMPLE_FLOAT("xk0",&tape->xk0),
-	    CFG_SIMPLE_INT("pswitch",&tape->pswitch),
-        CFG_SIMPLE_INT("constvolswitch",&tape->constvolswitch),
-        CFG_SIMPLE_INT("constareaswitch",&tape->constareaswitch),
-        CFG_SIMPLE_FLOAT("constvolprecision",&tape->constvolprecision),
-        CFG_SIMPLE_INT("stretchswitch",&tape->stretchswitch),
-        CFG_SIMPLE_FLOAT("xkA0",&tape->xkA0),	
-        CFG_SIMPLE_FLOAT("pressure",&tape->pressure),
-        CFG_SIMPLE_FLOAT("k_spring",&tape->kspring),
-        CFG_SIMPLE_FLOAT("xi",&tape->xi),
-        CFG_SIMPLE_FLOAT("stepsize",&tape->stepsize),
-        CFG_SIMPLE_INT("nxmax", &tape->ncxmax),
-        CFG_SIMPLE_INT("nymax", &tape->ncymax),
-        CFG_SIMPLE_INT("nzmax", &tape->nczmax),
-        CFG_SIMPLE_INT("iterations",&tape->iterations),
-        CFG_SIMPLE_INT("mcsweeps",&tape->mcsweeps),
-        CFG_SIMPLE_INT("inititer", &tape->inititer),
+        CFG_INT("nshell", 0, CFGF_NONE),
+        CFG_INT("npoly", 0, CFGF_NONE),
+        CFG_INT("nmono", 0, CFGF_NONE),
+        CFG_INT("nfil", 0, CFGF_NONE),
+        CFG_INT("nfono", 0, CFGF_NONE),
+        CFG_INT("internal_poly", 0, CFGF_NONE),
+        CFG_FLOAT("R_nucleus", 0, CFGF_NONE),
+        CFG_FLOAT("R_nucleusX", 0, CFGF_NONE),
+        CFG_FLOAT("R_nucleusY", 0, CFGF_NONE),
+        CFG_FLOAT("R_nucleusZ", 0, CFGF_NONE),
+        CFG_FLOAT("dmax", 1.7, CFGF_NONE),
+        CFG_FLOAT("dmin_interspecies", 1.2, CFGF_NONE),
+        CFG_FLOAT("xk0", 20, CFGF_NONE),
+        CFG_INT("pswitch", 0, CFGF_NONE),
+        CFG_INT("constvolswitch", 0, CFGF_NONE),
+        CFG_INT("constareaswitch", 0, CFGF_NONE),
+        CFG_FLOAT("constvolprecision", 0, CFGF_NONE),
+        CFG_INT("stretchswitch", 0, CFGF_NONE),
+        CFG_FLOAT("xkA0", 1.0, CFGF_NONE),
+        CFG_FLOAT("pressure", 0, CFGF_NONE),
+        CFG_FLOAT("k_spring", 800, CFGF_NONE),
+        CFG_FLOAT("xi", 100, CFGF_NONE),
+        CFG_FLOAT("stepsize", 0.15, CFGF_NONE),
+        CFG_INT("nxmax", 100, CFGF_NONE),
+        CFG_INT("nymax", 100, CFGF_NONE),
+        CFG_INT("nzmax", 100, CFGF_NONE),
+        CFG_INT("iterations", 100, CFGF_NONE),
+        CFG_INT("mcsweeps", 200000, CFGF_NONE),
+        CFG_INT("inititer", 0, CFGF_NONE),
         CFG_SIMPLE_BOOL("quiet",(cfg_bool_t *)&tape->quiet),
         CFG_SIMPLE_STR("multiprocessing",&tape->multiprocessing),
-        CFG_SIMPLE_INT("smp_cores",&tape->brezveze0),
-        CFG_SIMPLE_INT("cluster_nodes",&tape->brezveze1),
-        CFG_SIMPLE_INT("distributed_processes",&tape->brezveze2),
-        CFG_SIMPLE_INT("spherical_harmonics_coefficients",&tape->shc),
-        CFG_SIMPLE_INT("number_of_vertices_with_c0", &tape->number_of_vertices_with_c0),
-        CFG_SIMPLE_INT("type_of_adhesion_model", &tape->type_of_adhesion_model),
-        CFG_SIMPLE_INT("allow_xy_plane_movement", &tape->allow_xy_plane_movement),
-        CFG_SIMPLE_INT("force_balance_along_z_axis", &tape->force_balance_along_z_axis),
-        CFG_SIMPLE_FLOAT("c0",&tape->c0),
-        CFG_SIMPLE_FLOAT("w",&tape->w),
-        CFG_SIMPLE_FLOAT("F",&tape->F),
+        //CFG_SIMPLE_INT("smp_cores",&tape->brezveze0),
+        //CFG_SIMPLE_INT("cluster_nodes",&tape->brezveze1),
+        //CFG_SIMPLE_INT("distributed_processes",&tape->brezveze2),
+        CFG_INT("spherical_harmonics_coefficients", 0, CFGF_NONE),
+        CFG_INT("number_of_vertices_with_c0", 50, CFGF_NONE),
+        CFG_INT("type_of_adhesion_model", 1, CFGF_NONE),
+        CFG_INT("allow_xy_plane_movement", 0, CFGF_NONE),
+        CFG_INT("force_balance_along_z_axis", 0, CFGF_NONE),
+        //CFG_SIMPLE_INT("spherical_harmonics_coefficients",&tape->shc),
+        CFG_FLOAT("c0", 0.5, CFGF_NONE),
+        CFG_FLOAT("w", 1.5, CFGF_NONE),
+        CFG_FLOAT("F", 0.7, CFGF_NONE),
 /* Variables related to plane confinement */
         CFG_INT("plane_confinement_switch", 0, CFGF_NONE),
         CFG_FLOAT("plane_d", 15, CFGF_NONE),
@@ -1473,8 +1471,46 @@ ts_tape *parsetapebuffer(char *buffer){
     };
     cfg_t *cfg;    
     ts_uint retval;
-    cfg = cfg_init(opts, 0); //consider using CFGFG_IGNORE_UNKNOWN
+    cfg = cfg_init(opts, CFGF_IGNORE_UNKNOWN); //consider using CFGF_IGNORE_UNKNOWN
     retval = cfg_parse_buf(cfg, buffer);
+    tape->nshell = cfg_getint(cfg,"nshell");
+    tape->npoly = cfg_getint(cfg,"npoly");
+    tape->nmono = cfg_getint(cfg,"nmono");
+    tape->nfil = cfg_getint(cfg,"nfil");
+    tape->nshell = cfg_getint(cfg,"nshell");
+    tape->nfono = cfg_getint(cfg,"nfono");
+    tape->internal_poly = cfg_getint(cfg,"internal_poly");
+    tape->R_nucleus = cfg_getfloat(cfg,"R_nucleus");
+    tape->R_nucleusX = cfg_getfloat(cfg,"R_nucleusX");
+    tape->R_nucleusY = cfg_getfloat(cfg,"R_nucleusY");
+    tape->R_nucleusZ = cfg_getfloat(cfg,"R_nucleusZ");
+    tape->dmax = cfg_getfloat(cfg,"dmax");
+    tape->dmin_interspecies = cfg_getfloat(cfg,"dmin_interspecies");
+    tape->xk0 = cfg_getfloat(cfg,"xk0");
+    tape->pswitch = cfg_getint(cfg,"pswitch");
+    tape->constvolswitch = cfg_getint(cfg,"constvolswitch");
+    tape->constareaswitch = cfg_getint(cfg,"constareaswitch");
+    tape->constvolprecision = cfg_getfloat(cfg,"constvolprecision");
+    tape->stretchswitch = cfg_getint(cfg,"stretchswitch");
+    tape->xkA0 = cfg_getfloat(cfg,"xkA0");
+    tape->pressure = cfg_getfloat(cfg,"pressure");
+    tape->kspring = cfg_getfloat(cfg,"k_spring");
+    tape->xi = cfg_getfloat(cfg,"xi");
+    tape->stepsize = cfg_getfloat(cfg,"stepsize");
+    tape->ncxmax = cfg_getint(cfg,"nxmax");
+    tape->ncymax = cfg_getint(cfg,"nymax");
+    tape->nczmax = cfg_getint(cfg,"nzmax");
+    tape->iterations = cfg_getint(cfg,"iterations");
+    tape->mcsweeps = cfg_getint(cfg,"mcsweeps");
+    tape->inititer = cfg_getint(cfg,"inititer");  
+    tape->shc = cfg_getint(cfg,"spherical_harmonics_coefficients");
+    tape->number_of_vertices_with_c0 = cfg_getint(cfg,"number_of_vertices_with_c0");
+    tape->type_of_adhesion_model = cfg_getint(cfg,"type_of_adhesion_model");
+    tape->allow_xy_plane_movement = cfg_getint(cfg,"allow_xy_plane_movement");
+    tape->force_balance_along_z_axis = cfg_getint(cfg,"force_balance_along_z_axis");
+    tape->c0 = cfg_getfloat(cfg,"c0");
+    tape->w = cfg_getfloat(cfg,"w");
+    tape->F = cfg_getfloat(cfg,"F");
     tape->plane_confinement_switch = cfg_getint(cfg, "plane_confinement_switch");
     tape->plane_d = cfg_getfloat(cfg, "plane_d");
     tape->plane_F = cfg_getfloat(cfg, "plane_F");

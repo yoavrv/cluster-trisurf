@@ -134,36 +134,13 @@ typedef struct {
  *  ts_vertex holds the data for one single point (bead, vertex). To understand how to use it
  *  here is a detailed description of the fields in the data structure. */
 struct ts_vertex {
-        ts_uint idx;
-        ts_double x; /**< The x coordinate of vertex. */
+		ts_double x; /**< The x coordinate of vertex. */
         ts_double y; /**< The y coordinate of vertex. */
         ts_double z; /**< The z coordinate of vertex. */
-        ts_uint neigh_no; /**< The number of neighbours. */
-        struct ts_vertex **neigh; /**< The pointer that holds neigh_no pointers to this structure. */
-        ts_double *bond_length; /**< Obsolete! The bond lenght is moved to ts_bond */
-        ts_double *bond_length_dual; /**< Obsolete! Bond length in dual lattice is moved to ts_bond! */
         ts_double curvature;
         ts_double energy;
-        ts_double energy_h;
-        ts_uint tristar_no;
-        struct ts_triangle **tristar; /**< The list of triangles this vertex belongs to. This is an array of pointers to ts_triangle structure of tristar_no length */
-        ts_uint bond_no;
-        struct ts_bond **bond; /**< Array of pointers of lenght bond_no that stores information on bonds. */
-        struct ts_cell *cell; /**< Which cell do we belong to? */
-        ts_double xk;
-        ts_uint id;
-        ts_double projArea;
-        ts_double relR;
-        ts_double solAngle;
-		struct ts_poly *grafted_poly;
-		struct ts_cluster *cluster;
-		// new stuff
-
-		/* 1st bit: bonds, 2nd bit: active, 
-		3rd bit: adhesive, 4th bit: anisotropic, 
-		5th bit: reserved, 6th bit: vicsek 
-		7th bit: reserved, 8th bit: reserved*/
-		ts_bool type; 
+        //ts_double energy_h;
+        ts_double xk; //bending rigidity
 		ts_double w;
 		ts_double c;
 		ts_double nx; // normal vector
@@ -178,6 +155,24 @@ struct ts_vertex {
 		ts_double tx; // director vector
 		ts_double ty;
 		ts_double tz;
+        ts_double relR;
+        ts_double solAngle;
+		struct ts_vertex **neigh; /**< The pointer that holds neigh_no pointers to this structure. */
+		struct ts_triangle **tristar; /**< The list of triangles this vertex belongs to. This is an array of pointers to ts_triangle structure of tristar_no length */
+        struct ts_bond **bond; /**< Array of pointers of lenght bond_no that stores information on bonds. */
+        struct ts_cell *cell; /**< Which cell do we belong to? */
+		struct ts_poly *grafted_poly;
+		struct ts_cluster *cluster;
+		ts_uint idx; //vertex index
+		ts_uint id;	 //filament index
+		ts_uint neigh_no; /**< The number of neighbours. */
+		ts_uint tristar_no; //number of triangle-neighbors
+		ts_uint bond_no;
+		/* 1st bit: bonds, 2nd bit: active, 
+		3rd bit: adhesive, 4th bit: anisotropic, 
+		5th bit: reserved, 6th bit: vicsek 
+		7th bit: reserved, 8th bit: reserved*/
+		ts_bool type; 
 
 		// apparently using a bool for the type flag does nothing, but I don't want to reserve 
 		// flags for all 32 bytes of an int
@@ -198,65 +193,63 @@ enum vertex_type {
 typedef struct ts_vertex ts_vertex;
 
 typedef struct {
-    ts_uint n;
     ts_vertex **vtx;
+	ts_uint n;
 
 } ts_vertex_list;
 
 struct ts_bond {
-    	ts_uint idx;
-	ts_vertex *vtx1;
-	ts_vertex *vtx2;
-    	ts_double bond_length;
-    	ts_double bond_length_dual;
-	ts_bool tainted; //TODO: remove
+    ts_double bond_length;
 	ts_double energy;
 	ts_double x,y,z;
+	ts_vertex *vtx1;
+	ts_vertex *vtx2;
+	ts_uint idx;
 };
 typedef struct ts_bond ts_bond;
 
 struct ts_bond_list {
-    ts_uint n;
     ts_bond **bond;
+	ts_uint n;
 };
 typedef struct ts_bond_list ts_bond_list;
 
 struct ts_triangle {
-    ts_uint idx;
-	ts_vertex *vertex[3];
-	ts_uint neigh_no;
-	struct ts_triangle **neigh;
 	ts_double xnorm;
 	ts_double ynorm;
 	ts_double znorm;
     ts_double area; // firstly needed for sh.c
     ts_double volume; // firstly needed for sh.c
 	ts_double energy;
+	ts_vertex *vertex[3];
+	struct ts_triangle **neigh;
+	ts_uint idx;
+	ts_uint neigh_no;
 };
 typedef struct ts_triangle ts_triangle;
 
 struct ts_triangle_list{
-    ts_uint n;
 	ts_double a0;
-    ts_triangle **tria;
+	ts_triangle **tria;
+	ts_uint n;
 };
 typedef struct ts_triangle_list ts_triangle_list;
 
 
 typedef struct ts_cell {
-    ts_uint idx;
     ts_vertex **vertex;
-    ts_uint nvertex;
+	ts_uint idx;
+	ts_uint nvertex;
 } ts_cell; 
 
 typedef struct ts_cell_list{
-    ts_uint ncmax[3];
-    ts_uint cellno;
-    ts_cell **cell;
     ts_double dcell;
     ts_double shift;
-    ts_uint max_occupancy;
 	ts_double dmin_interspecies;
+	ts_cell **cell;
+	ts_uint ncmax[3];
+    ts_uint cellno;
+	ts_uint max_occupancy;
 } ts_cell_list;
 
 
@@ -273,17 +266,17 @@ typedef struct {
 
 
 struct ts_poly {
+	ts_double k;
 	ts_vertex_list *vlist;
 	ts_bond_list *blist;
 	ts_vertex *grafted_vtx;
-	ts_double k;
 };
 typedef struct ts_poly ts_poly;
 
 
 struct ts_poly_list {
-	ts_uint	n;
 	ts_poly **poly;
+	ts_uint	n;
 };
 typedef struct ts_poly_list ts_poly_list;
 
@@ -291,135 +284,134 @@ typedef struct ts_poly_list ts_poly_list;
 typedef struct{
 	ts_float z_max;
 	ts_float z_min;
-	ts_int force_switch;
+	ts_bool force_switch;
 } ts_confinement_plane;
 
 
 typedef struct {
-	long int nshell;
-	long int ncxmax;
-	long int ncymax;
-	long int nczmax;
-	long int npoly;
-	long int nmono;
-	long int internal_poly;
-	long int nfil;
-	long int nfono;
-	long int R_nucleus;
+	ts_double R_nucleus;
 	ts_double R_nucleusX;
 	ts_double R_nucleusY;
 	ts_double R_nucleusZ;
-	long int pswitch;
-    long int constvolswitch;
-    long int constareaswitch;
-	long int stretchswitch;
 	ts_double xkA0;
     ts_double constvolprecision;
-    	char *multiprocessing;
-   	long int brezveze0;
-    	long int brezveze1;
-    	long int brezveze2;
-    	ts_double xk0;
+    ts_double xk0;
 	ts_double dmax;
 	ts_double dmin_interspecies;
 	ts_double stepsize;
 	ts_double kspring;
 	ts_double xi;
 	ts_double pressure;
-	long int iterations;
-	long int inititer;
-	long int mcsweeps;
-	long int quiet;
-	long int shc;
-	long int number_of_vertices_with_c0;
 	ts_double c0;
 	ts_double w;
 	ts_double F;
-	long int plane_confinement_switch;
 	ts_double plane_d;
 	ts_double plane_F;
 	ts_double vicsek_model;
 	ts_double vicsek_strength;
 	ts_double vicsek_radius;
-	long int type_of_adhesion_model;
-	long int allow_xy_plane_movement;
-	long int force_balance_along_z_axis;
-	long int adhesion_switch;
 	ts_double adhesion_cuttoff;
 	ts_double adhesion_strength;
 	ts_double z_adhesion;
 	ts_double adhesion_radius;
+	//  long int brezveze0;
+    //	long int brezveze1;
+    //	long int brezveze2;
+	long int iterations;
+	long int mcsweeps;
 	ts_ulong random_seed;
+	ts_int inititer;
+	ts_uint number_of_vertices_with_c0;
+	ts_int nshell;
+	ts_int ncxmax;
+	ts_int ncymax;
+	ts_int nczmax;
+	ts_int npoly;
+	ts_int nmono;
+	ts_int internal_poly;
+	ts_int nfil;
+	ts_int nfono;
+	ts_int shc;
+	ts_bool pswitch;
+    ts_bool constvolswitch;
+    ts_bool constareaswitch;
+	ts_bool stretchswitch;
+	ts_bool quiet;
+	ts_bool plane_confinement_switch;
+	ts_bool type_of_adhesion_model;
+	ts_bool allow_xy_plane_movement;
+	ts_bool force_balance_along_z_axis;
+	ts_bool adhesion_switch;
+	char *multiprocessing;
 } ts_tape;
 
 
 
 
 typedef struct {
-	ts_vertex_list *vlist;
-	ts_bond_list *blist;
-	ts_triangle_list *tlist;
-	ts_cell_list *clist;
-	ts_uint nshell;
 	ts_double bending_rigidity;
 	ts_double dmax;
 	ts_double stepsize;
    	ts_double cm[3];
 	ts_double volume;
-	ts_spharm *sphHarmonics;
-// Polymers outside the vesicle and attached to the vesicle membrane (polymer brush):
-	ts_poly_list *poly_list;
-// Filaments inside the vesicle (not attached to the vesicel membrane:
-	ts_poly_list *filament_list;
-
 	ts_double spring_constant;
 	ts_double pressure;
-	ts_int pswitch;
- 	ts_tape *tape;
 	ts_double R_nucleus;
 	ts_double R_nucleusX;
 	ts_double R_nucleusY;
 	ts_double R_nucleusZ;
 	ts_double nucleus_center[3];
 	ts_double area;
-	ts_confinement_plane confinement_plane;
 	ts_double adhesion_center;
+	ts_tape *tape;
+	ts_spharm *sphHarmonics;
+	// Polymers outside the vesicle and attached to the vesicle membrane (polymer brush):
+	ts_poly_list *poly_list;
+	// Filaments inside the vesicle (not attached to the vesicel membrane:
+	ts_poly_list *filament_list;
+	ts_vertex_list *vlist;
+	ts_bond_list *blist;
+	ts_triangle_list *tlist;
+	ts_cell_list *clist;
+	ts_confinement_plane confinement_plane;
+	ts_uint nshell;
+	ts_bool pswitch;
 } ts_vesicle;
 
 
 
 struct ts_cluster{
+	ts_vertex **vtx;
 	ts_uint nvtx;
 	ts_uint idx;
-	ts_vertex **vtx;
 };
 
 typedef struct ts_cluster ts_cluster;
 
 typedef struct{
-	ts_uint n;
 	ts_cluster **cluster;
+	ts_uint n;
 } ts_cluster_list;
 
+// list of "seen" vertex for layer-based breadth-first search
+// a vertex list, with 4 locations: 
+// * n_top, the top of the list, where new vertices are added
+// * n_next, first vertex of the layer under construction
+// * n_curr, first vertex of the last completed layer, used to construct the next
+// * n_prev, first vertex of the completed layer before the current one
+// notice! seen_vertex->vtx[seen_vertex->n_top] is NEVER a valid vertex
 typedef struct {
-	// list of "seen" vertex for layer-based breadth-first search
-    // a vertex list, with 4 locations: 
-    // * n_top, the top of the list, where new vertices are added
-    // * n_next, first vertex of the layer under construction
-    // * n_curr, first vertex of the last completed layer, used to construct the next
-    // * n_prev, first vertex of the completed layer before the current one
-	// notice! seen_vertex->vtx[seen_vertex->n_top] is NEVER a valid vertex
+	ts_vertex **vtx;
 	ts_uint n_prev;
 	ts_uint n_curr;
 	ts_uint n_next;
 	ts_uint n_top;
 	ts_uint size;
-	ts_vertex **vtx;
 } ts_seen_vertex;
 
 /* GLOBAL VARIABLES */
 
-int quiet;
+ts_bool quiet;
 ts_double V0;
 ts_double A0;
 ts_double epsvol;

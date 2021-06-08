@@ -265,10 +265,11 @@ ts_bool preparationSh(ts_vesicle *vesicle, ts_double r0){
     ts_triangle *ctri;
     ts_double centroid[3];
     ts_double r;
+    ts_double projArea;
     for (i=0;  i<vesicle->vlist->n; i++){
         cvtx=vtx[i];
         //cvtx->projArea=4.0*M_PI/1447.0*(cvtx->x*cvtx->x+cvtx->y*cvtx->y+cvtx->z*cvtx->z)/r0/r0;
-        cvtx->projArea=0.0;
+        projArea=0.0;
 
         /* go over all triangles that have a common vertex i */
         for(j=0; j<cvtx->tristar_no; j++){
@@ -278,17 +279,17 @@ ts_bool preparationSh(ts_vesicle *vesicle, ts_double r0){
             centroid[2]=(ctri->vertex[0]->z + ctri->vertex[1]->z + ctri->vertex[2]->z)/3.0;
         /* calculating projArea+= area(triangle)*cos(theta) */
 #ifdef TS_DOUBLE_DOUBLE
-            cvtx->projArea = cvtx->projArea + ctri->area*(-centroid[0]*ctri->xnorm - centroid[1]*ctri->ynorm - centroid[2]*ctri->znorm)/ sqrt(centroid[0]*centroid[0]+centroid[1]*centroid[1]+centroid[2]*centroid[2]);
+            projArea = projArea + ctri->area*(-centroid[0]*ctri->xnorm - centroid[1]*ctri->ynorm - centroid[2]*ctri->znorm)/ sqrt(centroid[0]*centroid[0]+centroid[1]*centroid[1]+centroid[2]*centroid[2]);
 #endif
 #ifdef TS_DOUBLE_FLOAT
-            cvtx->projArea = cvtx->projArea + ctri->area*(-centroid[0]*ctri->xnorm - centroid[1]*ctri->ynorm - centroid[2]*ctri->znorm)/ sqrtf(centroid[0]*centroid[0]+centroid[1]*centroid[1]+centroid[2]*centroid[2]);
+            projArea = projArea + ctri->area*(-centroid[0]*ctri->xnorm - centroid[1]*ctri->ynorm - centroid[2]*ctri->znorm)/ sqrtf(centroid[0]*centroid[0]+centroid[1]*centroid[1]+centroid[2]*centroid[2]);
 #endif
 #ifdef TS_DOUBLE_LONGDOUBLE
-            cvtx->projArea = cvtx->projArea + ctri->area*(-centroid[0]*ctri->xnorm - centroid[1]*ctri->ynorm - centroid[2]*ctri->znorm)/ sqrtl(centroid[0]*centroid[0]+centroid[1]*centroid[1]+centroid[2]*centroid[2]);
+            projArea = projArea + ctri->area*(-centroid[0]*ctri->xnorm - centroid[1]*ctri->ynorm - centroid[2]*ctri->znorm)/ sqrtl(centroid[0]*centroid[0]+centroid[1]*centroid[1]+centroid[2]*centroid[2]);
 #endif
         }
 
-    cvtx->projArea=cvtx->projArea/3.0;
+    projArea=projArea/3.0;
         //we dont store spherical coordinates of vertex, so we have to calculate
         //r(i) at this point.
 #ifdef TS_DOUBLE_DOUBLE
@@ -301,7 +302,7 @@ ts_bool preparationSh(ts_vesicle *vesicle, ts_double r0){
     r=sqrtl(cvtx->x*cvtx->x+cvtx->y*cvtx->y+cvtx->z*cvtx->z);
 #endif
     cvtx->relR=(r-r0)/r0;
-    cvtx->solAngle=cvtx->projArea/r/r;
+    cvtx->solAngle=projArea/r/r;
     }
     return TS_SUCCESS;
 }
