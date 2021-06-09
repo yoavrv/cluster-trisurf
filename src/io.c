@@ -727,15 +727,15 @@ tlist->tria[i]->ynorm,tlist->tria[i]->znorm);
 }
 
 ts_bool fprint_vertex_data(FILE *fh,ts_vertex_list *vlist){
-    ts_uint i,j;
+    ts_uint i; // ,j;
     for(i=0;i<vlist->n;i++){
         fprintf(fh," %.17E\t%.17E\t%.17E\t%.17E\t%u\n",
         vlist->vtx[i]->xk,vlist->vtx[i]->c,vlist->vtx[i]->energy,
         vlist->vtx[i]->curvature, 0);
             fprintf(fh,"\n");
-        for(j=0;j<vlist->vtx[i]->bond_no;j++){
-            fprintf(fh," %.17E", vlist->vtx[i]->bond[j]->bond_length);
-        }
+        //for(j=0;j<vlist->vtx[i]->bond_no;j++){
+        //    fprintf(fh," %.17E", vlist->vtx[i]->bond[j]->bond_length);
+        //}
             fprintf(fh,"\n");
     }
     return TS_SUCCESS;

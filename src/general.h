@@ -201,7 +201,7 @@ typedef struct {
 } ts_vertex_list;
 
 struct ts_bond {
-    ts_double bond_length;
+    //ts_double bond_length;
 	ts_double energy;
 	//ts_double x,y,z;
 	ts_vertex *vtx1;

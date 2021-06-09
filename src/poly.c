@@ -45,7 +45,7 @@ ts_poly	*init_poly(ts_uint n, ts_vertex *grafted_vtx){
 	}
 
 	for(i=0;i<poly->blist->n;i++){
-	poly->blist->bond[i]->bond_length=sqrt(vtx_distance_sq(poly->blist->bond[i]->vtx1,poly->blist->bond[i]->vtx2));
+	//poly->blist->bond[i]->bond_length=sqrt(vtx_distance_sq(poly->blist->bond[i]->vtx1,poly->blist->bond[i]->vtx2));
 	bond_energy(poly->blist->bond[i],poly);
 	}
 	vertex_list_assign_id(poly->vlist,TS_ID_FILAMENT);

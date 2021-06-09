@@ -536,7 +536,7 @@ ts_bool single_filament_vertex_move(ts_vesicle *vesicle,ts_poly *poly,ts_vertex 
 	//backup bonds
 	for(i=0;i<vtx->bond_no;i++){
 		memcpy(&backupbond[i],vtx->bond[i], sizeof(ts_bond));
-		vtx->bond[i]->bond_length=sqrt(dist[i]);
+		//vtx->bond[i]->bond_length=sqrt(dist[i]);
 		//bond_vector(vtx->bond[i]);
 	}
 
