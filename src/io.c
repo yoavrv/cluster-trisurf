@@ -1402,7 +1402,7 @@ ts_tape *parsetape(char *filename){
 
 ts_tape *parsetapebuffer(char *buffer){
     ts_tape *tape=(ts_tape *)calloc(1,sizeof(ts_tape));
-    tape->multiprocessing=calloc(255,sizeof(char));
+    //tape->multiprocessing=calloc(255,sizeof(char));
     
     cfg_opt_t opts[] = {
         CFG_INT("nshell", 0, CFGF_NONE),
@@ -1435,7 +1435,7 @@ ts_tape *parsetapebuffer(char *buffer){
         CFG_INT("mcsweeps", 200000, CFGF_NONE),
         CFG_INT("inititer", 0, CFGF_NONE),
         CFG_SIMPLE_BOOL("quiet",(cfg_bool_t *)&tape->quiet),
-        CFG_SIMPLE_STR("multiprocessing",&tape->multiprocessing),
+        //CFG_SIMPLE_STR("multiprocessing",&tape->multiprocessing),
         //CFG_SIMPLE_INT("smp_cores",&tape->brezveze0),
         //CFG_SIMPLE_INT("cluster_nodes",&tape->brezveze1),
         //CFG_SIMPLE_INT("distributed_processes",&tape->brezveze2),
@@ -1544,7 +1544,7 @@ ts_tape *parsetapebuffer(char *buffer){
 }
 
 ts_bool tape_free(ts_tape *tape){
-	free(tape->multiprocessing);
+	//free(tape->multiprocessing);
 	free(tape);
 	return TS_SUCCESS;
 }

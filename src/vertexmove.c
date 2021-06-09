@@ -537,7 +537,7 @@ ts_bool single_filament_vertex_move(ts_vesicle *vesicle,ts_poly *poly,ts_vertex 
 	for(i=0;i<vtx->bond_no;i++){
 		memcpy(&backupbond[i],vtx->bond[i], sizeof(ts_bond));
 		vtx->bond[i]->bond_length=sqrt(dist[i]);
-		bond_vector(vtx->bond[i]);
+		//bond_vector(vtx->bond[i]);
 	}
 
 	//backup neighboring vertices:
@@ -549,13 +549,15 @@ ts_bool single_filament_vertex_move(ts_vesicle *vesicle,ts_poly *poly,ts_vertex 
 	delta_energy=0;
 	
 	if(vtx->bond_no == 2){
-		vtx->energy = -(vtx->bond[0]->x*vtx->bond[1]->x + vtx->bond[0]->y*vtx->bond[1]->y + vtx->bond[0]->z*vtx->bond[1]->z)/vtx->bond[0]->bond_length/vtx->bond[1]->bond_length;
+		//vtx->energy = -(vtx->bond[0]->x*vtx->bond[1]->x + vtx->bond[0]->y*vtx->bond[1]->y + vtx->bond[0]->z*vtx->bond[1]->z)/vtx->bond[0]->bond_length/vtx->bond[1]->bond_length;
+		vtx->energy = vtx_abc_cos(vtx->neigh[0], vtx, vtx->neigh[1]);
 		delta_energy += vtx->energy - backupvtx.energy;
 	}
 
 	for(i=0;i<vtx->neigh_no;i++){
 		if(vtx->neigh[i]->bond_no == 2){
-			vtx->neigh[i]->energy = -(vtx->neigh[i]->bond[0]->x*vtx->neigh[i]->bond[1]->x + vtx->neigh[i]->bond[0]->y*vtx->neigh[i]->bond[1]->y + vtx->neigh[i]->bond[0]->z*vtx->neigh[i]->bond[1]->z)/vtx->neigh[i]->bond[0]->bond_length/vtx->neigh[i]->bond[1]->bond_length;
+			//vtx->neigh[i]->energy = -(vtx->neigh[i]->bond[0]->x*vtx->neigh[i]->bond[1]->x + vtx->neigh[i]->bond[0]->y*vtx->neigh[i]->bond[1]->y + vtx->neigh[i]->bond[0]->z*vtx->neigh[i]->bond[1]->z)/vtx->neigh[i]->bond[0]->bond_length/vtx->neigh[i]->bond[1]->bond_length;
+			vtx->neigh[i]->energy = vtx_abc_cos(vtx->neigh[i]->neigh[0], vtx->neigh[i], vtx->neigh[i]->neigh[1]);
 			delta_energy += vtx->neigh[i]->energy - backupneigh[i].energy;
 		}
 	}

@@ -72,7 +72,7 @@ ts_bool set_vesicle_values_from_tape(ts_vesicle *vesicle){
 	ts_uint i,j;
 	for(i=0;i<vesicle->filament_list->n;i++){
 		for(j=0;j<vesicle->filament_list->poly[i]->blist->n;j++){
-			bond_vector(vesicle->filament_list->poly[i]->blist->bond[j]);
+			//bond_vector(vesicle->filament_list->poly[i]->blist->bond[j]);
 			vesicle->filament_list->poly[i]->blist->bond[j]->bond_length = sqrt(vtx_distance_sq(vesicle->filament_list->poly[i]->blist->bond[j]->vtx1,vesicle->filament_list->poly[i]->blist->bond[j]->vtx2));
 		}
 	}
@@ -81,7 +81,8 @@ ts_bool set_vesicle_values_from_tape(ts_vesicle *vesicle){
 		for(j=0;j<vesicle->filament_list->poly[i]->vlist->n;j++){
 			vtx = vesicle->filament_list->poly[i]->vlist->vtx[j];
 			if(vtx->bond_no == 2){
-			vtx->energy = -(vtx->bond[0]->x*vtx->bond[1]->x + vtx->bond[0]->y*vtx->bond[1]->y + vtx->bond[0]->z*vtx->bond[1]->z)/vtx->bond[0]->bond_length/vtx->bond[1]->bond_length;
+			//vtx->energy = -(vtx->bond[0]->x*vtx->bond[1]->x + vtx->bond[0]->y*vtx->bond[1]->y + vtx->bond[0]->z*vtx->bond[1]->z)/vtx->bond[0]->bond_length/vtx->bond[1]->bond_length;
+			vtx->energy = vtx_abc_cos(vtx->neigh[0], vtx, vtx->neigh[1]);
 			}
 		}
 	}

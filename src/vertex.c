@@ -250,6 +250,14 @@ inline ts_double vtx_direct(ts_vertex *vtx1, ts_vertex *vtx2, ts_vertex *vtx3){
     return(direct);    
 }
 
+inline ts_double vtx_abc_cos(ts_vertex *vtx1, ts_vertex *vtx2, ts_vertex *vtx3){
+    //replacment for bond->x, bond->y, bond->z logic 
+    ts_double ab_dot_ab, ab_dot_bc, bc_dot_bc;
+    ab_dot_ab = (vtx1->x-vtx2->x)*(vtx1->x-vtx2->x)+(vtx1->y-vtx2->y)*(vtx1->y-vtx2->y)+(vtx1->z-vtx2->z)*(vtx1->z-vtx2->z);
+    ab_dot_bc = (vtx1->x-vtx2->x)*(vtx3->x-vtx2->x)+(vtx1->y-vtx2->y)*(vtx3->y-vtx2->y)+(vtx1->z-vtx2->z)*(vtx3->z-vtx2->z);
+    bc_dot_bc = (vtx3->x-vtx2->x)*(vtx3->x-vtx2->x)+(vtx3->y-vtx2->y)*(vtx3->y-vtx2->y)+(vtx3->z-vtx2->z)*(vtx3->z-vtx2->z);
+    return sqrt(ab_dot_bc*ab_dot_bc/(ab_dot_ab*bc_dot_bc));
+}
 
 inline ts_bool vertex_add_tristar(ts_vertex *vtx, ts_triangle *tristarmem){
 	vtx->tristar_no++;

@@ -30,6 +30,7 @@ ts_bool seen_vertex_free(ts_seen_vertex *seen_vertex);
 inline ts_double vtx_distance_sq(ts_vertex *vtx1, ts_vertex *vtx2);
 ts_bool vtx_set_global_values(ts_vesicle *vesicle);
 inline ts_double vtx_direct(ts_vertex *vtx1, ts_vertex *vtx2, ts_vertex *vtx3);
+inline ts_double vtx_abc_cos(ts_vertex *vtx1, ts_vertex *vtx2, ts_vertex *vtx3);
 
 inline ts_bool vertex_add_tristar(ts_vertex *vtx, ts_triangle *tristarmem);
 inline ts_bool vtx_insert_neighbour(ts_vertex *vtx, ts_vertex *nvtx, ts_vertex *vtxm);
