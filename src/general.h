@@ -163,9 +163,13 @@ struct ts_vertex {
 		struct ts_cluster *cluster;
 		ts_uint idx; //vertex index
 		ts_uint id;	 //filament index
-		ts_uint neigh_no; /**< The number of neighbours. */
-		ts_uint tristar_no; //number of triangle-neighbors
-		ts_uint bond_no;
+		// number of neighbors, of all types
+		// these never really go beyond even 12, so
+		// we can squeeze to char
+		// (n.n is capped at 19 at vertexmove backup[], 10 at (currently broken) constvol)
+		ts_bool neigh_no; /**< The number of neighbours. */
+		ts_bool tristar_no; //number of triangle-neighbors
+		ts_bool bond_no;
 		/* 1st bit: bonds, 2nd bit: active, 
 		3rd bit: adhesive, 4th bit: anisotropic, 
 		5th bit: reserved, 6th bit: vicsek 
@@ -252,10 +256,10 @@ typedef struct ts_cell_list{
 
 
 typedef struct {
-	ts_double *vtx_relR;
+	ts_double *vtx_relR; //stuff taken from vertex
 	ts_double* vtx_solAngle;
+	ts_uint n_vtx; //vlist->n
     ts_uint l;
-	ts_uint n_vtx;
     ts_double **ulm;
     gsl_complex **ulmComplex;
     ts_double **sumUlm2;
@@ -343,7 +347,7 @@ typedef struct {
 	ts_bool allow_xy_plane_movement;
 	ts_bool force_balance_along_z_axis;
 	ts_bool adhesion_switch;
-	char *multiprocessing;
+	//char *multiprocessing;
 } ts_tape;
 
 

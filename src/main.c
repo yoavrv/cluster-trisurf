@@ -130,7 +130,7 @@ int main(int argv, char *argc[]){
 //	exit(1);
 
 			//write_vertex_xml_file(vesicle,1000);
-	fprintf(stdout,"vesicle: %ld, tape: %ld, vertex: %ld, triangle: %ld",sizeof(*vesicle),sizeof(*vesicle->tape),sizeof(*vesicle->vlist->vtx[0]),sizeof(*vesicle->tlist->tria[0]));
+	fprintf(stdout,"vesicle: %ld, tape: %ld, vertex: %ld, triangle: %ld, bond: %ld",sizeof(*vesicle),sizeof(*vesicle->tape),sizeof(*vesicle->vlist->vtx[0]),sizeof(*vesicle->tlist->tria[0]),sizeof(*vesicle->blist->bond[0]));
 	run_simulation(vesicle, tape->mcsweeps, tape->inititer, tape->iterations, start_iteration);
 	write_master_xml_file(command_line_args.output_fullfilename);
 	write_dout_fcompat_file(vesicle,"dout");

@@ -389,8 +389,8 @@ ts_double direct_force_from_Fz_balance(ts_vesicle *vesicle, ts_vertex *vtx, ts_v
         countdown-=1; //recalculate when reach 0
     }
 
-    if (Fz<0){
-	    return -Fz*(vtx->z-vtx_old->z)/vesicle->vlist->n;
+    if (Fz>0){
+	    return Fz*(vtx->z-vtx_old->z)/vesicle->vlist->n;
     }
     else{
         return 0;
