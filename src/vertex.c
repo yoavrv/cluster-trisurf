@@ -216,10 +216,41 @@ inline ts_double vtx_distance_sq(ts_vertex *vtx1, ts_vertex *vtx2){
 
 
 ts_bool vtx_set_global_values(ts_vesicle *vesicle){ 
-    ts_double xk=vesicle->bending_rigidity;
+    // as it's set now: override any specific values! must use before initial distribution/ XML parsing!
+    // (besides, if it's a real global value, it shouldn't be on the vertices anyway- in vesicle, depend on type)
     ts_uint i; 
+
     for(i=0;i<vesicle->vlist->n;i++){
-        vesicle->vlist->vtx[i]->xk=xk;
+        vesicle->vlist->vtx[i]->xk=vesicle->tape->xk0;
+    }
+
+
+    for(i=0;i<vesicle->vlist->n;i++){
+        vesicle->vlist->vtx[i]->xk2=vesicle->tape->xk2;
+    }
+
+    // in case type and such lead to no curvature2, force, etc. being calculated
+    for(i=0;i<vesicle->vlist->n;i++){
+        vesicle->vlist->vtx[i]->curvature=0;
+        vesicle->vlist->vtx[i]->curvature2=0;
+        vesicle->vlist->vtx[i]->energy=0;
+        vesicle->vlist->vtx[i]->type=is_adhesive_vtx; // nonbonding, passive, adhesive, isotropic
+		vesicle->vlist->vtx[i]->w=0;
+		vesicle->vlist->vtx[i]->c=0;
+		vesicle->vlist->vtx[i]->f=0;
+		vesicle->vlist->vtx[i]->ad_w= vesicle->tape->adhesion_strength;
+		vesicle->vlist->vtx[i]->d=0;  // curvature deviator
+		vesicle->vlist->vtx[i]->xk = vesicle->tape->xk0;
+		vesicle->vlist->vtx[i]->xk2 = 0; // Gauss-Bonet: we only need excess compare to the regular membrane
+		vesicle->vlist->vtx[i]->nx=0; //normal
+		vesicle->vlist->vtx[i]->ny=0;
+		vesicle->vlist->vtx[i]->nz=0;
+		vesicle->vlist->vtx[i]->fx=0; //force
+		vesicle->vlist->vtx[i]->fy=0;
+		vesicle->vlist->vtx[i]->fz=0;
+		vesicle->vlist->vtx[i]->tx=0; //director
+		vesicle->vlist->vtx[i]->ty=0;
+		vesicle->vlist->vtx[i]->tz=0;
     }
     return TS_SUCCESS;
 }

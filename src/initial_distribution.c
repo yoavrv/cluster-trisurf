@@ -51,6 +51,8 @@ ts_vesicle *create_vesicle_from_tape(ts_tape *tape){
 }
 
 ts_bool set_vesicle_values_from_tape(ts_vesicle *vesicle){
+	// Set vesicle values and globals of vertices from tape
+	// note: runs before any particular function (initial population, parseXML[]) 
 	// Nucleus:
 	ts_vertex *vtx;
 	ts_tape *tape=vesicle->tape;
@@ -105,8 +107,7 @@ ts_bool set_vesicle_values_from_tape(ts_vesicle *vesicle){
 	
 	vesicle->nshell=tape->nshell;
 	vesicle->dmax=tape->dmax*tape->dmax; /* dmax^2 in the vesicle dmax variable */
-	vesicle->bending_rigidity=tape->xk0;
-	vtx_set_global_values(vesicle); /* make xk0 default value for every vertex */ 
+	vtx_set_global_values(vesicle); /* make xk0 xk2 default value for every vertex  */ 
 //	ts_fprintf(stdout, "Tape setting: xk0=%e\n",tape->xk0);
 	vesicle->stepsize=tape->stepsize;
 	vesicle->clist->ncmax[0]=tape->ncxmax;
@@ -158,6 +159,8 @@ ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
 		vtx->f=tape->F;
 		vtx->ad_w=tape->adhesion_strength;
 		vtx->d=0;  // curvature deviator
+		vtx->xk = tape->xk0;
+		vtx->xk2 = tape->xk2;
 		vtx->nx=0; //normal
 		vtx->ny=0;
 		vtx->nz=0;
@@ -180,6 +183,8 @@ ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
 		vtx->f=0;
 		vtx->ad_w=tape->adhesion_strength;
 		vtx->d=0;  // curvature deviator
+		vtx->xk = tape->xk0;
+		vtx->xk2 = 0; // Gauss-Bonet: we only need excess compare to the regular membrane
 		vtx->nx=0; //normal
 		vtx->ny=0;
 		vtx->nz=0;
@@ -192,7 +197,7 @@ ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
 	}
 	free(indices);
 
-	// This updates the normals using the energy_vertex
+	// This updates the energy, curvatures, and normals using the energy_vertex
 	mean_curvature_and_energy(vesicle);
 	if(fabs(tape->w)>1e-16){ //if nonzero energy
 		//	ts_fprintf(stderr,"Setting attraction between vertices with spontaneous curvature\n");

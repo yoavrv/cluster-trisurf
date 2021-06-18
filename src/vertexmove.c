@@ -192,12 +192,12 @@ if(vesicle->R_nucleus>0.0){
 	// bending energy of the vertex
 	oenergy=vtx->energy;
     energy_vertex(vtx);
-    delta_energy=vtx->xk*(vtx->energy - oenergy);
+    delta_energy=(vtx->energy - oenergy);
     //the same is done for neighbouring vertices
     for(i=0;i<vtx->neigh_no;i++){
         oenergy=vtx->neigh[i]->energy;
         energy_vertex(vtx->neigh[i]);
-        delta_energy+=vtx->neigh[i]->xk*(vtx->neigh[i]->energy-oenergy);
+        delta_energy+=(vtx->neigh[i]->energy-oenergy);
     }
 
 	if(vesicle->pswitch == 1 || vesicle->tape->constvolswitch >0){

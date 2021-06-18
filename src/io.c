@@ -937,6 +937,7 @@ ts_bool write_vertex_xml_file(ts_vesicle *vesicle, ts_uint timestepno, ts_cluste
     //here comes additional data as needed.
     //Yoav : additional scalar data: type, (spontaneous_curature), bonding_strength (w), direct_force (f), 
     // adhesion_strength (ad_w), spontaneous_deviator (d, which has nothing at the moment), bending energy
+    // curvature, second_curvature, bending_modulus, second_bending_modulus
 
     //type
 	fprintf(fh,"<DataArray type=\"Int64\" Name=\"type\" format=\"ascii\">");
@@ -1092,6 +1093,111 @@ ts_bool write_vertex_xml_file(ts_vesicle *vesicle, ts_uint timestepno, ts_cluste
 		}
 	}
     fprintf(fh,"</DataArray>\n");
+
+    //curvature
+	fprintf(fh,"<DataArray type=\"Float64\" Name=\"curvature\" format=\"ascii\">");
+	for(i=0;i<vlist->n;i++){
+		fprintf(fh,"%.17e ",vtx[i]->curvature);
+	}
+	//polymeres
+	if(poly){
+		poly_idx=vlist->n;
+		for(i=0;i<vesicle->poly_list->n;i++){
+			for(j=0;j<vesicle->poly_list->poly[i]->vlist->n;j++,poly_idx++){
+				fprintf(fh,"%.17e ", vesicle->poly_list->poly[i]->vlist->vtx[j]->curvature);
+			}
+		}
+	}
+	//filaments
+	if(fil){
+		poly_idx=vlist->n+monono*polyno;
+		for(i=0;i<vesicle->filament_list->n;i++){
+			for(j=0;j<vesicle->filament_list->poly[i]->vlist->n;j++,poly_idx++){
+	//	fprintf(stderr,"was here\n");
+				fprintf(fh,"%.17e ",  vesicle->filament_list->poly[i]->vlist->vtx[j]->curvature);
+			}
+		}
+	}
+    fprintf(fh,"</DataArray>\n");
+
+    // second_curvature
+	fprintf(fh,"<DataArray type=\"Float64\" Name=\"second_curvature\" format=\"ascii\">");
+	for(i=0;i<vlist->n;i++){
+		fprintf(fh,"%.17e ",vtx[i]->curvature2);
+	}
+	//polymeres
+	if(poly){
+		poly_idx=vlist->n;
+		for(i=0;i<vesicle->poly_list->n;i++){
+			for(j=0;j<vesicle->poly_list->poly[i]->vlist->n;j++,poly_idx++){
+				fprintf(fh,"%.17e ", vesicle->poly_list->poly[i]->vlist->vtx[j]->curvature2);
+			}
+		}
+	}
+	//filaments
+	if(fil){
+		poly_idx=vlist->n+monono*polyno;
+		for(i=0;i<vesicle->filament_list->n;i++){
+			for(j=0;j<vesicle->filament_list->poly[i]->vlist->n;j++,poly_idx++){
+	//	fprintf(stderr,"was here\n");
+				fprintf(fh,"%.17e ",  vesicle->filament_list->poly[i]->vlist->vtx[j]->curvature2);
+			}
+		}
+	}
+    fprintf(fh,"</DataArray>\n");
+
+    // bending modulus
+	fprintf(fh,"<DataArray type=\"Float64\" Name=\"bending_modulus\" format=\"ascii\">");
+	for(i=0;i<vlist->n;i++){
+		fprintf(fh,"%.17e ",vtx[i]->xk);
+	}
+	//polymeres
+	if(poly){
+		poly_idx=vlist->n;
+		for(i=0;i<vesicle->poly_list->n;i++){
+			for(j=0;j<vesicle->poly_list->poly[i]->vlist->n;j++,poly_idx++){
+				fprintf(fh,"%.17e ", vesicle->poly_list->poly[i]->vlist->vtx[j]->xk);
+			}
+		}
+	}
+	//filaments
+	if(fil){
+		poly_idx=vlist->n+monono*polyno;
+		for(i=0;i<vesicle->filament_list->n;i++){
+			for(j=0;j<vesicle->filament_list->poly[i]->vlist->n;j++,poly_idx++){
+	//	fprintf(stderr,"was here\n");
+				fprintf(fh,"%.17e ",  vesicle->filament_list->poly[i]->vlist->vtx[j]->xk);
+			}
+		}
+	}
+    fprintf(fh,"</DataArray>\n");
+
+    // second_bending modulus
+	fprintf(fh,"<DataArray type=\"Float64\" Name=\"second_bending_modulus\" format=\"ascii\">");
+	for(i=0;i<vlist->n;i++){
+		fprintf(fh,"%.17e ",vtx[i]->xk2);
+	}
+	//polymeres
+	if(poly){
+		poly_idx=vlist->n;
+		for(i=0;i<vesicle->poly_list->n;i++){
+			for(j=0;j<vesicle->poly_list->poly[i]->vlist->n;j++,poly_idx++){
+				fprintf(fh,"%.17e ", vesicle->poly_list->poly[i]->vlist->vtx[j]->xk2);
+			}
+		}
+	}
+	//filaments
+	if(fil){
+		poly_idx=vlist->n+monono*polyno;
+		for(i=0;i<vesicle->filament_list->n;i++){
+			for(j=0;j<vesicle->filament_list->poly[i]->vlist->n;j++,poly_idx++){
+	//	fprintf(stderr,"was here\n");
+				fprintf(fh,"%.17e ",  vesicle->filament_list->poly[i]->vlist->vtx[j]->xk2);
+			}
+		}
+	}
+    fprintf(fh,"</DataArray>\n");
+
 
 	//here comes additional data. Energy!
 	fprintf(fh,"<DataArray type=\"Float64\" Name=\"bending_energy\" format=\"ascii\">");
@@ -1418,6 +1524,7 @@ ts_tape *parsetapebuffer(char *buffer){
         CFG_FLOAT("dmax", 1.7, CFGF_NONE),
         CFG_FLOAT("dmin_interspecies", 1.2, CFGF_NONE),
         CFG_FLOAT("xk0", 20, CFGF_NONE),
+        CFG_FLOAT("xk2", 0, CFGF_NONE),
         CFG_INT("pswitch", 0, CFGF_NONE),
         CFG_INT("constvolswitch", 0, CFGF_NONE),
         CFG_INT("constareaswitch", 0, CFGF_NONE),
@@ -1487,6 +1594,7 @@ ts_tape *parsetapebuffer(char *buffer){
     tape->dmax = cfg_getfloat(cfg,"dmax");
     tape->dmin_interspecies = cfg_getfloat(cfg,"dmin_interspecies");
     tape->xk0 = cfg_getfloat(cfg,"xk0");
+    tape->xk2 = cfg_getfloat(cfg,"xk2");
     tape->pswitch = cfg_getint(cfg,"pswitch");
     tape->constvolswitch = cfg_getint(cfg,"constvolswitch");
     tape->constareaswitch = cfg_getint(cfg,"constareaswitch");

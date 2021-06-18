@@ -165,10 +165,10 @@ c
 
     /* Save old energy */
     oldenergy=0;
-    oldenergy+=k->xk* k->energy;
-    oldenergy+=kp->xk* kp->energy;
-    oldenergy+=km->xk* km->energy;
-    oldenergy+=it->xk* it->energy;
+    oldenergy+=k->energy;
+    oldenergy+=kp->energy;
+    oldenergy+=km->energy;
+    oldenergy+=it->energy;
     oldenergy+=bond->energy; /* attraction with neighboring vertices, that have spontaneous curvature */
     //Neigbours of k, it, km, kp don't change its energy.
 
@@ -183,10 +183,10 @@ c
 
     /* Calculating the new energy */
     delta_energy=0;
-    delta_energy+=k->xk* k->energy;
-    delta_energy+=kp->xk* kp->energy;
-    delta_energy+=km->xk* km->energy;
-    delta_energy+=it->xk* it->energy;
+    delta_energy+=k->energy;
+    delta_energy+=kp->energy;
+    delta_energy+=km->energy;
+    delta_energy+=it->energy;
     delta_energy+=bond->energy; /* attraction with neighboring vertices, that have spontaneous curvature */
   //Neigbours of k, it, km, kp don't change its energy.
 	if(vesicle->tape->stretchswitch==1){

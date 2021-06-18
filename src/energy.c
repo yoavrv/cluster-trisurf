@@ -196,7 +196,7 @@ inline ts_bool energy_vertex(ts_vertex *vtx){
 // c is forced curvature energy for each vertex. Should be set to zero for
 // normal circumstances.
 /* the following statement is an expression for $\frac{1}{2}\int(c_1+c_2-c_0^\prime)^2\mathrm{d}A$, where $c_0^\prime=2c_0$ (twice the spontaneous curvature)  */
-    vtx->energy=0.5*s*(vtx->curvature/s-vtx->c)*(vtx->curvature/s-vtx->c);
+    vtx->energy=vtx->xk* 0.5*s*(vtx->curvature/s-vtx->c)*(vtx->curvature/s-vtx->c);
 
 
     return TS_SUCCESS;

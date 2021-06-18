@@ -21,7 +21,7 @@
 ts_vesicle *parseDump(char *dumpfname) {
 	//restore from vtu
 	xmlDocPtr doc;
-	xmlNodePtr cur, cur1,cur2;
+	xmlNodePtr cur, cur1,cur2, root, tape_node, vesicle_node;
 	ts_vesicle *vesicle=NULL;
 	doc = xmlParseFile(dumpfname);
 	int i;
@@ -29,26 +29,38 @@ ts_vesicle *parseDump(char *dumpfname) {
 		fatal("Dump file could not be found or parsed. It is correct file?",1);
 	}
 	
-	cur = xmlDocGetRootElement(doc);
+	root = xmlDocGetRootElement(doc);
 	
-	if (cur == NULL) {
+	if (root == NULL) {
 		fatal("Dump file is empty.",1);
 	}
 	
-	if (xmlStrcmp(cur->name, (const xmlChar *) "VTKFile")) {
+	if (xmlStrcmp(root->name, (const xmlChar *) "VTKFile")) {
 		fatal("document of the wrong type, root node != story",1);
 	}
 	
-	cur = cur->xmlChildrenNode;
+	//need to get things in order:
+	// tape, then vesicle, than rest
+	// so we first make sure to save these two nodes
+	cur = root->xmlChildrenNode;
 	while (cur != NULL) {
 
 		if ((!xmlStrcmp(cur->name, (const xmlChar *)"tape"))){
-			setGlobalTapeTXTfromTapeTag(doc, cur);
+			tape_node = cur;
 		}
-
 		if ((!xmlStrcmp(cur->name, (const xmlChar *)"trisurf"))){
-			vesicle=parseTrisurfTag(doc, cur);
+			vesicle_node = cur;
 		}
+		cur = cur->next;
+	}
+	
+	setGlobalTapeTXTfromTapeTag(doc, tape_node);
+	vesicle=parseTrisurfTag(doc, vesicle_node);
+
+	// the rest
+	cur = root->xmlChildrenNode;
+	while (cur != NULL) {
+
 		// START Point Position data &  Bonds
 		if ((!xmlStrcmp(cur->name, (const xmlChar *)"UnstructuredGrid"))){
 			cur1 = cur->xmlChildrenNode;
@@ -83,7 +95,7 @@ ts_vesicle *parseDump(char *dumpfname) {
 	xmlFreeDoc(doc);
 
 //	vesicle->poly_list=init_poly_list(0, 0, vesicle->vlist, vesicle);
-	set_vesicle_values_from_tape(vesicle);
+	//set_vesicle_values_from_tape(vesicle); //moved to vesicle initialization
 	init_normal_vectors(vesicle->tlist);
 	mean_curvature_and_energy(vesicle);
 	sweep_attraction_bond_energy(vesicle);
@@ -198,7 +210,8 @@ ts_vesicle *parseTrisurfTag(xmlDocPtr doc, xmlNodePtr cur){
 	}
 
 	vesicle->tape=tape;
-//	set_vesicle_values_from_tape(vesicle);
+	set_vesicle_values_from_tape(vesicle);
+
 	return vesicle;
 }
 
@@ -376,6 +389,10 @@ ts_bool parseXMLPointData(ts_vesicle *vesicle,xmlDocPtr doc, xmlNodePtr cur){
 			}
 			//Yoav : additional scalar data: type, (spontaneous_curature), bonding_strength (w), direct_force (f), 
 			// adhesion_strength (ad_w), spontaneous_deviator (d, which has nothing at the moment),
+			// bending_modulus (xk), second bending modulus (xk2)
+
+			// Honestly, I've no idea of a good solution: since this requires a field name, it can't be factored into a sane function
+			// and I really don't want to deal with a macro
 			if(!xmlStrcmp(property_name,(const xmlChar *)"type")){
 				values=xmlNodeListGetString(doc,child->xmlChildrenNode,1);
 				vals=(char *)values;
@@ -491,7 +508,98 @@ ts_bool parseXMLPointData(ts_vesicle *vesicle,xmlDocPtr doc, xmlNodePtr cur){
 				}
 				xmlFree(values);		
 			}
-			
+			if(!xmlStrcmp(property_name,(const xmlChar *)"bending_modulus")){
+				values=xmlNodeListGetString(doc,child->xmlChildrenNode,1);
+				vals=(char *)values;
+				token=strtok(vals," ");
+				idx=0;
+				while(token!=NULL){
+					if(idx<vesicle->vlist->n){
+						vesicle->vlist->vtx[idx]->xk=atof(token);
+					} else if(vesicle->tape->nmono && vesicle->tape->npoly && idx<vesicle->vlist->n+vesicle->tape->nmono*vesicle->tape->npoly) {
+						polyidx=(idx-vesicle->vlist->n)/vesicle->tape->nmono;
+						monoidx=(idx-vesicle->vlist->n)%vesicle->tape->nmono;
+						vesicle->poly_list->poly[polyidx]->vlist->vtx[monoidx]->xk=atof(token);
+					} else {
+						filidx=(idx-vesicle->vlist->n-vesicle->tape->nmono*vesicle->tape->npoly)/vesicle->tape->nfono;
+						fonoidx=(idx-vesicle->vlist->n-vesicle->tape->nmono*vesicle->tape->npoly)%vesicle->tape->nfono;
+						//fprintf(stderr,"filidx=%d, fonoidx=%d, coord=%s,%s,%s\n",filidx,fonoidx,token[0],token[1],token[2]);
+						vesicle->filament_list->poly[filidx]->vlist->vtx[fonoidx]->xk=atof(token);
+					}
+					idx++;
+					token=strtok(NULL," ");
+				}
+				xmlFree(values);		
+			}
+			if(!xmlStrcmp(property_name,(const xmlChar *)"second_bending_modulus")){
+				values=xmlNodeListGetString(doc,child->xmlChildrenNode,1);
+				vals=(char *)values;
+				token=strtok(vals," ");
+				idx=0;
+				while(token!=NULL){
+					if(idx<vesicle->vlist->n){
+						vesicle->vlist->vtx[idx]->xk2=atof(token);
+					} else if(vesicle->tape->nmono && vesicle->tape->npoly && idx<vesicle->vlist->n+vesicle->tape->nmono*vesicle->tape->npoly) {
+						polyidx=(idx-vesicle->vlist->n)/vesicle->tape->nmono;
+						monoidx=(idx-vesicle->vlist->n)%vesicle->tape->nmono;
+						vesicle->poly_list->poly[polyidx]->vlist->vtx[monoidx]->xk2=atof(token);
+					} else {
+						filidx=(idx-vesicle->vlist->n-vesicle->tape->nmono*vesicle->tape->npoly)/vesicle->tape->nfono;
+						fonoidx=(idx-vesicle->vlist->n-vesicle->tape->nmono*vesicle->tape->npoly)%vesicle->tape->nfono;
+						//fprintf(stderr,"filidx=%d, fonoidx=%d, coord=%s,%s,%s\n",filidx,fonoidx,token[0],token[1],token[2]);
+						vesicle->filament_list->poly[filidx]->vlist->vtx[fonoidx]->xk2=atof(token);
+					}
+					idx++;
+					token=strtok(NULL," ");
+				}
+				xmlFree(values);		
+			}
+			if(!xmlStrcmp(property_name,(const xmlChar *)"curvature")){
+				values=xmlNodeListGetString(doc,child->xmlChildrenNode,1);
+				vals=(char *)values;
+				token=strtok(vals," ");
+				idx=0;
+				while(token!=NULL){
+					if(idx<vesicle->vlist->n){
+						vesicle->vlist->vtx[idx]->curvature=atof(token);
+					} else if(vesicle->tape->nmono && vesicle->tape->npoly && idx<vesicle->vlist->n+vesicle->tape->nmono*vesicle->tape->npoly) {
+						polyidx=(idx-vesicle->vlist->n)/vesicle->tape->nmono;
+						monoidx=(idx-vesicle->vlist->n)%vesicle->tape->nmono;
+						vesicle->poly_list->poly[polyidx]->vlist->vtx[monoidx]->curvature=atof(token);
+					} else {
+						filidx=(idx-vesicle->vlist->n-vesicle->tape->nmono*vesicle->tape->npoly)/vesicle->tape->nfono;
+						fonoidx=(idx-vesicle->vlist->n-vesicle->tape->nmono*vesicle->tape->npoly)%vesicle->tape->nfono;
+						//fprintf(stderr,"filidx=%d, fonoidx=%d, coord=%s,%s,%s\n",filidx,fonoidx,token[0],token[1],token[2]);
+						vesicle->filament_list->poly[filidx]->vlist->vtx[fonoidx]->curvature=atof(token);
+					}
+					idx++;
+					token=strtok(NULL," ");
+				}
+				xmlFree(values);		
+			}
+			if(!xmlStrcmp(property_name,(const xmlChar *)"second_curvature")){
+				values=xmlNodeListGetString(doc,child->xmlChildrenNode,1);
+				vals=(char *)values;
+				token=strtok(vals," ");
+				idx=0;
+				while(token!=NULL){
+					if(idx<vesicle->vlist->n){
+						vesicle->vlist->vtx[idx]->curvature2=atof(token);
+					} else if(vesicle->tape->nmono && vesicle->tape->npoly && idx<vesicle->vlist->n+vesicle->tape->nmono*vesicle->tape->npoly) {
+						polyidx=(idx-vesicle->vlist->n)/vesicle->tape->nmono;
+						monoidx=(idx-vesicle->vlist->n)%vesicle->tape->nmono;
+						vesicle->poly_list->poly[polyidx]->vlist->vtx[monoidx]->curvature2=atof(token);
+					} else {
+						filidx=(idx-vesicle->vlist->n-vesicle->tape->nmono*vesicle->tape->npoly)/vesicle->tape->nfono;
+						fonoidx=(idx-vesicle->vlist->n-vesicle->tape->nmono*vesicle->tape->npoly)%vesicle->tape->nfono;
+						//fprintf(stderr,"filidx=%d, fonoidx=%d, coord=%s,%s,%s\n",filidx,fonoidx,token[0],token[1],token[2]);
+						vesicle->filament_list->poly[filidx]->vlist->vtx[fonoidx]->curvature2=atof(token);
+					}
+					idx++;
+					token=strtok(NULL," ");
+				}
+				xmlFree(values);		
+			}
 			// also have normal property, and vector properties: 
 			// modified from the coordinate extraction
 			// normal, force, director

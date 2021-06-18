@@ -85,8 +85,7 @@ int main(int argv, char *argc[]){
         }
 		// nove vrednosti iz tapea...
 		vesicle->tape=tape;
-		vesicle->bending_rigidity=tape->xk0;
-		vtx_set_global_values(vesicle);
+		//vtx_set_global_values(vesicle); // xks are set for each vertex rather thanglobally
 		vesicle->pswitch =tape->pswitch;
 		vesicle->pressure=tape->pressure;
 		vesicle->dmax=tape->dmax*tape->dmax;

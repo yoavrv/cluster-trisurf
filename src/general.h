@@ -138,9 +138,11 @@ struct ts_vertex {
         ts_double y; /**< The y coordinate of vertex. */
         ts_double z; /**< The z coordinate of vertex. */
         ts_double curvature;
+		ts_double curvature2; // to be determined: mean, Gaussian curvature or c1,c2
         ts_double energy;
         //ts_double energy_h;
         ts_double xk; //bending rigidity
+		ts_double xk2; //second bending modulus (Gaussian/ deviatoric?): should be excess (Gauss-Bonet)
 		ts_double w;
 		ts_double c;
 		ts_double nx; // normal vector
@@ -300,7 +302,8 @@ typedef struct {
 	ts_double R_nucleusZ;
 	ts_double xkA0;
     ts_double constvolprecision;
-    ts_double xk0;
+    ts_double xk0; // bending modulus
+	ts_double xk2; // second bending modulus (Gaussian/ deviatoric?): should be excess (Gauss-Bonet)
 	ts_double dmax;
 	ts_double dmin_interspecies;
 	ts_double stepsize;
@@ -354,7 +357,7 @@ typedef struct {
 
 
 typedef struct {
-	ts_double bending_rigidity;
+	//ts_double bending_rigidity;
 	ts_double dmax;
 	ts_double stepsize;
    	ts_double cm[3];
