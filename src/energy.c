@@ -94,6 +94,7 @@ inline ts_bool energy_vertex(ts_vertex *vtx){
     ts_double s=0.0,xh=0.0,yh=0.0,zh=0.0,txn=0.0,tyn=0.0,tzn=0.0;
     ts_double x1,x2,x3,ctp,ctm,tot,xlen;
     ts_double h,ht,norml;
+    ts_double angle_sum=0;
     for(jj=1; jj<=vtx->neigh_no;jj++){
         jjp=jj+1;
         if(jjp>vtx->neigh_no) jjp=1;
@@ -162,6 +163,7 @@ inline ts_bool energy_vertex(ts_vertex *vtx){
         txn+=jt->xnorm;
         tyn+=jt->ynorm;
         tzn+=jt->znorm;
+        angle_sum += atan(ctp) + atan(ctm);
     }
     
     h=xh*xh+yh*yh+zh*zh;
@@ -197,7 +199,7 @@ inline ts_bool energy_vertex(ts_vertex *vtx){
 // normal circumstances.
 /* the following statement is an expression for $\frac{1}{2}\int(c_1+c_2-c_0^\prime)^2\mathrm{d}A$, where $c_0^\prime=2c_0$ (twice the spontaneous curvature)  */
     vtx->energy=vtx->xk* 0.5*s*(vtx->curvature/s-vtx->c)*(vtx->curvature/s-vtx->c);
-
+    vtx->curvature2 = (2*M_PI- angle_sum)/s;
 
     return TS_SUCCESS;
 }
