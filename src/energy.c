@@ -95,6 +95,7 @@ inline ts_bool energy_vertex(ts_vertex *vtx){
     ts_double x1,x2,x3,ctp,ctm,tot,xlen;
     ts_double h,ht,norml;
     ts_double angle_sum=0;
+    ts_double a_dot_b, a_cross_b_x, a_cross_b_y, a_cross_b_z, mag_a_cross_b;
     for(jj=1; jj<=vtx->neigh_no;jj++){
         jjp=jj+1;
         if(jjp>vtx->neigh_no) jjp=1;
@@ -163,7 +164,20 @@ inline ts_bool energy_vertex(ts_vertex *vtx){
         txn+=jt->xnorm;
         tyn+=jt->ynorm;
         tzn+=jt->znorm;
-        angle_sum += atan(ctp) + atan(ctm);
+
+        // angle stuff
+        //angle_sum += atan(ctp) + atan(ctm); // simple but slow!
+        /// get the angle m-vtx-j
+        // atan2(|axb|,a*b) was recommended at mathwork forum (cosin has small angle problems, and still need a sqrt)
+        a_dot_b = (jm->x-vtx->x)*(j->x-vtx->x)+
+                  (jm->y-vtx->y)*(j->y-vtx->y)+
+                  (jm->z-vtx->z)*(j->z-vtx->z);
+        a_cross_b_x = (jm->y-vtx->y)*(j->z-vtx->z)-(jm->z-vtx->z)*(j->y-vtx->y);
+        a_cross_b_y = (jm->z-vtx->z)*(j->x-vtx->x)-(jm->x-vtx->x)*(j->z-vtx->z);
+        a_cross_b_z = (jm->x-vtx->x)*(j->y-vtx->y)-(jm->y-vtx->y)*(j->x-vtx->x);
+        mag_a_cross_b = sqrt(pow(a_cross_b_x,2)+pow(a_cross_b_y,2)+pow(a_cross_b_z,2));
+        angle_sum += atan2(mag_a_cross_b, a_dot_b);
+
     }
     
     h=xh*xh+yh*yh+zh*zh;
@@ -200,6 +214,9 @@ inline ts_bool energy_vertex(ts_vertex *vtx){
 /* the following statement is an expression for $\frac{1}{2}\int(c_1+c_2-c_0^\prime)^2\mathrm{d}A$, where $c_0^\prime=2c_0$ (twice the spontaneous curvature)  */
     vtx->energy=vtx->xk* 0.5*s*(vtx->curvature/s-vtx->c)*(vtx->curvature/s-vtx->c);
     vtx->curvature2 = (2*M_PI- angle_sum)/s;
+    if (vtx->type&is_anisotropic_vtx){
+        vtx->energy += vtx->xk2 * s * vtx->curvature2;
+    }
 
     return TS_SUCCESS;
 }
