@@ -1766,54 +1766,128 @@ ts_bool read_geometry_file(char *fname, ts_vesicle *vesicle){
 }
 
 ts_bool update_tapetxt(char* tape_txt, char* cmd_line_tape_args){
-    //absolutely horrible way to change lines in a string, something like o(n^a lot) 
-    //but it works and it doesn't need to be fast
+    // update the tape using arguments in the command line
+    // now preserves \n!
     char tapetxt_2[128000]; //tmp storage, used to rebuild text file of the tape
-    char* arg_str_pointer=cmd_line_tape_args;//hold the new options
+    char* arg_str=cmd_line_tape_args; //hold the new options
+    char* tape_p=tape_txt; //trace reading of tape_txt
+    char* new_tape_p=tapetxt_2; //trace writing of tape_txt_2
 
-    //we need to go over the lines of the tape: if this was python
-    // tape_txt = "".join( tape_txt[:line] line_to_change tapetxt[line+1:])
-    char* tape_lines_pointer=NULL;
-    ts_uint opt_len=0, optval_len=0;
-    ts_uint added_opt_flag=0;
+    ts_uint num_opts;
+    ts_bool *dones;  // hold which options have been transfered to tape
+    ts_uint i=0;
+    ts_uint fail=0;  // option loop exit 
+    ts_uint opt_len;
+    ts_uint optval_len;
+    ts_uint line_len;
+    //char test[5000];
 
-    // the tape options to change are held as "opt1=val1,opt2=val2,..." string
-    // we need to pass over the lines of tape_txt, find each option, 
-    // insert the new option instead, and then copy the rest
-    while(arg_str_pointer != NULL)
-    {
-        // get next option=value
-        opt_len=strcspn(arg_str_pointer,"=");
-        if (opt_len==0) break; //0: no option left
-        optval_len=strcspn(arg_str_pointer,",");
-
-        added_opt_flag=0;
-        strcpy(tapetxt_2,""); // clear the tmp tape
-        tape_lines_pointer = strtok(tape_txt,"\n"); //break tape into lines
-        while (tape_lines_pointer != NULL){
-            // big  monstrosity below is just
-            // line starts as "opt..."
-            // and the next char--^  is either a space or =
-            // so "opt=7" and "opt = 7" are replaced, but "opt7" doesn't
-            if (strncmp(arg_str_pointer,tape_lines_pointer,opt_len)==0 \
-            && ((tape_lines_pointer[opt_len])==' ' || (tape_lines_pointer[opt_len])=='=')){
-                strncat(tapetxt_2,arg_str_pointer,optval_len);
-                added_opt_flag = 1;
-            }
-            else{
-                strcat(tapetxt_2,tape_lines_pointer);
-            }
-            strcat(tapetxt_2,"\n");
-            tape_lines_pointer = strtok(NULL,"\n"); //next line
-        }
-        if (!added_opt_flag) {
-            strcat(tapetxt_2,"#--tape-options added\n");
-            strncat(tapetxt_2,arg_str_pointer,optval_len);
-            strcat(tapetxt_2,"\n");
-        }
-        strcpy(tape_txt,tapetxt_2);
-
-        arg_str_pointer = arg_str_pointer + optval_len + 1;
+    if (!*cmd_line_tape_args){
+        return TS_SUCCESS; // no cmd line tape args
     }
+
+
+    if (arg_str!=NULL){
+        num_opts++;
+    }
+    else { //null pointer
+        return TS_SUCCESS;
+    }
+
+    //get number of options
+    //fprintf(stdout,"options: %d and more\n", *cmd_line_tape_args);
+    //fprintf(stdout,"tape:\"\n%s\"\n", tape_txt);
+    for ( i=0  ; arg_str[i] != '\0' ;  i++ ) { //string iterations
+        if (arg_str[i]==','){
+            num_opts++;
+        }
+        if (fail++>100000) {
+            fatal("passed 100,000 chars in  --tape-options. giving up!\n",100);
+        }
+    }
+    if (arg_str[i-1]==',') num_opts--; // if last character is a separator, ignore
+
+    fail=0;
+    arg_str = cmd_line_tape_args;
+    dones = (char*) calloc(num_opts,sizeof(char));
+
+    for (tape_p = tape_txt; *tape_p != '\0' ; ){
+        line_len = strcspn(tape_p,"\n");
+        fail = 1;
+        arg_str = cmd_line_tape_args;
+        //skip spaces and tabs:
+        while (*tape_p==' ' || *tape_p=='\t'){
+            *new_tape_p=*tape_p;
+            tape_p++;
+            new_tape_p++;
+            line_len--;
+        }
+
+        // go over the new tape options
+        for (i=0; i<num_opts; i++){
+            opt_len=strcspn(arg_str,"=,");
+            optval_len=strcspn(arg_str,",");
+            //strncpy(test, arg_str,optval_len);
+            //test[optval_len]='\0';
+            //fprintf(stdout,"checking: opt %d: %s\n-----\n",i,test);
+
+            // if the line is one of the options to replace, write from cmd_options
+            if (strncmp(tape_p, arg_str, opt_len)==0                                            // start with opt
+                    && opt_len!=0                                                               // option is not empty 
+                    && ( tape_p[opt_len]==' ' || tape_p[opt_len]=='=' || tape_p[opt_len]=='\n') // not start of something else
+                    ){
+                strncpy(new_tape_p, arg_str, optval_len);
+                new_tape_p[optval_len]='\n';
+                new_tape_p += optval_len+1;
+                dones[i]=1;
+                fail = 0;
+                new_tape_p[0]='\0';
+                //fprintf(stdout,"modified:\n%s-----\n",tapetxt_2);
+                break;
+            }
+            if (i<num_opts-1) arg_str += optval_len+1;
+        }
+        if (fail){
+            strncpy(new_tape_p, tape_p, line_len+1);
+            new_tape_p += line_len;
+            if (new_tape_p[0]!='\0') new_tape_p++;
+            new_tape_p[0]='\0';
+            //fprintf(stdout,"copied:\n%s-----\n",new_tape_txt);
+        }
+        tape_p += line_len+1;
+        
+    }
+    
+    //for (i=0; i<num_opts; i++) test[i]=dones[i]+'0';
+    //test[i]='\0';
+    //fprintf(stdout,"dones: %s\n", test);
+
+    // append to tape new options
+    arg_str = cmd_line_tape_args;
+    for (i=0; i<num_opts; i++){ // i=0, arg_str = cmd_line_tape_options...
+        opt_len=strcspn(arg_str,"=,");
+        optval_len=strcspn(arg_str,",");
+        if (dones[i] || optval_len==0) {
+            arg_str += optval_len+1;
+            continue;
+        }
+        else {
+            strcpy(new_tape_p,"\n#--tape-options added\n");
+            new_tape_p += 23; // length of that ^
+            strncpy(new_tape_p, arg_str, optval_len);
+            new_tape_p[optval_len]='\n';
+            new_tape_p += optval_len+1;
+            arg_str += optval_len+1;
+            dones[i]=1;
+        }
+        
+    }
+    *new_tape_p = '\0'; // end string
+
+    free(dones);
+    
+    // copy new tape
+    strcpy(tape_txt,tapetxt_2);
+
     return TS_SUCCESS;
 }
