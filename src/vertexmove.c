@@ -191,12 +191,12 @@ if(vesicle->R_nucleus>0.0){
 
 	// bending energy of the vertex
 	oenergy=vtx->energy;
-    energy_vertex(vtx);
+    energy_vertex(vesicle, vtx);
     delta_energy=(vtx->energy - oenergy);
     //the same is done for neighbouring vertices
     for(i=0;i<vtx->neigh_no;i++){
         oenergy=vtx->neigh[i]->energy;
-        energy_vertex(vtx->neigh[i]);
+        energy_vertex(vesicle, vtx->neigh[i]);
         delta_energy+=(vtx->neigh[i]->energy-oenergy);
     }
 
@@ -337,7 +337,7 @@ if(vesicle->R_nucleus>0.0){
 
 	//    fprintf(stderr, "before vtx(x,y,z)=%e,%e,%e\n",constvol_vtx_moved->x, constvol_vtx_moved->y, constvol_vtx_moved->z);
     	if(vesicle->tape->constvolswitch == 1){
-        	constvolumerestore(constvol_vtx_moved,constvol_vtx_backup);
+        	constvolumerestore(vesicle, constvol_vtx_moved,constvol_vtx_backup);
     	}
 
 		//exit, stop clock

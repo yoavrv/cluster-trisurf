@@ -22,7 +22,7 @@ ts_bool mean_curvature_and_energy(ts_vesicle *vesicle){
     ts_vertex **vtx=vlist->vtx;
 
     for(i=0;i<vlist->n;i++){
-        energy_vertex(vtx[i]);
+        energy_vertex(vesicle, vtx[i]);
         
     }
 
@@ -86,7 +86,7 @@ inline ts_bool bond_energy(ts_bond *bond,ts_poly *poly){
  * @param *vtx is a pointer to vertex at which we want to calculate the energy
  * @returns TS_SUCCESS on successful calculation.
 */
-inline ts_bool energy_vertex(ts_vertex *vtx){
+inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     ts_uint jj;
     ts_uint jjp,jjm;
     ts_vertex *j,*jp, *jm;
@@ -226,13 +226,13 @@ inline ts_bool energy_vertex(ts_vertex *vtx){
 ts_bool sweep_attraction_bond_energy(ts_vesicle *vesicle){
 	int i;
 	for(i=0;i<vesicle->blist->n;i++){
-		attraction_bond_energy(vesicle->blist->bond[i]);
+		attraction_bond_energy(vesicle, vesicle->blist->bond[i]);
 	}
 	return TS_SUCCESS;
 }
 
 
-inline ts_bool attraction_bond_energy(ts_bond *bond){
+inline ts_bool attraction_bond_energy(ts_vesicle *vesicle, ts_bond *bond){
 
 	if((bond->vtx1->type&is_bonding_vtx && bond->vtx2->type&is_bonding_vtx)){
         // f(w1,w2)

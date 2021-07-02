@@ -178,7 +178,7 @@ c
     fprintf(stderr,"Volume in the beginning=%1.16e\n", vesicle->volume);
     */
     /* fix data structure for flipped bond */
-    ts_flip_bond(k,it,km,kp, bond,lm, lp, lm2, lp1);
+    ts_flip_bond(vesicle, k,it,km,kp, bond,lm, lp, lm2, lp1);
 
 
     /* Calculating the new energy */
@@ -311,7 +311,7 @@ c
 	    //restore all backups
 //		fprintf(stderr,"Restoring!!!\n");
         if(vesicle->tape->constvolswitch == 1){
-            constvolumerestore(constvol_vtx_moved,constvol_vtx_backup);
+            constvolumerestore(vesicle, constvol_vtx_moved,constvol_vtx_backup);
         }
 
 		for(i=0;i<4;i++){
@@ -376,7 +376,7 @@ c
 }
 
 
-ts_bool ts_flip_bond(ts_vertex *k,ts_vertex *it,ts_vertex *km, ts_vertex *kp, ts_bond *bond,
+ts_bool ts_flip_bond(ts_vesicle *vesicle, ts_vertex *k,ts_vertex *it,ts_vertex *km, ts_vertex *kp, ts_bond *bond,
                      ts_triangle *lm, ts_triangle *lp, ts_triangle *lm2, ts_triangle *lp1){
 
     ts_uint i; //lmidx, lpidx;
@@ -438,15 +438,15 @@ ts_bool ts_flip_bond(ts_vertex *k,ts_vertex *it,ts_vertex *km, ts_vertex *kp, ts
 
 
     // 7. step. Update energy
-    energy_vertex(k);
-    energy_vertex(kp);
-    energy_vertex(km);
-    energy_vertex(it);
+    energy_vertex(vesicle, k);
+    energy_vertex(vesicle, kp);
+    energy_vertex(vesicle, km);
+    energy_vertex(vesicle, it);
     // Yoav: this also updates the normals
 
     // Yoav: Do we need to update force?
 
     // Yoav; No more sense in giving w to the energy: it's in the vertices now
-    attraction_bond_energy(bond);
+    attraction_bond_energy(vesicle, bond);
     return TS_SUCCESS;
 }
