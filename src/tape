@@ -109,8 +109,18 @@ plane_d=10
 #plane to vesicle repulsion force while closing
 plane_F=1.0
 
-# model- 0: regular, force in normal direction, 16: Vicsek, connected neighbors up to radius, 17: 1 with weight 1/neighbor dist
-force_model=1
+# bond model- 0: bonding vtx mean(w), 1: require type identity
+bond_model=0
+
+# curvature model- 0: only mean curvature, 1: Gaussian curavture for anisotropic proteins, 2: Gaussian curavture (but not energy) for all
+curvature_model=0
+# xk2: second bending modulus: due to Gauss-Bonet, excees (xkG-xkG0)
+xk2=0 
+
+# force_model- 0: regular, force in normal direction, 
+# 1: inhibition, F~nonactive_neigh, 2: F~c0>=0 neigh
+# 16: Vicsek, connected neighbors up to radius, 17: 16 with weight 1/neighbor dist
+force_model=0
 #Vicsek: force direction is sum of own normal + (nearest neighbor normals * vicsek_strength)
 #interaction strength parameter: Vicsek: weight of neighbors
 vicsek_strength=0.1

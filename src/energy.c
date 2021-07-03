@@ -96,6 +96,7 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     ts_double h,ht,norml;
     ts_double angle_sum=0;
     ts_double a_dot_b, a_cross_b_x, a_cross_b_y, a_cross_b_z, mag_a_cross_b;
+    ts_bool model=vesicle->tape->type_of_curvature_model;
     for(jj=1; jj<=vtx->neigh_no;jj++){
         jjp=jj+1;
         if(jjp>vtx->neigh_no) jjp=1;
@@ -165,19 +166,21 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
         tyn+=jt->ynorm;
         tzn+=jt->znorm;
 
-        if (vesicle->tape->type_of_curvature_model!=0 && vtx->type & is_anisotropic_vtx){
-        // angle stuff
-        //angle_sum += atan(ctp) + atan(ctm); // simple but slow!
-        /// get the angle m-vtx-j
-        // atan2(|axb|,a*b) was recommended at mathwork forum (cosin has small angle problems, and still need a sqrt)
-        a_dot_b = (jm->x-vtx->x)*(j->x-vtx->x)+
-                  (jm->y-vtx->y)*(j->y-vtx->y)+
-                  (jm->z-vtx->z)*(j->z-vtx->z);
-        a_cross_b_x = (jm->y-vtx->y)*(j->z-vtx->z)-(jm->z-vtx->z)*(j->y-vtx->y);
-        a_cross_b_y = (jm->z-vtx->z)*(j->x-vtx->x)-(jm->x-vtx->x)*(j->z-vtx->z);
-        a_cross_b_z = (jm->x-vtx->x)*(j->y-vtx->y)-(jm->y-vtx->y)*(j->x-vtx->x);
-        mag_a_cross_b = sqrt(pow(a_cross_b_x,2)+pow(a_cross_b_y,2)+pow(a_cross_b_z,2));
-        angle_sum += atan2(mag_a_cross_b, a_dot_b);
+        if (model!=0){
+            if (model==2 || (model==1 && vtx->type & is_anisotropic_vtx && vtx->xk2!=0)){
+                // angle stuff
+                //angle_sum += atan(ctp) + atan(ctm); // simple but slow!
+                /// get the angle m-vtx-j
+                // atan2(|axb|,a*b) was recommended at mathwork forum (cosin has small angle problems, and still need a sqrt)
+                a_dot_b = (jm->x-vtx->x)*(j->x-vtx->x)+
+                          (jm->y-vtx->y)*(j->y-vtx->y)+
+                          (jm->z-vtx->z)*(j->z-vtx->z);
+                a_cross_b_x = (jm->y-vtx->y)*(j->z-vtx->z)-(jm->z-vtx->z)*(j->y-vtx->y);
+                a_cross_b_y = (jm->z-vtx->z)*(j->x-vtx->x)-(jm->x-vtx->x)*(j->z-vtx->z);
+                a_cross_b_z = (jm->x-vtx->x)*(j->y-vtx->y)-(jm->y-vtx->y)*(j->x-vtx->x);
+                mag_a_cross_b = sqrt(pow(a_cross_b_x,2)+pow(a_cross_b_y,2)+pow(a_cross_b_z,2));
+                angle_sum += atan2(mag_a_cross_b, a_dot_b);
+            }
         }
     }
     
@@ -214,16 +217,16 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
 // normal circumstances.
 /* the following statement is an expression for $\frac{1}{2}\int(c_1+c_2-c_0^\prime)^2\mathrm{d}A$, where $c_0^\prime=2c_0$ (twice the spontaneous curvature)  */
     vtx->energy=vtx->xk* 0.5*s*(vtx->curvature/s-vtx->c)*(vtx->curvature/s-vtx->c);
-    if (vesicle->tape->type_of_curvature_model!=0 && vtx->type&is_anisotropic_vtx){
-        vtx->curvature2 = (2*M_PI- angle_sum)/s;
-        vtx->energy += vtx->xk2 * s * vtx->curvature2;
-    }
-    else if (vesicle->tape->type_of_curvature_model==1){
-        vtx->curvature2 = (2*M_PI- angle_sum)/s;
-        if (vtx->type&is_anisotropic_vtx){
-            vtx->energy += vtx->xk2 * s * vtx->curvature2;
+    
+    if (model!=0){
+        if (model==2 || ( model==1 && vtx->type&is_anisotropic_vtx && vtx->xk2!=0)) {
+            vtx->curvature2 = (2*M_PI- angle_sum)/s;
+            if (vtx->type&is_anisotropic_vtx && vtx->xk2!=0){
+                vtx->energy += vtx->xk2 * s * vtx->curvature2;
+            }
         }
     }
+    
 
     return TS_SUCCESS;
 }
@@ -264,10 +267,17 @@ inline ts_bool attraction_bond_energy(ts_vesicle *vesicle, ts_bond *bond){
 
 
 ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_old){
-	// modified to include Vicsek Interaction
+	// modified to include Vicsek Interaction and basic inhibition models
+    // 0: force in normal direction
+    // 1: inhibation F*=No_inactive/No_neigh
+    // 2: inhibation F*=No_c>=0/No_neigh
+    //16: Vicsek model, constant weight
+    //17: Vicsek model, ~ 1/R
+
     
-    // quit if there is no point
+    // quit if there is no force
     if(fabs(vtx->f)<1e-15) return 0.0;
+
     ts_bool model=vesicle->tape->type_of_force_model;
     ts_double vicsek_strength=vesicle->tape->vicsek_strength;
     ts_double vicsek_radius= vesicle->tape->vicsek_radius;
@@ -284,17 +294,14 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
     // allocate the struct for the "seen vertex" (defined in general.h, functions in vertex.c)
     ts_seen_vertex *seen_vtx; //initalize in vicsek
 
+    ts_uint No_neigh_activating; // number of activating neighbors
+    ts_double inhibition_factor;
 
 
-    // if not vicsek type, or vicsek model is not relevant
-    if ( !(vtx->type&is_vicsek_vtx) || model==16 || model==17 || fabs(vicsek_strength)<1e-15 || fabs(vicsek_radius)<1e-15) {//no vicsek
-        //regular "force in normal direction"
-        vtx->fx = vtx->nx;
-        vtx->fy = vtx->ny;
-        vtx->fz = vtx->nz;
 
-    }
-    else {
+    // if vicsek type and vicsek model is relevant
+    if ( vtx->type&is_vicsek_vtx && (model==16 || model==17) && fabs(vicsek_strength)>1e-15 && fabs(vicsek_radius)>1e-15) {
+        
         //vicsek model
         //force directed by Vicsek sum-over-neighbors-normals
 
@@ -393,11 +400,58 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 	    //don't forget to free! 
         seen_vertex_free(seen_vtx);
 
-    //end else from if (!Vicsek)
+    //end if (!Vicsek)
+    }
+    else {
+        //regular "force in normal direction"
+        vtx->fx = vtx->nx;
+        vtx->fy = vtx->ny;
+        vtx->fz = vtx->nz;
     }
     
+    // now we calculate the final force and work
+
+    
+    //we recalculate the force based on inhibition: we want the real force to be recorded!
+
+    // HIV_Gag inhibition model
+    if (model==1){
+        // force ~ number of active neighbors
+        No_neigh_activating = 0;
+        for (i=0; i<vtx->neigh_no; i++){ 
+            if ( !( vtx->neigh[i]->type & is_active_vtx ) ) {
+                No_neigh_activating++;
+            }
+        }
+        inhibition_factor = 1;
+        inhibition_factor *= No_neigh_activating;  //take that, integer-integer division!
+        inhibition_factor /= vtx->neigh_no;
+        // change force by factor
+        vtx->fx *= inhibition_factor;
+        vtx->fy *= inhibition_factor;
+        vtx->fz *= inhibition_factor;
+    }
+
+    if (model==2){
+        // force ~ number of c>0 neighbors
+        No_neigh_activating = 0;
+        for (i=0; i<vtx->neigh_no; i++){
+            if ( vtx->neigh[i]->c > -1e-15   ) {
+                No_neigh_activating++;
+            }
+        }
+        inhibition_factor = 1;
+        inhibition_factor *= No_neigh_activating;  //take that, integer-integer division!
+        inhibition_factor /= vtx->neigh_no;
+        // change force by factor
+        vtx->fx *= inhibition_factor;
+        vtx->fy *= inhibition_factor;
+        vtx->fz *= inhibition_factor;
+    }
+
     /*calculate ddp, normal force directed displacement*/
 	ddp=vtx->fx*(vtx->x-vtx_old->x)+vtx->fy*(vtx->y-vtx_old->y)+vtx->fz*(vtx->z-vtx_old->z);
+
     
     /*calculate dE*/
     return -vtx->f*ddp;

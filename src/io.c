@@ -1314,6 +1314,18 @@ ts_bool write_vertex_xml_file(ts_vesicle *vesicle, ts_uint timestepno, ts_cluste
 
 	fprintf(fh,"</PointData>\n<CellData>\n");
 
+    fprintf(fh,"<DataArray type=\"Float64\" Name=\"bonding_energy\" format=\"ascii\">");
+		for(i=0;i<blist->n;i++){
+			fprintf(fh,"%.17e ",vesicle->blist->bond[i]->energy);
+		}
+		for(i=0;i<monono*polyno+filno*(fonono-1);i++){
+			fprintf(fh,"0.0 ");
+		}
+		for(i=0;i<vesicle->tlist->n;i++){
+			fprintf(fh,"0.0 ");
+		}
+	    fprintf(fh,"</DataArray>\n");
+
 	if(vesicle->tape->stretchswitch==1){
 		fprintf(fh,"<DataArray type=\"Float64\" Name=\"stretching_energy\" format=\"ascii\">");
 		for(i=0;i<blist->n;i++){
