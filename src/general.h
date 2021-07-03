@@ -315,7 +315,6 @@ typedef struct {
 	ts_double F;
 	ts_double plane_d;
 	ts_double plane_F;
-	ts_double vicsek_model;
 	ts_double vicsek_strength;
 	ts_double vicsek_radius;
 	ts_double adhesion_cuttoff;
@@ -350,6 +349,9 @@ typedef struct {
 	ts_bool allow_xy_plane_movement;
 	ts_bool force_balance_along_z_axis;
 	ts_bool adhesion_switch;
+	ts_bool type_of_bond_model;
+	ts_bool type_of_curvature_model;
+	ts_bool type_of_force_model;
 	//char *multiprocessing;
 } ts_tape;
 

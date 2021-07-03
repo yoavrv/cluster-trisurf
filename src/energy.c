@@ -165,6 +165,7 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
         tyn+=jt->ynorm;
         tzn+=jt->znorm;
 
+        if (vesicle->tape->type_of_curvature_model!=0 && vtx->type & is_anisotropic_vtx){
         // angle stuff
         //angle_sum += atan(ctp) + atan(ctm); // simple but slow!
         /// get the angle m-vtx-j
@@ -177,7 +178,7 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
         a_cross_b_z = (jm->x-vtx->x)*(j->y-vtx->y)-(jm->y-vtx->y)*(j->x-vtx->x);
         mag_a_cross_b = sqrt(pow(a_cross_b_x,2)+pow(a_cross_b_y,2)+pow(a_cross_b_z,2));
         angle_sum += atan2(mag_a_cross_b, a_dot_b);
-
+        }
     }
     
     h=xh*xh+yh*yh+zh*zh;
@@ -213,9 +214,15 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
 // normal circumstances.
 /* the following statement is an expression for $\frac{1}{2}\int(c_1+c_2-c_0^\prime)^2\mathrm{d}A$, where $c_0^\prime=2c_0$ (twice the spontaneous curvature)  */
     vtx->energy=vtx->xk* 0.5*s*(vtx->curvature/s-vtx->c)*(vtx->curvature/s-vtx->c);
-    vtx->curvature2 = (2*M_PI- angle_sum)/s;
-    if (vtx->type&is_anisotropic_vtx){
+    if (vesicle->tape->type_of_curvature_model!=0 && vtx->type&is_anisotropic_vtx){
+        vtx->curvature2 = (2*M_PI- angle_sum)/s;
         vtx->energy += vtx->xk2 * s * vtx->curvature2;
+    }
+    else if (vesicle->tape->type_of_curvature_model==1){
+        vtx->curvature2 = (2*M_PI- angle_sum)/s;
+        if (vtx->type&is_anisotropic_vtx){
+            vtx->energy += vtx->xk2 * s * vtx->curvature2;
+        }
     }
 
     return TS_SUCCESS;
@@ -234,13 +241,24 @@ ts_bool sweep_attraction_bond_energy(ts_vesicle *vesicle){
 
 inline ts_bool attraction_bond_energy(ts_vesicle *vesicle, ts_bond *bond){
 
-	if((bond->vtx1->type&is_bonding_vtx && bond->vtx2->type&is_bonding_vtx)){
-        // f(w1,w2)
-		bond->energy=-0.5*(bond->vtx1->w+bond->vtx2->w);
-	}
-	else {
-		bond->energy=0.0;
-	}
+    if (vesicle->tape->type_of_bond_model==0){ // bonding type bond together
+	    if((bond->vtx1->type&is_bonding_vtx && bond->vtx2->type&is_bonding_vtx)){
+            // f(w1,w2)
+		    bond->energy=-0.5*(bond->vtx1->w+bond->vtx2->w);
+	    }
+	    else {
+		    bond->energy=0.0;
+	    }
+    }
+    if (vesicle->tape->type_of_bond_model==1){ // bond by same type
+	    if((bond->vtx1->type&is_bonding_vtx && bond->vtx2->type==bond->vtx1->type)){
+            // f(w1,w2)
+		    bond->energy=-0.5*(bond->vtx1->w+bond->vtx2->w);
+	    }
+	    else {
+		    bond->energy=0.0;
+	    }
+    }
 	return TS_SUCCESS;
 }
 
@@ -250,7 +268,9 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
     
     // quit if there is no point
     if(fabs(vtx->f)<1e-15) return 0.0;
-
+    ts_bool model=vesicle->tape->type_of_force_model;
+    ts_double vicsek_strength=vesicle->tape->vicsek_strength;
+    ts_double vicsek_radius= vesicle->tape->vicsek_radius;
 
     ts_double norml,ddp=0.0;
 	//ts_double xnorm=0.0,ynorm=0.0,znorm=0.0;
@@ -260,14 +280,14 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
     ts_uint i, j, curr_dist;
     
     // estimated mallocation size for the cluster: roughly ~pi*r^2
-    ts_uint max_vtx_seen=3*(( (int) vesicle->tape->vicsek_radius)+1)*(( (int) vesicle->tape->vicsek_radius)+1);
+    ts_uint max_vtx_seen=3*(( (int) vicsek_radius)+1)*(( (int) vicsek_radius)+1);
     // allocate the struct for the "seen vertex" (defined in general.h, functions in vertex.c)
     ts_seen_vertex *seen_vtx; //initalize in vicsek
 
 
 
     // if not vicsek type, or vicsek model is not relevant
-    if ( !(vtx->type&is_vicsek_vtx) || !vesicle->tape->vicsek_model || fabs(vesicle->tape->vicsek_strength)<1e-15 || fabs(vesicle->tape->vicsek_radius)<1e-15) {//no vicsek
+    if ( !(vtx->type&is_vicsek_vtx) || model==16 || model==17 || fabs(vicsek_strength)<1e-15 || fabs(vicsek_radius)<1e-15) {//no vicsek
         //regular "force in normal direction"
         vtx->fx = vtx->nx;
         vtx->fy = vtx->ny;
@@ -292,7 +312,7 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
     
         // Breadth first search using seen_vtx, layer by layer,
         // until reaching layer that is outside the maximum radius
-        for (curr_dist=1 ; curr_dist<=vesicle->tape->vicsek_radius; curr_dist++){
+        for (curr_dist=1 ; curr_dist<=vicsek_radius; curr_dist++){
             advance_seen_vertex_to_next_layer(seen_vtx);
             
             // The for loops are split by layers
@@ -339,16 +359,16 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
                         add_vtx_to_seen(seen_vtx,seen_vtx->vtx[i]->neigh[j]);
 
                         //add normal to the sum
-                        // Vicsek model 2: weight by 1/distance
-                        if (vesicle->tape->vicsek_model == 2) {
-                            vixnorm += vesicle->tape->vicsek_strength * seen_vtx->vtx[i]->neigh[j]->nx / curr_dist;
-                            viynorm += vesicle->tape->vicsek_strength * seen_vtx->vtx[i]->neigh[j]->ny / curr_dist;
-                            viznorm += vesicle->tape->vicsek_strength * seen_vtx->vtx[i]->neigh[j]->nz / curr_dist;
+                        // Vicsek model 17: weight by 1/distance
+                        if (vesicle->tape->type_of_force_model == 17) {
+                            vixnorm += vicsek_strength * seen_vtx->vtx[i]->neigh[j]->nx / curr_dist;
+                            viynorm += vicsek_strength * seen_vtx->vtx[i]->neigh[j]->ny / curr_dist;
+                            viznorm += vicsek_strength * seen_vtx->vtx[i]->neigh[j]->nz / curr_dist;
                         }
                         else {
-                            vixnorm += vesicle->tape->vicsek_strength * seen_vtx->vtx[i]->neigh[j]->nx;
-                            viynorm += vesicle->tape->vicsek_strength * seen_vtx->vtx[i]->neigh[j]->ny;
-                            viznorm += vesicle->tape->vicsek_strength * seen_vtx->vtx[i]->neigh[j]->nz;
+                            vixnorm += vicsek_strength * seen_vtx->vtx[i]->neigh[j]->nx;
+                            viynorm += vicsek_strength * seen_vtx->vtx[i]->neigh[j]->ny;
+                            viznorm += vicsek_strength * seen_vtx->vtx[i]->neigh[j]->nz;
                         }
 
                     }

@@ -109,12 +109,12 @@ plane_d=10
 #plane to vesicle repulsion force while closing
 plane_F=1.0
 
+# model- 0: regular, force in normal direction, 16: Vicsek, connected neighbors up to radius, 17: 1 with weight 1/neighbor dist
+force_model=1
 #Vicsek: force direction is sum of own normal + (nearest neighbor normals * vicsek_strength)
-# model- 0: no vicsek, 1: connected neighbors up to radius, 2: 1 with weight 1/neighbor dist
-vicsek_model=1
-#interaction strength parameter: 1: weight of neighbors
+#interaction strength parameter: Vicsek: weight of neighbors
 vicsek_strength=0.1
-#interactionr radius parameter: 1: max. neighbor distance (int)
+#interactionr radius parameter: Vicsek: max. neighbor distance (int)
 vicsek_radius=4.0
 
 #some important parameters

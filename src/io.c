@@ -1496,7 +1496,7 @@ ts_tape *parsetape(char *filename){
 	fclose(fd);
 	if(size);
 
-    // absolutly horrible but works:
+
     // fix the tape that is recorded to the .vtu
     // with the new command line arguments
     update_tapetxt(tapetxt, command_line_args.tape_opts);
@@ -1569,10 +1569,13 @@ ts_tape *parsetapebuffer(char *buffer){
 //	CFG_FLOAT("stretchswitch", 0, CFGF_NONE),
 //	CFG_FLOAT("xkA0",0,CFGF_NONE),
 
-/* variables for Vicsek interaction*/
-        CFG_INT("vicsek_model", 0, CFGF_NONE),
+/* variables for Vicsek interaction and general interaction modification*/
+        CFG_INT("force_model", 0, CFGF_NONE),
         CFG_FLOAT("vicsek_strength", 0.1, CFGF_NONE),
         CFG_FLOAT("vicsek_radius", 1.0, CFGF_NONE),
+        CFG_INT("bond_model", 0, CFGF_NONE),
+        CFG_INT("curvature_model", 0, CFGF_NONE),
+/* random seed */
         CFG_INT("random_seed",0,CFGF_NONE),
         CFG_END()
     };
@@ -1622,7 +1625,7 @@ ts_tape *parsetapebuffer(char *buffer){
     tape->plane_confinement_switch = cfg_getint(cfg, "plane_confinement_switch");
     tape->plane_d = cfg_getfloat(cfg, "plane_d");
     tape->plane_F = cfg_getfloat(cfg, "plane_F");
-    tape->vicsek_model = cfg_getint(cfg, "vicsek_model");
+    tape->type_of_force_model = cfg_getint(cfg, "force_model");
     tape->vicsek_strength = cfg_getfloat(cfg, "vicsek_strength");
     tape->vicsek_radius = cfg_getfloat(cfg, "vicsek_radius");
     tape->adhesion_switch = cfg_getint(cfg, "adhesion_switch");
@@ -1631,6 +1634,8 @@ ts_tape *parsetapebuffer(char *buffer){
     tape->adhesion_radius = cfg_getfloat(cfg, "adhesion_radius");
     tape->z_adhesion = cfg_getfloat(cfg, "z_adhesion");
     tape->random_seed = cfg_getint(cfg, "random_seed");
+    tape->type_of_bond_model = cfg_getint(cfg, "bond_model");
+    tape->type_of_curvature_model = cfg_getint(cfg, "curvature_model");
 
     if (retval==CFG_FILE_ERROR){
         fatal("No tape file.", 100);

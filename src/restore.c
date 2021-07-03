@@ -171,6 +171,7 @@ ts_vesicle *parseTrisurfTag(xmlDocPtr doc, xmlNodePtr cur){
 	nvtx = xmlGetProp(cur, (xmlChar *)"nvtx");
 	npoly=xmlGetProp(cur, (xmlChar *)"npoly");
 	nmono=xmlGetProp(cur, (xmlChar *)"nmono");
+	update_tapetxt(tapetxt, command_line_args.tape_opts);
 	ts_tape *tape=parsetapebuffer(tapetxt);
 	//fprintf(stderr,"nvtx=%u\n",atoi((char *)nvtx));
 	//TODO: check if nvtx is in agreement with nshell from tape

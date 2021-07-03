@@ -30,7 +30,7 @@ ts_vesicle *initial_distribution_dipyramid(ts_uint nshell, ts_uint ncmax1, ts_ui
 	retval = init_triangle_neighbours(vesicle);
 	retval = init_common_vertex_triangle_neighbours(vesicle);
 	retval = init_normal_vectors(vesicle->tlist);
-	retval = mean_curvature_and_energy(vesicle);
+	//retval = mean_curvature_and_energy(vesicle); sweeping happens after initial population anyway
 	ts_fprintf(stdout,"initial_distribution finished!\n");
 	if(retval);
 	return vesicle;
