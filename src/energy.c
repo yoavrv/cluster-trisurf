@@ -5,6 +5,9 @@
 #include "vertex.h"
 #include<math.h>
 #include<stdio.h>
+#include <gsl/gsl_vector_complex.h>
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_eigen.h>
 
 
 /** @brief Wrapper that calculates energy of every vertex in vesicle
@@ -43,6 +46,22 @@ inline ts_bool bond_energy(ts_bond *bond,ts_poly *poly){
 	bond->energy=poly->k*pow(bond->bond_length-d_relaxed,2);
 	return TS_SUCCESS;
 };
+
+
+inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
+    // oh boi!
+    ts_uchar i_vtx, j_tria, k_bond;
+    gsl_vector *edge_vector = gsl_vector_alloc(3);
+    gsl_vector *edge_normal = gsl_vector_alloc(3);
+    gsl_vector *edge_tangent = gsl_vector_alloc(3);
+    gsl_vector *vtx_normal = gsl_vector_alloc(3);
+
+    // we stand at the principle vertex vertex
+    ts_triangle *left_tri, *right_tri;
+
+    return 0;
+}
+
 
 /** @brief Calculation of the bending energy of the vertex.
  *  
@@ -87,6 +106,10 @@ inline ts_bool bond_energy(ts_bond *bond,ts_poly *poly){
  * @returns TS_SUCCESS on successful calculation.
 */
 inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
+    if (vesicle->tape->type_of_curvature_model==10) {
+        return curvature_tensor_energy_vertex(vesicle, vtx);
+    }
+    
     ts_uint jj;
     ts_uint jjp,jjm;
     ts_vertex *j,*jp, *jm;
@@ -97,6 +120,7 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     ts_double angle_sum=0;
     ts_double a_dot_b, a_cross_b_x, a_cross_b_y, a_cross_b_z, mag_a_cross_b;
     ts_bool model=vesicle->tape->type_of_curvature_model;
+    
     for(jj=1; jj<=vtx->neigh_no;jj++){
         jjp=jj+1;
         if(jjp>vtx->neigh_no) jjp=1;

@@ -32,7 +32,9 @@ ts_bool constvolume(ts_vesicle *vesicle, ts_vertex *vtx_avoid, ts_double Vol, ts
 /* different check of nearest neighbour (and second nearest neighbour) check.
  * Checking the distance between vertex and vertex to be moved to assure
  * constant volume. Solves upper todo problem. */
-
+        if (vtx_moved->type==is_ghost_vtx) {
+            continue;
+        }
         if(vtx_distance_sq(vtx_moved,vtx_avoid)<16.0*vesicle->dmax){
             continue;
         }
