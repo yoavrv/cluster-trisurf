@@ -137,7 +137,7 @@ ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
 	ts_vertex* vtx;
 	n = vesicle->vlist->n;
 	indices = (ts_uint*) malloc(n * sizeof(ts_uint));
-	// create an array fo indices; copied a bunch from wikipedia "FIsher-Yates shuffle"
+	// create an array fo indices; copied a bunch from wikipedia "Fisher-Yates shuffle"
 	for (i=0; i<n; i++){
 		indices[i] = i;
 	} // shuffle
@@ -199,10 +199,10 @@ ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
 
 	// This updates the energy, curvatures, and normals using the energy_vertex
 	mean_curvature_and_energy(vesicle);
-	if(fabs(tape->w)>1e-16){ //if nonzero energy
-		//	ts_fprintf(stderr,"Setting attraction between vertices with spontaneous curvature\n");
-		sweep_attraction_bond_energy(vesicle);
-	}
+	
+	//	ts_fprintf(stderr,"Setting attraction between vertices with spontaneous curvature\n");
+	sweep_attraction_bond_energy(vesicle);
+	
 	return TS_SUCCESS;
 }
 

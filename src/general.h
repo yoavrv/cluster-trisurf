@@ -190,7 +190,7 @@ enum vertex_type {
 	is_reserved_0_vtx=16,
 	is_vicsek_vtx=32,
 	is_reserved_1_vtx=64,
-	reserved_2_vtx=128
+	is_ghost_vtx=-128,
 }; 
 
 

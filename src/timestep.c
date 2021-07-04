@@ -235,7 +235,13 @@ ts_bool single_timestep(ts_vesicle *vesicle,ts_double *vmsr, ts_double *bfsr, cl
         //rnvec[0]=drand48();
         //rnvec[1]=drand48();
         //rnvec[2]=drand48();
-        retval=single_verticle_timestep(vesicle,vesicle->vlist->vtx[i], time_1, time_2);
+		if (vesicle->vlist->vtx[i]->type == is_ghost_vtx) {
+			//skip! ghost vertex should not move**
+			retval=0;
+		}
+		else {
+        	retval=single_verticle_timestep(vesicle,vesicle->vlist->vtx[i], time_1, time_2);
+		}
 		if(retval==TS_SUCCESS) vmsrcnt++;
     }
 	*time_0+=clock()-stopwatch;
@@ -255,20 +261,31 @@ ts_bool single_timestep(ts_vesicle *vesicle,ts_double *vmsr, ts_double *bfsr, cl
 
 	for(i=0;i<vesicle->poly_list->n;i++){
 		for(j=0;j<vesicle->poly_list->poly[i]->vlist->n;j++){
+			if (vesicle->poly_list->poly[i]->vlist->vtx[j]->type == is_ghost_vtx) {
+			//skip! ghost vertex should not move**
+			retval = 0;
+			}
+			else {
 			rnvec[0]=drand48();
 			rnvec[1]=drand48();
 			rnvec[2]=drand48();
 			retval=single_poly_vertex_move(vesicle,vesicle->poly_list->poly[i],vesicle->poly_list->poly[i]->vlist->vtx[j],rnvec);	
+			}
 		}
 	}
 
 
 	for(i=0;i<vesicle->filament_list->n;i++){
 		for(j=0;j<vesicle->filament_list->poly[i]->vlist->n;j++){
-			rnvec[0]=drand48();
-			rnvec[1]=drand48();
-			rnvec[2]=drand48();
-			retval=single_filament_vertex_move(vesicle,vesicle->filament_list->poly[i],vesicle->filament_list->poly[i]->vlist->vtx[j],rnvec);	
+			if (vesicle->filament_list->poly[i]->vlist->vtx[j]->type == is_ghost_vtx) {
+				retval = 0;
+			}
+			else {
+				rnvec[0]=drand48();
+				rnvec[1]=drand48();
+				rnvec[2]=drand48();
+				retval=single_filament_vertex_move(vesicle,vesicle->filament_list->poly[i],vesicle->filament_list->poly[i]->vlist->vtx[j],rnvec);
+			}	
 		}
 	}
  

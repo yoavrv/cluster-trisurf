@@ -41,6 +41,8 @@ c
     ts_vertex *constvol_vtx_moved, *constvol_vtx_backup;
     ts_bool retval;
 
+    if (it->type==is_ghost_vtx && k->type==is_ghost_vtx) return TS_FAIL;
+
     if(it->neigh_no< 3) return TS_FAIL;
     if(k->neigh_no< 3) return TS_FAIL;
     if(k==NULL || it==NULL){
