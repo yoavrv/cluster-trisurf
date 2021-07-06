@@ -119,6 +119,7 @@ xk2=0
 
 # force_model- 0: regular, force in normal direction, 
 # 1: inhibition, F~nonactive_neigh, 2: F~c0>=0 neigh
+# 3: F=0 if any neigh c0 less than 0 
 # 16: Vicsek, connected neighbors up to radius, 17: 16 with weight 1/neighbor dist
 force_model=0
 #Vicsek: force direction is sum of own normal + (nearest neighbor normals * vicsek_strength)

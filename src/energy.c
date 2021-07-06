@@ -553,6 +553,7 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
     // 0: force in normal direction
     // 1: inhibation F*=No_inactive/No_neigh
     // 2: inhibation F*=No_c>=0/No_neigh
+    // 3: F=0 for neigh c0<0
     //16: Vicsek model, constant weight
     //17: Vicsek model, ~ 1/R
 
@@ -730,6 +731,18 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
         vtx->fy *= inhibition_factor;
         vtx->fz *= inhibition_factor;
     }
+    if (model==3){
+        // force disabled for any c<0 neighbors
+        for (i=0; i<vtx->neigh_no; i++){
+            if ( vtx->neigh[i]->c < -1e-15   ) {
+                vtx->fx = 0;
+                vtx->fy = 0;
+                vtx->fz = 0;
+                break;
+            }
+        }
+    }
+
 
     /*calculate ddp, normal force directed displacement*/
 	ddp=vtx->fx*(vtx->x-vtx_old->x)+vtx->fy*(vtx->y-vtx_old->y)+vtx->fz*(vtx->z-vtx_old->z);
