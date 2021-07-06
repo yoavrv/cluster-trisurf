@@ -15,16 +15,15 @@
 #include "vertexmove.h"
 #include <string.h>
 #include "constvol.h"
-#include <time.h>
 
-ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *time_1, clock_t *time_2){
+
+ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
     ts_uint i;
     ts_double dist;
     ts_bool retval; 
     ts_uint cellidx; 
     ts_double delta_energy, delta_energy_cv,oenergy,dvol=0.0, darea=0.0, dstretchenergy=0.0;
     ts_double costheta,sintheta,phi,cosphi,r;
-	clock_t stopwatch;
 	//This will hold all the information of vtx and its neighbours
 	ts_vertex backupvtx[20], *constvol_vtx_moved=NULL, *constvol_vtx_backup=NULL;
 	memcpy((void *)&backupvtx[0],(void *)vtx,sizeof(ts_vertex));
@@ -44,8 +43,6 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
 //    	vtx->y=vtx->y+vesicle->stepsize*(2.0*rn[1]-1.0);
 //    	vtx->z=vtx->z+vesicle->stepsize*(2.0*rn[2]-1.0);
 
-	//measure how long does the pick-movement phase takes
-	stopwatch = clock();
 
 //random move in a sphere with radius stepsize:
 	//rnvec[0]=drand48();
@@ -65,8 +62,6 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
 	}
 	vtx->z=vtx->z+r*costheta;
 
-	// finish timing when the movement is approved or thrown out
-	//*time_1 += clock()-stopwatch;
 
 	
 //distance with neighbours check
@@ -74,7 +69,6 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
         dist=vtx_distance_sq(vtx,vtx->neigh[i]);
         if(dist<1.0 || dist>vesicle->dmax) {
 		    vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
-			*time_1 += clock()-stopwatch;
     		return TS_FAIL;
 		}
     }
@@ -84,7 +78,6 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
 		dist=vtx_distance_sq(vtx,vtx->grafted_poly->vlist->vtx[0]);
         if(dist<1.0 || dist>vesicle->dmax) {
 		vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
-		*time_1 += clock()-stopwatch;
 		return TS_FAIL;
 		}
 	}
@@ -95,7 +88,6 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
 if(vesicle->R_nucleus>0.0){
 	if ((vtx->x-vesicle->nucleus_center[0])*(vtx->x-vesicle->nucleus_center[0])+ (vtx->y-vesicle->nucleus_center[1])*(vtx->y-vesicle->nucleus_center[1]) + (vtx->z-vesicle->nucleus_center[2])*(vtx->z-vesicle->nucleus_center[2]) < vesicle->R_nucleus){
 		vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
-		*time_1 += clock()-stopwatch;
 		return TS_FAIL;
 	}
 } else if(vesicle->R_nucleusX>0.0){
@@ -104,7 +96,6 @@ if(vesicle->R_nucleus>0.0){
 	if ((vtx->x-vesicle->nucleus_center[0])*(vtx->x-vesicle->nucleus_center[0])/vesicle->R_nucleusX + (vtx->y-vesicle->nucleus_center[1])*(vtx->y-vesicle->nucleus_center[1])/vesicle->R_nucleusY + (vtx->z-vesicle->nucleus_center[2])*(vtx->z-vesicle->nucleus_center[2])/vesicle->R_nucleusZ < 1.0){
 //	if (SQ(vtx->x)/vesicle->R_nucleusX + SQ(vtx->y)/vesicle->R_nucleusY + SQ(vtx->z)/vesicle->R_nucleusZ < 1.0){
 		vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
-		*time_1 += clock()-stopwatch;
 		return TS_FAIL;
 	}
 
@@ -114,7 +105,6 @@ if(vesicle->R_nucleus>0.0){
 	if(vesicle->tape->plane_confinement_switch){
 		if(vtx->z>vesicle->confinement_plane.z_max || vtx->z<vesicle->confinement_plane.z_min){
 		vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
-		*time_1 += clock()-stopwatch;
 		return TS_FAIL;
 		}
 
@@ -125,21 +115,18 @@ if(vesicle->R_nucleus>0.0){
 		if (vesicle->tape->type_of_adhesion_model==1 || vesicle->tape->type_of_adhesion_model==2){
 			if(vtx->z<vesicle->tape->z_adhesion){
 			vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
-			*time_1 += clock()-stopwatch;
 			return TS_FAIL;
 			}
 		}
 		if (vesicle->tape->type_of_adhesion_model==3){
     		if((pow(vesicle->adhesion_center - vtx->z,2) + pow(vtx->x,2) + pow(vtx->y,2)) < pow(vesicle->tape->adhesion_radius,2)){
 			vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
-			*time_1 += clock()-stopwatch;
 			return TS_FAIL;
 			}
         }
 		if (vesicle->tape->type_of_adhesion_model==4){
     		if((pow(vesicle->adhesion_center - vtx->z,2) + pow(vtx->x,2)) < pow(vesicle->tape->adhesion_radius,2)){
 			vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
-			*time_1 += clock()-stopwatch;
 			return TS_FAIL;
 			}
 		}
@@ -153,7 +140,6 @@ if(vesicle->R_nucleus>0.0){
 
     if(retval==TS_FAIL){
 		vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
-		*time_1 += clock()-stopwatch;
         return TS_FAIL;
     } 
 	
@@ -163,9 +149,7 @@ if(vesicle->R_nucleus>0.0){
 		memcpy((void *)&backupvtx[i+1],(void *)vtx->neigh[i],sizeof(ts_vertex));
 	}
 
-	//start clock
-	*time_1 += clock()-stopwatch;
-	stopwatch = clock();
+
 
 	if(vesicle->pswitch == 1 || vesicle->tape->constvolswitch>0){
 		for(i=0;i<vtx->tristar_no;i++) dvol-=vtx->tristar[i]->volume;
@@ -215,8 +199,6 @@ if(vesicle->R_nucleus>0.0){
 		        	vtx->neigh[i]=memcpy((void *)vtx->neigh[i],(void *)&backupvtx[i+1],sizeof(ts_vertex));
 	        	}
             	for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]); 
-
-				*time_2 += clock()-stopwatch;
             	return TS_FAIL;
 		}
 
@@ -232,8 +214,6 @@ if(vesicle->R_nucleus>0.0){
 		        	vtx->neigh[i]=memcpy((void *)vtx->neigh[i],(void *)&backupvtx[i+1],sizeof(ts_vertex));
 	        	}
             		for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]); 
-
-					*time_2 += clock()-stopwatch;
             		return TS_FAIL;
 		}
 
@@ -250,8 +230,6 @@ if(vesicle->R_nucleus>0.0){
 		        vtx->neigh[i]=memcpy((void *)vtx->neigh[i],(void *)&backupvtx[i+1],sizeof(ts_vertex));
 	        }
             for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]);
-
-			*time_2 += clock()-stopwatch;
             return TS_FAIL;
         }
 	//    vesicle_volume(vesicle);
@@ -340,8 +318,6 @@ if(vesicle->R_nucleus>0.0){
         	constvolumerestore(vesicle, constvol_vtx_moved,constvol_vtx_backup);
     	}
 
-		//exit, stop clock
-		*time_2 += clock()-stopwatch;
     	return TS_FAIL; 
     }
 }
@@ -370,8 +346,7 @@ if(vesicle->R_nucleus>0.0){
 //    vesicle_volume(vesicle);
 //    fprintf(stderr,"Volume after success=%1.16e\n", vesicle->volume);
 	
-	//exit, stop clock
-	*time_2 += clock()-stopwatch;
+
     return TS_SUCCESS;
 }
 
