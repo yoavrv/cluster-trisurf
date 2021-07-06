@@ -1591,7 +1591,7 @@ ts_tape *parsetapebuffer(char *buffer){
         CFG_INT("random_seed",0,CFGF_NONE),
         CFG_END()
     };
-    CFGF_IGNORE_UNKNOWN;
+    //CFGF_IGNORE_UNKNOWN;
     cfg_t *cfg;    
     ts_uint retval;
     cfg = cfg_init(opts, 256); //consider using CFGF_IGNORE_UNKNOWN=256
