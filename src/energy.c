@@ -10,6 +10,13 @@
 #include <gsl/gsl_eigen.h>
 
 
+int cmpfunc(const void *x, const void *y)
+{
+	double diff=	fabs(*(double*)x) - fabs(*(double*)y);
+	if(diff<0) return 1;
+	else return -1;
+}
+
 /** @brief Wrapper that calculates energy of every vertex in vesicle
  *  
  *  Function calculated energy of every vertex in vesicle. It can be used in
@@ -25,7 +32,9 @@ ts_bool mean_curvature_and_energy(ts_vesicle *vesicle){
     ts_vertex **vtx=vlist->vtx;
 
     for(i=0;i<vlist->n;i++){
-        energy_vertex(vesicle, vtx[i]);
+        if (!(vtx[i]->type&is_ghost_vtx)) {       
+            energy_vertex(vesicle, vtx[i]);
+        }
         
     }
 
@@ -49,17 +58,266 @@ inline ts_bool bond_energy(ts_bond *bond,ts_poly *poly){
 
 
 inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
-    // oh boi!
-    ts_uchar i_vtx, j_tria, k_bond;
-    gsl_vector *edge_vector = gsl_vector_alloc(3);
-    gsl_vector *edge_normal = gsl_vector_alloc(3);
-    gsl_vector *edge_tangent = gsl_vector_alloc(3);
-    gsl_vector *vtx_normal = gsl_vector_alloc(3);
+    // direct copy from Samo git repository
+    // ...almost
+    ts_uint jj, i, j;
+    ts_double edge_vector_x[7]={0,0,0,0,0,0,0};
+    ts_double edge_vector_y[7]={0,0,0,0,0,0,0};
+    ts_double edge_vector_z[7]={0,0,0,0,0,0,0};
+    ts_double edge_normal_x[7]={0,0,0,0,0,0,0};
+    ts_double edge_normal_y[7]={0,0,0,0,0,0,0};
+    ts_double edge_normal_z[7]={0,0,0,0,0,0,0};
+    ts_double edge_binormal_x[7]={0,0,0,0,0,0,0};
+    ts_double edge_binormal_y[7]={0,0,0,0,0,0,0};
+    ts_double edge_binormal_z[7]={0,0,0,0,0,0,0};
+    ts_double vertex_normal_x=0.0;
+    ts_double vertex_normal_y=0.0;
+    ts_double vertex_normal_z=0.0;
+//    ts_triangle *triedge[2]={NULL,NULL};
 
-    // we stand at the principle vertex vertex
-    ts_triangle *left_tri, *right_tri;
+    ts_uint nei,neip,neim;
+    ts_vertex *it, *k, *kp,*km;
+    ts_triangle *lm=NULL, *lp=NULL;
+    ts_double sumnorm;
+    ts_double temp_length;
+    ts_double cross_x, cross_y, cross_z;
 
-    return 0;
+    ts_double Se11, Se21, Se22, Se31, Se32, Se33;
+    ts_double Pv11, Pv21, Pv22, Pv31, Pv32, Pv33;
+    ts_double Se12, Se13, Se23, Pv12, Pv13, Pv23;//test alias
+    ts_double We;
+    ts_double Av, We_Av;
+
+	ts_double eigenval[3];
+
+	gsl_matrix *gsl_Sv=gsl_matrix_alloc(3,3);
+	gsl_vector *Sv_eigen=gsl_vector_alloc(3);
+	gsl_eigen_symm_workspace *workspace=gsl_eigen_symm_alloc(3);
+
+	ts_double mprod[7], phi[7], he[7];
+	ts_double Sv[3][3]={{0,0,0},{0,0,0},{0,0,0}};
+    // Here edge vector is calculated
+//    fprintf(stderr, "Vertex has neighbours=%d\n", vtx->neigh_no);
+
+
+
+
+	Av=0;
+	for(i=0; i<vtx->tristar_no; i++){
+		vertex_normal_x=(vertex_normal_x - vtx->tristar[i]->xnorm*vtx->tristar[i]->area);
+		vertex_normal_y=(vertex_normal_y - vtx->tristar[i]->ynorm*vtx->tristar[i]->area);
+		vertex_normal_z=(vertex_normal_z - vtx->tristar[i]->znorm*vtx->tristar[i]->area);
+		Av+=vtx->tristar[i]->area/3;
+	}
+	temp_length=sqrt(pow(vertex_normal_x,2)+pow(vertex_normal_y,2)+pow(vertex_normal_z,2));
+	vertex_normal_x=vertex_normal_x/temp_length;
+	vertex_normal_y=vertex_normal_y/temp_length;
+	vertex_normal_z=vertex_normal_z/temp_length;
+
+	Pv11=1-vertex_normal_x*vertex_normal_x;
+	Pv22=1-vertex_normal_y*vertex_normal_y;
+	Pv33=1-vertex_normal_z*vertex_normal_z;
+	Pv21=vertex_normal_x*vertex_normal_y;
+	Pv31=vertex_normal_x*vertex_normal_z;
+	Pv32=vertex_normal_y*vertex_normal_z;
+    Pv12=Pv21; Pv13=Pv31; Pv23=Pv32; //test
+
+/*	if(vtx->idx==0){
+		printf("Vertex normal for vertex %d: %f, %f, %f\n",vtx->idx,vertex_normal_x, vertex_normal_y, vertex_normal_z);
+	}
+*/
+    for(jj=0;jj<vtx->neigh_no;jj++){
+	edge_vector_x[jj]=vtx->neigh[jj]->x-vtx->x;
+	edge_vector_y[jj]=vtx->neigh[jj]->y-vtx->y;
+	edge_vector_z[jj]=vtx->neigh[jj]->z-vtx->z;
+
+	//Here we calculate normalized edge vector
+
+	temp_length=sqrt(edge_vector_x[jj]*edge_vector_x[jj]+edge_vector_y[jj]*edge_vector_y[jj]+edge_vector_z[jj]*edge_vector_z[jj]);
+	edge_vector_x[jj]=edge_vector_x[jj]/temp_length;
+	edge_vector_y[jj]=edge_vector_y[jj]/temp_length;
+	edge_vector_z[jj]=edge_vector_z[jj]/temp_length;
+
+	//end normalization
+//	printf("(%f %f %f)\n", vertex_normal_x, vertex_normal_y, vertex_normal_z);
+/*
+	if(vtx->idx==0){
+		printf("Edge vector for vertex %d (vector %d): %f, %f, %f\n",vtx->idx,jj,edge_vector_x[jj], edge_vector_y[jj], edge_vector_z[jj]);
+	}
+*/
+	it=vtx;
+	k=vtx->neigh[jj];
+	nei=0;
+    	for(i=0;i<it->neigh_no;i++){ // Finds the nn of it, that is k 
+        	if(it->neigh[i]==k){
+            	nei=i;
+            	break;
+        	}
+    	}
+    	neip=nei+1;  // I don't like it.. Smells like I must have it in correct order
+    	neim=nei-1;
+    	if(neip>=it->neigh_no) neip=0;
+    	if((ts_int)neim<0) neim=it->neigh_no-1; /* casting is essential... If not
+there the neim is never <0 !!! */
+  //  fprintf(stderr,"The numbers are: %u %u\n",neip, neim);
+    	km=it->neigh[neim];  // We located km and kp
+    	kp=it->neigh[neip];
+
+    	if(km==NULL || kp==NULL){
+        	fatal("energy_vertex: cannot determine km and kp!",233);
+    	}
+
+   for(i=0;i<it->tristar_no;i++){
+        for(j=0;j<k->tristar_no;j++){
+            if((it->tristar[i] == k->tristar[j])){ //ce gre za skupen trikotnik
+                if((it->tristar[i]->vertex[0] == km || it->tristar[i]->vertex[1]
+== km || it->tristar[i]->vertex[2]== km )){
+                lm=it->tristar[i];
+         //       lmidx=i;
+                }
+                else
+                {
+                lp=it->tristar[i];
+         //       lpidx=i;
+                }
+
+            }
+        }
+    }
+if(lm==NULL || lp==NULL) fatal("energy_vertex: Cannot find triangles lm and lp!",233);
+
+	//Triangle normals are NORMALIZED!
+
+	sumnorm=sqrt( pow((lm->xnorm + lp->xnorm),2) + pow((lm->ynorm + lp->ynorm), 2) + pow((lm->znorm + lp->znorm), 2));
+
+	edge_normal_x[jj]=(lm->xnorm+ lp->xnorm)/sumnorm;
+	edge_normal_y[jj]=(lm->ynorm+ lp->ynorm)/sumnorm;
+	edge_normal_z[jj]=(lm->znorm+ lp->znorm)/sumnorm;
+
+
+	edge_binormal_x[jj]=(edge_normal_y[jj]*edge_vector_z[jj])-(edge_normal_z[jj]*edge_vector_y[jj]);
+	edge_binormal_y[jj]=-(edge_normal_x[jj]*edge_vector_z[jj])+(edge_normal_z[jj]*edge_vector_x[jj]);
+	edge_binormal_z[jj]=(edge_normal_x[jj]*edge_vector_y[jj])-(edge_normal_y[jj]*edge_vector_x[jj]);
+
+
+	//mprod[jj]=it->x*(k->y*edge_vector_z[jj]-edge_vector_y[jj]*k->z)-it->y*(k->x*edge_vector_z[jj]-k->z*edge_vector_x[jj])+it->z*(k->x*edge_vector_y[jj]-k->y*edge_vector_x[jj]);
+	mprod[jj]=lm->xnorm*(lp->ynorm*edge_vector_z[jj]-lp->znorm*edge_vector_y[jj]) - lm->ynorm*(lp->xnorm*edge_vector_z[jj]-lp->znorm*edge_vector_z[jj])+ lm->znorm*(lp->xnorm*edge_vector_y[jj]-lp->ynorm*edge_vector_x[jj]);
+
+    cross_x = lm->ynorm*lp->znorm - lp->ynorm*lm->znorm;
+    cross_y = lm->znorm*lp->xnorm - lp->znorm*lm->xnorm;
+    cross_z = lm->xnorm*lp->ynorm - lp->xnorm*lm->ynorm;
+	phi[jj]=copysign(atan2(sqrt(cross_x*cross_x+cross_y*cross_y+cross_z*cross_z),lm->xnorm*lp->xnorm+lm->ynorm*lp->ynorm+lm->znorm*lp->znorm-1e-10),-mprod[jj])+M_PI;
+/*	if(vtx->idx==0){
+		printf("Angle PHI vertex %d (angle %d): %f\n",vtx->idx,jj,phi[jj]);
+	}
+*/
+//	printf("ACOS arg=%e\n", lm->xnorm*lp->xnorm+lm->ynorm*lp->ynorm+lm->znorm*lp->znorm);
+	//he was multiplied with 2 before...
+//	he[jj]=sqrt( pow((edge_vector_x[jj]),2) + pow((edge_vector_y[jj]), 2) + pow((edge_vector_z[jj]), 2))*cos(phi[jj]/2.0);
+	he[jj]=temp_length*cos(phi[jj]/2.0);
+//	printf("phi[%d]=%f\n", jj,phi[jj]);
+
+    //lets try this identity: cos( (acos(b)+pi)/2) = -sqrt(1-b/2) 
+    if (abs(cos(phi[jj]/2.0) - copysign(sqrt( (1-(lm->xnorm*lp->xnorm+lm->ynorm*lp->ynorm+lm->znorm*lp->znorm)+1e-15) /2), mprod[jj]))>1e-10){
+        fprintf(stdout,"not equal: cos phi/2: %f, sqrt(1/2-cos(phi)/2) : %f, diff: %f\n mprod : %f\n",cos(phi[jj]/2),
+         sqrt( (1 +1e-15 -( lm->xnorm*lp->xnorm+lm->ynorm*lp->ynorm+lm->znorm*lp->znorm))/2), 
+         cos(phi[jj]/2.0)-sqrt( (1-(lm->xnorm*lp->xnorm+lm->ynorm*lp->ynorm+lm->znorm*lp->znorm)) /2), mprod[jj] );
+        fatal("ouch\n",100);
+    }
+
+    
+/*
+	if(vtx->idx==0){
+		printf("H operator of edge vertex %d (edge %d): %f\n",vtx->idx,jj,he[jj]);
+	}
+*/
+	Se11=-edge_binormal_x[jj]*edge_binormal_x[jj]*he[jj];
+	Se21=-edge_binormal_x[jj]*edge_binormal_y[jj]*he[jj];
+	Se22=-edge_binormal_y[jj]*edge_binormal_y[jj]*he[jj];
+	Se31=-edge_binormal_x[jj]*edge_binormal_z[jj]*he[jj];
+	Se32=-edge_binormal_y[jj]*edge_binormal_z[jj]*he[jj];
+	Se33=-edge_binormal_z[jj]*edge_binormal_z[jj]*he[jj];
+    Se12=Se21; Se13=Se31; Se23=Se32; //test
+
+	We=vertex_normal_x*edge_normal_x[jj]+vertex_normal_y*edge_normal_y[jj]+vertex_normal_z*edge_normal_z[jj];
+	We_Av=We/Av;
+
+/*
+	Sv[0][0]+=We_Av* ( Pv11*(Pv11*Se11+Pv21*Se21+Pv31*Se31)+Pv21*(Pv11*Se21+Pv21*Se22+Pv31*Se32)+Pv31*(Pv11*Se31+Pv21*Se32+Pv31*Se33) );
+	Sv[0][1]+=We_Av* (Pv21*(Pv11*Se11+Pv21*Se21+Pv31*Se31)+Pv22*(Pv11*Se21+Pv21*Se22+Pv31*Se32)+Pv32*(Pv11*Se31+Pv21*Se32+Pv31*Se33));
+	Sv[0][2]+=We_Av* (Pv31*(Pv11*Se11+Pv21*Se21+Pv31*Se31)+Pv32*(Pv11*Se21+Pv21*Se22+Pv31*Se32)+Pv33*(Pv11*Se31+Pv21*Se32+Pv31*Se33));
+	
+	Sv[1][0]+=We_Av* (Pv11*(Pv21*Se11+Pv22*Se21+Pv32*Se31)+Pv21*(Pv21*Se21+Pv22*Se22+Pv32*Se32)+Pv31*(Pv21*Se31+Pv22*Se32+Pv32*Se33));
+	Sv[1][1]+=We_Av* (Pv21*(Pv21*Se11+Pv22*Se21+Pv32*Se31)+Pv22*(Pv21*Se21+Pv22*Se22+Pv32*Se32)+Pv32*(Pv21*Se31+Pv22*Se32+Pv32*Se33));
+	Sv[1][2]+=We_Av* (Pv31*(Pv21*Se11+Pv22*Se21+Pv32*Se31)+Pv32*(Pv21*Se21+Pv22*Se22+Pv32*Se32)+Pv33*(Pv21*Se31+Pv22*Se32+Pv32*Se33));
+
+	Sv[2][0]+=We_Av* (Pv11*(Pv31*Se11+Pv32*Se21+Pv33*Se31)+Pv21*(Pv31*Se21+Pv32*Se22+Pv33*Se32)+Pv31*(Pv31*Se31+Pv32*Se32+Pv33*Se33));
+	Sv[2][1]+=We_Av* (Pv21*(Pv31*Se11+Pv32*Se21+Pv33*Se31)+Pv22*(Pv31*Se21+Pv32*Se22+Pv33*Se32)+Pv32*(Pv31*Se31+Pv32*Se32+Pv33*Se33));
+	Sv[2][2]+=We_Av* (Pv31*(Pv31*Se11+Pv32*Se21+Pv33*Se31)+Pv32*(Pv31*Se21+Pv32*Se22+Pv33*Se32)+Pv33*(Pv31*Se31+Pv32*Se32+Pv33*Se33));
+    */
+    Sv[0][0]+=We_Av* (Pv11*(Se11*Pv11+Se12*Pv21+Se13*Pv31)+Pv12*(Se21*Pv11+Se22*Pv21+Se23*Pv31)+Pv13*(Se31*Pv11+Se32*Pv21+Se33*Pv31));
+	Sv[0][1]+=We_Av* (Pv11*(Se11*Pv12+Se12*Pv22+Se13*Pv32)+Pv12*(Se21*Pv12+Se22*Pv22+Se23*Pv32)+Pv13*(Se31*Pv12+Se32*Pv22+Se33*Pv32));
+	Sv[0][2]+=We_Av* (Pv11*(Se11*Pv13+Se12*Pv23+Se13*Pv33)+Pv12*(Se21*Pv13+Se22*Pv23+Se23*Pv33)+Pv13*(Se31*Pv13+Se32*Pv23+Se33*Pv33));
+	
+	Sv[1][0]+=We_Av* (Pv21*(Se11*Pv11+Se12*Pv21+Se13*Pv31)+Pv22*(Se21*Pv11+Se22*Pv21+Se23*Pv31)+Pv23*(Se31*Pv11+Se32*Pv21+Se33*Pv31));
+	Sv[1][1]+=We_Av* (Pv21*(Se11*Pv12+Se12*Pv22+Se13*Pv32)+Pv22*(Se21*Pv12+Se22*Pv22+Se23*Pv32)+Pv23*(Se31*Pv12+Se32*Pv22+Se33*Pv32));
+	Sv[1][2]+=We_Av* (Pv21*(Se11*Pv13+Se12*Pv23+Se13*Pv33)+Pv22*(Se21*Pv13+Se22*Pv23+Se23*Pv33)+Pv23*(Se31*Pv13+Se32*Pv23+Se33*Pv33));
+
+	Sv[2][0]+=We_Av* (Pv31*(Se11*Pv11+Se12*Pv21+Se13*Pv31)+Pv32*(Se21*Pv11+Se22*Pv21+Se23*Pv31)+Pv33*(Se31*Pv11+Se32*Pv21+Se33*Pv31));
+	Sv[2][1]+=We_Av* (Pv31*(Se11*Pv12+Se12*Pv22+Se13*Pv32)+Pv32*(Se21*Pv12+Se22*Pv22+Se23*Pv32)+Pv33*(Se31*Pv12+Se32*Pv22+Se33*Pv32));
+	Sv[2][2]+=We_Av* (Pv31*(Se11*Pv13+Se12*Pv23+Se13*Pv33)+Pv32*(Se21*Pv13+Se22*Pv23+Se23*Pv33)+Pv33*(Se31*Pv13+Se32*Pv23+Se33*Pv33));
+//	printf("(%f %f %f); (%f %f %f); (%f %f %f)\n", edge_vector_x[jj], edge_vector_y[jj], edge_vector_z[jj], edge_normal_x[jj], edge_normal_y[jj], edge_normal_z[jj], edge_binormal_x[jj], edge_binormal_y[jj], edge_binormal_z[jj]);
+
+    } // END FOR JJ
+	gsl_matrix_set(gsl_Sv, 0,0, Sv[0][0]);
+	gsl_matrix_set(gsl_Sv, 0,1, Sv[0][1]);
+	gsl_matrix_set(gsl_Sv, 0,2, Sv[0][2]);
+	gsl_matrix_set(gsl_Sv, 1,0, Sv[1][0]);
+	gsl_matrix_set(gsl_Sv, 1,1, Sv[1][1]);
+	gsl_matrix_set(gsl_Sv, 1,2, Sv[1][2]);
+	gsl_matrix_set(gsl_Sv, 2,0, Sv[2][0]);
+	gsl_matrix_set(gsl_Sv, 2,1, Sv[2][1]);
+	gsl_matrix_set(gsl_Sv, 2,2, Sv[2][2]);
+
+//	printf("Se= %f, %f, %f\n    %f, %f, %f\n    %f, %f, %f\n", Se11, Se21, Se31, Se21, Se22, Se32, Se31, Se32, Se33);
+//	printf("Pv= %f, %f, %f\n    %f, %f, %f\n    %f, %f, %f\n", Pv11, Pv21, Pv31, Pv21, Pv22, Pv32, Pv31, Pv32, Pv33);
+//	printf("Sv= %f, %f, %f\n    %f, %f, %f\n    %f, %f, %f\n", Sv[0][0], Sv[0][1], Sv[0][2], Sv[1][0], Sv[1][1], Sv[1][2], Sv[2][0], Sv[2][1], Sv[2][2]);
+
+
+	gsl_eigen_symm(gsl_Sv, Sv_eigen, workspace);
+
+//	printf("Eigenvalues: %f, %f, %f\n", gsl_vector_get(Sv_eigen, 0),gsl_vector_get(Sv_eigen, 1), gsl_vector_get(Sv_eigen, 2) );
+//	printf("Eigenvalues: %f, %f, %f\n", gsl_matrix_get(evec, 0,0),gsl_matrix_get(evec, 0,1), gsl_matrix_get(evec, 0,2) );
+
+
+	eigenval[0]= gsl_vector_get(Sv_eigen, 0);
+	eigenval[1]= gsl_vector_get(Sv_eigen, 1);
+	eigenval[2]= gsl_vector_get(Sv_eigen, 2);
+
+	qsort(eigenval, 3, sizeof(ts_double), cmpfunc);
+	if(vtx->idx==0){
+	//printf("Eigenvalues: %f, %f, %f\n", eigenval[0], eigenval[1], eigenval[2] );
+//	exit(0);
+	}
+
+    // Yoav : and the stuff I'm tracking
+    vtx->nx = vertex_normal_x;
+    vtx->ny = vertex_normal_y;
+    vtx->nz = vertex_normal_z;
+    //vtx->curvature = (eigenval[0] + eigenval[1])/2;
+    //vtx->curvature2 = eigenval[0]*eigenval[1];
+    vtx->curvature = (eigenval[0]+ eigenval[1]);
+    vtx->curvature2 = eigenval[0]*eigenval[1];
+	vtx->energy=4*vtx->xk*(pow(eigenval[0]+eigenval[1]-2*vtx->c,2))*Av;
+    if (vtx->type&is_anisotropic_vtx && vtx->xk2!=0){
+            vtx->energy += vtx->xk2 * Av * eigenval[0]*eigenval[1];
+    }
+
+	gsl_matrix_free(gsl_Sv);
+	gsl_vector_free(Sv_eigen);
+//	gsl_matrix_free(evec);
+	gsl_eigen_symm_free(workspace);
+	return TS_SUCCESS;
 }
 
 

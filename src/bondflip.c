@@ -203,6 +203,37 @@ c
 		dvol = dvol + lm->volume + lp->volume;
 		if(vesicle->pswitch==1) delta_energy-= vesicle->pressure*dvol;
 	}
+
+if(k->neigh_no<4 || kp->neigh_no<4 || km->neigh_no<4 || it->neigh_no<4){
+
+			//restore old state.
+			/* restoration procedure copied from few lines below */
+			    for(i=0;i<4;i++){
+			//			fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
+				free(orig_vtx[i]->neigh);
+				free(orig_vtx[i]->tristar);
+				free(orig_vtx[i]->bond);
+				free(orig_tria[i]->neigh);
+				memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
+				memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
+			//			fprintf(stderr,"Restored vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
+				/* level 2 pointers are redirected*/
+			    }
+			    memcpy(bond,bck_bond,sizeof(ts_bond));
+			    for(i=0;i<4;i++){
+				free(bck_vtx[i]);
+				free(bck_tria[i]);
+			/*			fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d =",i, orig_vtx[i]->neigh_no );
+				for(j=0;j<orig_vtx[i]->neigh_no;j++) fprintf(stderr," %d", orig_vtx[i]->neigh[j]->idx);
+				fprintf(stderr,"\n"); */
+			    }
+			    free(bck_bond);
+			    return TS_FAIL;
+
+		
+    }
+
+
     if(vesicle->tape->constareaswitch==2){
         darea=darea+lm->area+lp->area; 
 /*check whether the dvol is gt than epsvol */
