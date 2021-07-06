@@ -21,7 +21,7 @@
 ts_vesicle *parseDump(char *dumpfname) {
 	//restore from vtu
 	xmlDocPtr doc;
-	xmlNodePtr cur, cur1,cur2, root, tape_node, vesicle_node;
+	xmlNodePtr cur, cur1,cur2, root, tape_node=NULL, vesicle_node=NULL;
 	ts_vesicle *vesicle=NULL;
 	doc = xmlParseFile(dumpfname);
 	int i;

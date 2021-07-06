@@ -1790,7 +1790,7 @@ ts_bool update_tapetxt(char* tape_txt, char* cmd_line_tape_args){
     char* tape_p=tape_txt; //trace reading of tape_txt
     char* new_tape_p=tapetxt_2; //trace writing of tape_txt_2
 
-    ts_uint num_opts;
+    ts_uint num_opts=0;
     ts_bool *dones;  // hold which options have been transfered to tape
     ts_uint i=0;
     ts_uint fail=0;  // option loop exit 
