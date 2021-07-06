@@ -1591,9 +1591,10 @@ ts_tape *parsetapebuffer(char *buffer){
         CFG_INT("random_seed",0,CFGF_NONE),
         CFG_END()
     };
+    CFGF_IGNORE_UNKNOWN;
     cfg_t *cfg;    
     ts_uint retval;
-    cfg = cfg_init(opts, CFGF_IGNORE_UNKNOWN); //consider using CFGF_IGNORE_UNKNOWN
+    cfg = cfg_init(opts, 256); //consider using CFGF_IGNORE_UNKNOWN=256
     retval = cfg_parse_buf(cfg, buffer);
     tape->nshell = cfg_getint(cfg,"nshell");
     tape->npoly = cfg_getint(cfg,"npoly");
@@ -1790,7 +1791,7 @@ ts_bool update_tapetxt(char* tape_txt, char* cmd_line_tape_args){
     char* tape_p=tape_txt; //trace reading of tape_txt
     char* new_tape_p=tapetxt_2; //trace writing of tape_txt_2
 
-    ts_uint num_opts;
+    ts_uint num_opts=0;
     ts_bool *dones;  // hold which options have been transfered to tape
     ts_uint i=0;
     ts_uint fail=0;  // option loop exit 
