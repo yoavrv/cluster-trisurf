@@ -135,7 +135,9 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_uint mcsweeps, ts_uint inititer, 
 			vmsr+=vmsrt;
 			bfsr+=bfsrt;
 		}
-
+		if (i==8){
+			vesicle->vlist->vtx[183]->ad_w = 7;
+		}
 		
 		//post sweep processing: statistics, save state
 		vmsr/=(ts_double)mcsweeps;
