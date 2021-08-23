@@ -87,7 +87,7 @@ ts_double vesicle_meancurvature(ts_vesicle *vesicle){
 	ts_uint i;
 	mc=0;
 	for(i=0;i<vesicle->vlist->n;i++){
-		mc=mc+vesicle->vlist->vtx[i]->curvature;
+		mc=mc+vesicle->vlist->vtx[i]->mean_curvature;
 	}
 	return mc/2.0;
 }

@@ -562,16 +562,16 @@ ts_bool parseXMLPointData(ts_vesicle *vesicle,xmlDocPtr doc, xmlNodePtr cur){
 				idx=0;
 				while(token!=NULL){
 					if(idx<vesicle->vlist->n){
-						vesicle->vlist->vtx[idx]->curvature=atof(token);
+						vesicle->vlist->vtx[idx]->mean_curvature=atof(token);
 					} else if(vesicle->tape->nmono && vesicle->tape->npoly && idx<vesicle->vlist->n+vesicle->tape->nmono*vesicle->tape->npoly) {
 						polyidx=(idx-vesicle->vlist->n)/vesicle->tape->nmono;
 						monoidx=(idx-vesicle->vlist->n)%vesicle->tape->nmono;
-						vesicle->poly_list->poly[polyidx]->vlist->vtx[monoidx]->curvature=atof(token);
+						vesicle->poly_list->poly[polyidx]->vlist->vtx[monoidx]->mean_curvature=atof(token);
 					} else {
 						filidx=(idx-vesicle->vlist->n-vesicle->tape->nmono*vesicle->tape->npoly)/vesicle->tape->nfono;
 						fonoidx=(idx-vesicle->vlist->n-vesicle->tape->nmono*vesicle->tape->npoly)%vesicle->tape->nfono;
 						//fprintf(stderr,"filidx=%d, fonoidx=%d, coord=%s,%s,%s\n",filidx,fonoidx,token[0],token[1],token[2]);
-						vesicle->filament_list->poly[filidx]->vlist->vtx[fonoidx]->curvature=atof(token);
+						vesicle->filament_list->poly[filidx]->vlist->vtx[fonoidx]->mean_curvature=atof(token);
 					}
 					idx++;
 					token=strtok(NULL," ");
@@ -585,16 +585,16 @@ ts_bool parseXMLPointData(ts_vesicle *vesicle,xmlDocPtr doc, xmlNodePtr cur){
 				idx=0;
 				while(token!=NULL){
 					if(idx<vesicle->vlist->n){
-						vesicle->vlist->vtx[idx]->curvature2=atof(token);
+						vesicle->vlist->vtx[idx]->gaussian_curvature=atof(token);
 					} else if(vesicle->tape->nmono && vesicle->tape->npoly && idx<vesicle->vlist->n+vesicle->tape->nmono*vesicle->tape->npoly) {
 						polyidx=(idx-vesicle->vlist->n)/vesicle->tape->nmono;
 						monoidx=(idx-vesicle->vlist->n)%vesicle->tape->nmono;
-						vesicle->poly_list->poly[polyidx]->vlist->vtx[monoidx]->curvature2=atof(token);
+						vesicle->poly_list->poly[polyidx]->vlist->vtx[monoidx]->gaussian_curvature=atof(token);
 					} else {
 						filidx=(idx-vesicle->vlist->n-vesicle->tape->nmono*vesicle->tape->npoly)/vesicle->tape->nfono;
 						fonoidx=(idx-vesicle->vlist->n-vesicle->tape->nmono*vesicle->tape->npoly)%vesicle->tape->nfono;
 						//fprintf(stderr,"filidx=%d, fonoidx=%d, coord=%s,%s,%s\n",filidx,fonoidx,token[0],token[1],token[2]);
-						vesicle->filament_list->poly[filidx]->vlist->vtx[fonoidx]->curvature2=atof(token);
+						vesicle->filament_list->poly[filidx]->vlist->vtx[fonoidx]->gaussian_curvature=atof(token);
 					}
 					idx++;
 					token=strtok(NULL," ");

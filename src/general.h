@@ -137,8 +137,10 @@ struct ts_vertex {
 		ts_double x; /**< The x coordinate of vertex. */
         ts_double y; /**< The y coordinate of vertex. */
         ts_double z; /**< The z coordinate of vertex. */
-        ts_double curvature;
-		ts_double curvature2; // to be determined: mean, Gaussian curvature or c1,c2
+        ts_double mean_curvature;
+		ts_double gaussian_curvature; // to be determined: mean, Gaussian curvature or c1,c2
+		ts_double mean_energy;
+		ts_double gaussian_energy;
         ts_double energy;
         //ts_double energy_h;
         ts_double xk; //bending rigidity
@@ -148,6 +150,9 @@ struct ts_vertex {
 		ts_double nx; // normal vector
 		ts_double ny;
 		ts_double nz;
+		ts_double nx2; // normal vector
+		ts_double ny2;
+		ts_double nz2;
 		ts_double f;  // force
 		ts_double fx; // force vector
 		ts_double fy;
@@ -157,6 +162,18 @@ struct ts_vertex {
 		ts_double tx; // director vector
 		ts_double ty;
 		ts_double tz;
+		ts_double eig0[3];
+		ts_double eig1[3];
+		ts_double eig2[3];
+		ts_double new_c1;
+		ts_double new_c2;
+		ts_double eig_v0;
+		ts_double eig_v1;
+		ts_double eig_v2;
+		ts_double mean_curvature2;
+		ts_double gaussian_curvature2; 
+		ts_double mean_energy2;
+		ts_double gaussian_energy2;
 		struct ts_vertex **neigh; /**< The pointer that holds neigh_no pointers to this structure. */
 		struct ts_triangle **tristar; /**< The list of triangles this vertex belongs to. This is an array of pointers to ts_triangle structure of tristar_no length */
         struct ts_bond **bond; /**< Array of pointers of lenght bond_no that stores information on bonds. */

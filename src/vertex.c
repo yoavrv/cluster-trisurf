@@ -231,9 +231,17 @@ ts_bool vtx_set_global_values(ts_vesicle *vesicle){
 
     // in case type and such lead to no curvature2, force, etc. being calculated
     for(i=0;i<vesicle->vlist->n;i++){
-        vesicle->vlist->vtx[i]->curvature=0;
-        vesicle->vlist->vtx[i]->curvature2=0;
+        vesicle->vlist->vtx[i]->mean_curvature=0;
+        vesicle->vlist->vtx[i]->mean_curvature2=0;
+        vesicle->vlist->vtx[i]->gaussian_curvature=0;
+        vesicle->vlist->vtx[i]->gaussian_curvature2=0;
         vesicle->vlist->vtx[i]->energy=0;
+        vesicle->vlist->vtx[i]->mean_energy=0;
+        vesicle->vlist->vtx[i]->mean_energy2=0;
+        vesicle->vlist->vtx[i]->gaussian_energy=0;
+        vesicle->vlist->vtx[i]->gaussian_energy2=0;
+        vesicle->vlist->vtx[i]->new_c1=0;
+        vesicle->vlist->vtx[i]->new_c2=0;
         vesicle->vlist->vtx[i]->type=is_adhesive_vtx; // nonbonding, passive, adhesive, isotropic
 		vesicle->vlist->vtx[i]->w=0;
 		vesicle->vlist->vtx[i]->c=0;

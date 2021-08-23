@@ -131,7 +131,7 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     ts_double temp_length;
     ts_double cross_x, cross_y, cross_z;
 
-    ts_double Se11, Se21, Se22, Se31, Se32, Se33;
+    ts_double Se11=0, Se21=0, Se22=0, Se31=0, Se32=0, Se33=0;
     ts_double Pv11, Pv21, Pv22, Pv31, Pv32, Pv33;
     ts_double Se12, Se13, Se23, Pv12, Pv13, Pv23;//test alias
     ts_double We;
@@ -163,6 +163,9 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
 	vertex_normal_x=vertex_normal_x/temp_length;
 	vertex_normal_y=vertex_normal_y/temp_length;
 	vertex_normal_z=vertex_normal_z/temp_length;
+    vtx->nx2 = vertex_normal_x;
+    vtx->ny2 = vertex_normal_y;
+    vtx->nz2 = vertex_normal_z;
 
 	Pv11=(pow(vertex_normal_x,2)+pow(vertex_normal_y,2)+pow(vertex_normal_z,2))-vertex_normal_x*vertex_normal_x;
 	Pv22=(pow(vertex_normal_x,2)+pow(vertex_normal_y,2)+pow(vertex_normal_z,2))-vertex_normal_y*vertex_normal_y;
@@ -292,17 +295,20 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
 //	printf("ACOS arg=%e\n", lm->xnorm*lp->xnorm+lm->ynorm*lp->ynorm+lm->znorm*lp->znorm);
 	//he was multiplied with 2 before...
 //	he[jj]=sqrt( pow((edge_vector_x[jj]),2) + pow((edge_vector_y[jj]), 2) + pow((edge_vector_z[jj]), 2))*cos(phi[jj]/2.0);
-	he[jj]=temp_length*cos(phi[jj]/2.0);
+	//he[jj]=temp_length*cos(phi[jj]/2.0);
 //	printf("phi[%d]=%f\n", jj,phi[jj]);
 
-    //lets try this identity: cos( (acos(b)+pi)/2) = -sqrt(1-b/2) 
-    if (abs(cos(phi[jj]/2.0) - copysign(sqrt( (1-(lm->xnorm*lp->xnorm+lm->ynorm*lp->ynorm+lm->znorm*lp->znorm)+1e-15) /2), mprod[jj]))>1e-10){
-        fprintf(stdout,"not equal: cos phi/2: %f, sqrt(1/2-cos(phi)/2) : %f, diff: %f\n mprod : %f\n",cos(phi[jj]/2),
-         sqrt( (1 +1e-15 -( lm->xnorm*lp->xnorm+lm->ynorm*lp->ynorm+lm->znorm*lp->znorm))/2), 
-         cos(phi[jj]/2.0)-sqrt( (1-(lm->xnorm*lp->xnorm+lm->ynorm*lp->ynorm+lm->znorm*lp->znorm)) /2), mprod[jj] );
-        fatal("ouch\n",100);
-    }
+    cross_x = lp->ynorm*edge_normal_z[jj] - lp->znorm*edge_normal_y[jj];
+    cross_y = lp->znorm*edge_normal_x[jj] - lp->xnorm*edge_normal_z[jj];
+    cross_z = lp->xnorm*edge_normal_y[jj] - lp->ynorm*edge_normal_x[jj];
 
+    he[jj]=temp_length*(cross_x*edge_vector_x[jj] + cross_y*edge_vector_y[jj] + cross_z*edge_vector_z[jj] );
+    //temporarily for testing: We is set later
+    We = temp_length*cos(phi[jj]/2.0);
+    if (fabs(We - he[jj])>1e-7){
+        fprintf(stdout,"%.17e by products is not the same as %.17e by cosine\n", he[jj], We);
+        fatal("not equal\n",100);
+    }
     
 /*
 	if(vtx->idx==0){
@@ -401,18 +407,18 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
 	eigenval[0]= gsl_vector_get(Sv_eigen, 0);
 	eigenval[1]= gsl_vector_get(Sv_eigen, 1);
 	eigenval[2]= gsl_vector_get(Sv_eigen, 2);
-    vtx->tx = gsl_matrix_get(Sv_eigenV,0,0);
-    vtx->ty = gsl_matrix_get(Sv_eigenV,1,0);
-    vtx->tz = gsl_matrix_get(Sv_eigenV,2,0);
-    vtx->d = eigenval[0];
-    vtx->fx = gsl_matrix_get(Sv_eigenV,0,1);
-    vtx->fy = gsl_matrix_get(Sv_eigenV,1,1);
-    vtx->fz = gsl_matrix_get(Sv_eigenV,2,1);
-    vtx->f = eigenval[1];
-    vtx->nx = gsl_matrix_get(Sv_eigenV,0,2);
-    vtx->ny = gsl_matrix_get(Sv_eigenV,1,2);
-    vtx->nz = gsl_matrix_get(Sv_eigenV,2,2);
-    vtx->ad_w = eigenval[2];
+    vtx->eig0[0] = gsl_matrix_get(Sv_eigenV,0,0);
+    vtx->eig0[1] = gsl_matrix_get(Sv_eigenV,1,0);
+    vtx->eig0[2] = gsl_matrix_get(Sv_eigenV,2,0);
+    vtx->eig_v0 = eigenval[0];
+    vtx->eig1[0] = gsl_matrix_get(Sv_eigenV,0,1);
+    vtx->eig1[1] = gsl_matrix_get(Sv_eigenV,1,1);
+    vtx->eig1[2] = gsl_matrix_get(Sv_eigenV,2,1);
+    vtx->eig_v1 = eigenval[1];
+    vtx->eig2[0] = gsl_matrix_get(Sv_eigenV,0,2);
+    vtx->eig2[1] = gsl_matrix_get(Sv_eigenV,1,2);
+    vtx->eig2[2] = gsl_matrix_get(Sv_eigenV,2,2);
+    vtx->eig_v2 = eigenval[2];
 
 	//qsort(eigenval, 3, sizeof(ts_double), cmpfunc);
 	if(vtx->idx==0){
@@ -426,15 +432,16 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     //vtx->nz = vertex_normal_z;
     //vtx->curvature = (eigenval[0] + eigenval[1])/2;
     //vtx->curvature2 = eigenval[0]*eigenval[1];
-    vtx->curvature = (eigenval[0]+ eigenval[1]);
-    vtx->curvature2 = eigenval[0]*eigenval[1];
-	vtx->energy=4*vtx->xk*(pow(eigenval[0]+eigenval[1]-2*vtx->c,2))*Av;
-    if (vtx->type&is_anisotropic_vtx && vtx->xk2!=0){
-            vtx->energy += vtx->xk2 * Av * eigenval[0]*eigenval[1];
-    }
+    vtx->mean_curvature2 = (eigenval[0]+ eigenval[1]);
+    vtx->gaussian_curvature2 = eigenval[0]*eigenval[1];
+	vtx->mean_energy2 = 4*vtx->xk*(pow(eigenval[0]+eigenval[1]-2*vtx->c,2))*Av;
+
+    vtx->gaussian_energy2 = vtx->xk2 * Av * eigenval[0]*eigenval[1];
+    
 
 	gsl_matrix_free(gsl_Sv);
 	gsl_vector_free(Sv_eigen);
+    gsl_matrix_free(Sv_eigenV);
 //	gsl_matrix_free(evec);
 	gsl_eigen_symmv_free(workspace);
 	return TS_SUCCESS;
@@ -484,10 +491,7 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
  * @returns TS_SUCCESS on successful calculation.
 */
 inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
-    if (vesicle->tape->type_of_curvature_model==10) {
-        return curvature_tensor_energy_vertex(vesicle, vtx);
-    }
-    
+        
     ts_uint li, ri;
     ts_uint t;
     ts_vertex *vl, *vr;
@@ -501,7 +505,8 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     ts_double angle_sum=0;
     ts_double a_dot_b, a_cross_b_x, a_cross_b_y, a_cross_b_z, mag_a_cross_b;
     ts_bool model=vesicle->tape->type_of_curvature_model;
-    
+
+ /*   
     if (vtx == vesicle->vlist->vtx[183] && vtx->ad_w == 7){
     fprintf(stdout,"%ld",p_diff(vtx,vesicle->vlist->vtx[0]));
     fprintf(stdout,"I'm on %p, I read nodes ", vtx);
@@ -608,7 +613,7 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     fprintf(stdout,"\n");
     fatal("goodbye!",100);
     }
-
+*/
 
 
     for(jj=1; jj<=vtx->neigh_no;jj++){
@@ -680,22 +685,21 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
         tyn+=jt->ynorm;
         tzn+=jt->znorm;
 
-        if (model!=0){
-            if (model==2 || (model==1 && vtx->type & is_anisotropic_vtx && vtx->xk2!=0)){
-                // angle stuff
-                //angle_sum += atan(ctp) + atan(ctm); // simple but slow!
-                /// get the angle m-vtx-j
-                // atan2(|axb|,a*b) was recommended at mathwork forum (cosin has small angle problems, and still need a sqrt)
-                a_dot_b = (jm->x-vtx->x)*(j->x-vtx->x)+
-                          (jm->y-vtx->y)*(j->y-vtx->y)+
-                          (jm->z-vtx->z)*(j->z-vtx->z);
-                a_cross_b_x = (jm->y-vtx->y)*(j->z-vtx->z)-(jm->z-vtx->z)*(j->y-vtx->y);
-                a_cross_b_y = (jm->z-vtx->z)*(j->x-vtx->x)-(jm->x-vtx->x)*(j->z-vtx->z);
-                a_cross_b_z = (jm->x-vtx->x)*(j->y-vtx->y)-(jm->y-vtx->y)*(j->x-vtx->x);
-                mag_a_cross_b = sqrt(pow(a_cross_b_x,2)+pow(a_cross_b_y,2)+pow(a_cross_b_z,2));
-                angle_sum += atan2(mag_a_cross_b, a_dot_b);
-            }
-        }
+
+
+        // angle stuff
+        //angle_sum += atan(ctp) + atan(ctm); // simple but slow!
+        /// get the angle m-vtx-j
+        // atan2(|axb|,a*b) was recommended at mathwork forum (cosin has small angle problems, and still need a sqrt)
+        a_dot_b = (jm->x-vtx->x)*(j->x-vtx->x)+
+                  (jm->y-vtx->y)*(j->y-vtx->y)+
+                  (jm->z-vtx->z)*(j->z-vtx->z);
+        a_cross_b_x = (jm->y-vtx->y)*(j->z-vtx->z)-(jm->z-vtx->z)*(j->y-vtx->y);
+        a_cross_b_y = (jm->z-vtx->z)*(j->x-vtx->x)-(jm->x-vtx->x)*(j->z-vtx->z);
+        a_cross_b_z = (jm->x-vtx->x)*(j->y-vtx->y)-(jm->y-vtx->y)*(j->x-vtx->x);
+        mag_a_cross_b = sqrt(pow(a_cross_b_x,2)+pow(a_cross_b_y,2)+pow(a_cross_b_z,2));
+        angle_sum += atan2(mag_a_cross_b, a_dot_b);
+
     }
     
     h=xh*xh+yh*yh+zh*zh;
@@ -703,9 +707,9 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     s=s/4.0; 
 #ifdef TS_DOUBLE_DOUBLE
     if(ht>=0.0) {
-        vtx->curvature=sqrt(h);
+        vtx->mean_curvature=sqrt(h)/s;
     } else {
-        vtx->curvature=-sqrt(h);
+        vtx->mean_curvature=-sqrt(h)/s;
     }
 #endif
 #ifdef TS_DOUBLE_FLOAT
@@ -730,17 +734,29 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
 // c is forced curvature energy for each vertex. Should be set to zero for
 // normal circumstances.
 /* the following statement is an expression for $\frac{1}{2}\int(c_1+c_2-c_0^\prime)^2\mathrm{d}A$, where $c_0^\prime=2c_0$ (twice the spontaneous curvature)  */
-    vtx->energy=vtx->xk* 0.5*s*(vtx->curvature/s-vtx->c)*(vtx->curvature/s-vtx->c);
+    vtx->mean_energy=vtx->xk* 0.5*s*(vtx->mean_curvature-vtx->c)*(vtx->mean_curvature-vtx->c);
     
-    if (model!=0){
-        if (model==2 || ( model==1 && vtx->type&is_anisotropic_vtx && vtx->xk2!=0)) {
-            vtx->curvature2 = (2*M_PI- angle_sum)/s;
-            if (vtx->type&is_anisotropic_vtx && vtx->xk2!=0){
-                vtx->energy += vtx->xk2 * s * vtx->curvature2;
-            }
-        }
+    vtx->gaussian_curvature = (2*M_PI- angle_sum)/s;
+
+    vtx->gaussian_energy = vtx->xk2 * s * vtx->gaussian_curvature;
+
+    
+    if (vesicle->tape->type_of_curvature_model==10 || vesicle->tape->type_of_curvature_model==11) {
+        curvature_tensor_energy_vertex(vesicle, vtx);
     }
     
+    if (vesicle->tape->type_of_curvature_model==10){
+        vtx->energy = vtx->mean_energy2 + vtx->gaussian_energy2;
+        if (vtx == vesicle->vlist->vtx[10]){
+            ts_fprintf(stdout, "Energy by 2 %.17e\n", vtx->energy);
+        }
+    }
+    else {
+        vtx->energy = vtx->mean_energy + vtx->gaussian_energy;
+        if (vtx == vesicle->vlist->vtx[10]){
+            ts_fprintf(stdout, "Actually, energy by 1 %.17e\n", vtx->energy);
+        }
+    }
 
     return TS_SUCCESS;
 }
