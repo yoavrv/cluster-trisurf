@@ -133,7 +133,7 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
 
     ts_double Se11=0, Se21=0, Se22=0, Se31=0, Se32=0, Se33=0;
     ts_double Pv11, Pv21, Pv22, Pv31, Pv32, Pv33;
-    ts_double Se12, Se13, Se23, Pv12, Pv13, Pv23;//test alias
+    ts_double Se12, Se13, Se23, Pv12, Pv13, Pv23;//alias for clarity: hopefully compiler removes
     ts_double We;
     ts_double Av, We_Av;
 
@@ -146,9 +146,6 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
 
 	ts_double mprod[7], phi[7], he[7];
 	ts_double Sv[3][3]={{0,0,0},{0,0,0},{0,0,0}};
-    // Here edge vector is calculated
-//    fprintf(stderr, "Vertex has neighbours=%d\n", vtx->neigh_no);
-
 
 
 
@@ -173,12 +170,9 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
 	Pv21=vertex_normal_x*vertex_normal_y;
 	Pv31=vertex_normal_x*vertex_normal_z;
 	Pv32=vertex_normal_y*vertex_normal_z;
-    Pv12=Pv21; Pv13=Pv31; Pv23=Pv32; //test
+    Pv12=Pv21; Pv13=Pv31; Pv23=Pv32; //for clarity: hopefully compiler gets rid of these
 
-/*	if(vtx->idx==0){
-		printf("Vertex normal for vertex %d: %f, %f, %f\n",vtx->idx,vertex_normal_x, vertex_normal_y, vertex_normal_z);
-	}
-*/
+
     // reorder the triangles: // find first triangle
     vl = vtx->neigh[0];
     vr = vtx->neigh[1];
@@ -280,35 +274,27 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
 	edge_binormal_y[jj]=-(edge_normal_x[jj]*edge_vector_z[jj])+(edge_normal_z[jj]*edge_vector_x[jj]);
 	edge_binormal_z[jj]=(edge_normal_x[jj]*edge_vector_y[jj])-(edge_normal_y[jj]*edge_vector_x[jj]);
 
+    cross_x = lp->ynorm*edge_normal_z[jj] - lp->znorm*edge_normal_y[jj];
+    cross_y = lp->znorm*edge_normal_x[jj] - lp->xnorm*edge_normal_z[jj];
+    cross_z = lp->xnorm*edge_normal_y[jj] - lp->ynorm*edge_normal_x[jj];
 
-	//mprod[jj]=it->x*(k->y*edge_vector_z[jj]-edge_vector_y[jj]*k->z)-it->y*(k->x*edge_vector_z[jj]-k->z*edge_vector_x[jj])+it->z*(k->x*edge_vector_y[jj]-k->y*edge_vector_x[jj]);
+    he[jj]=temp_length*(cross_x*edge_vector_x[jj] + cross_y*edge_vector_y[jj] + cross_z*edge_vector_z[jj] );
+    
+    // old style
+    /*
 	mprod[jj]=lm->xnorm*(lp->ynorm*edge_vector_z[jj]-lp->znorm*edge_vector_y[jj]) - lm->ynorm*(lp->xnorm*edge_vector_z[jj]-lp->znorm*edge_vector_x[jj])+ lm->znorm*(lp->xnorm*edge_vector_y[jj]-lp->ynorm*edge_vector_x[jj]);
 
     cross_x = lm->ynorm*lp->znorm - lp->ynorm*lm->znorm;
     cross_y = lm->znorm*lp->xnorm - lp->znorm*lm->xnorm;
     cross_z = lm->xnorm*lp->ynorm - lp->xnorm*lm->ynorm;
 	phi[jj]=copysign(atan2(sqrt(cross_x*cross_x+cross_y*cross_y+cross_z*cross_z),lm->xnorm*lp->xnorm+lm->ynorm*lp->ynorm+lm->znorm*lp->znorm-1e-10),-mprod[jj])+M_PI;
-/*	if(vtx->idx==0){
-		printf("Angle PHI vertex %d (angle %d): %f\n",vtx->idx,jj,phi[jj]);
-	}
-*/
-//	printf("ACOS arg=%e\n", lm->xnorm*lp->xnorm+lm->ynorm*lp->ynorm+lm->znorm*lp->znorm);
-	//he was multiplied with 2 before...
-//	he[jj]=sqrt( pow((edge_vector_x[jj]),2) + pow((edge_vector_y[jj]), 2) + pow((edge_vector_z[jj]), 2))*cos(phi[jj]/2.0);
-	//he[jj]=temp_length*cos(phi[jj]/2.0);
-//	printf("phi[%d]=%f\n", jj,phi[jj]);
-
-    cross_x = lp->ynorm*edge_normal_z[jj] - lp->znorm*edge_normal_y[jj];
-    cross_y = lp->znorm*edge_normal_x[jj] - lp->xnorm*edge_normal_z[jj];
-    cross_z = lp->xnorm*edge_normal_y[jj] - lp->ynorm*edge_normal_x[jj];
-
-    he[jj]=temp_length*(cross_x*edge_vector_x[jj] + cross_y*edge_vector_y[jj] + cross_z*edge_vector_z[jj] );
-    //temporarily for testing: We is set later
-    We = temp_length*cos(phi[jj]/2.0);
+    We = temp_length*cos(phi[jj]/2.0); //temporarily for testing: We is set later
+    
     if (fabs(We - he[jj])>1e-7){
         fprintf(stdout,"%.17e by products is not the same as %.17e by cosine\n", he[jj], We);
         fatal("not equal\n",100);
     }
+    */
     
 /*
 	if(vtx->idx==0){
@@ -321,25 +307,12 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
 	Se31=-edge_binormal_x[jj]*edge_binormal_z[jj]*he[jj];
 	Se32=-edge_binormal_y[jj]*edge_binormal_z[jj]*he[jj];
 	Se33=-edge_binormal_z[jj]*edge_binormal_z[jj]*he[jj];
-    Se12=Se21; Se13=Se31; Se23=Se32; //for clarity
+    Se12=Se21; Se13=Se31; Se23=Se32; //for clarity: hopefully compiler gets rid of these
 
 	We=vertex_normal_x*edge_normal_x[jj]+vertex_normal_y*edge_normal_y[jj]+vertex_normal_z*edge_normal_z[jj];
 	We_Av=We/Av;
 
-/*
-	Sv[0][0]+=We_Av* ( Pv11*(Pv11*Se11+Pv21*Se21+Pv31*Se31)+Pv21*(Pv11*Se21+Pv21*Se22+Pv31*Se32)+Pv31*(Pv11*Se31+Pv21*Se32+Pv31*Se33) );
-	Sv[0][1]+=We_Av* (Pv21*(Pv11*Se11+Pv21*Se21+Pv31*Se31)+Pv22*(Pv11*Se21+Pv21*Se22+Pv31*Se32)+Pv32*(Pv11*Se31+Pv21*Se32+Pv31*Se33));
-	Sv[0][2]+=We_Av* (Pv31*(Pv11*Se11+Pv21*Se21+Pv31*Se31)+Pv32*(Pv11*Se21+Pv21*Se22+Pv31*Se32)+Pv33*(Pv11*Se31+Pv21*Se32+Pv31*Se33));
-	
-	Sv[1][0]+=We_Av* (Pv11*(Pv21*Se11+Pv22*Se21+Pv32*Se31)+Pv21*(Pv21*Se21+Pv22*Se22+Pv32*Se32)+Pv31*(Pv21*Se31+Pv22*Se32+Pv32*Se33));
-	Sv[1][1]+=We_Av* (Pv21*(Pv21*Se11+Pv22*Se21+Pv32*Se31)+Pv22*(Pv21*Se21+Pv22*Se22+Pv32*Se32)+Pv32*(Pv21*Se31+Pv22*Se32+Pv32*Se33));
-	Sv[1][2]+=We_Av* (Pv31*(Pv21*Se11+Pv22*Se21+Pv32*Se31)+Pv32*(Pv21*Se21+Pv22*Se22+Pv32*Se32)+Pv33*(Pv21*Se31+Pv22*Se32+Pv32*Se33));
 
-	Sv[2][0]+=We_Av* (Pv11*(Pv31*Se11+Pv32*Se21+Pv33*Se31)+Pv21*(Pv31*Se21+Pv32*Se22+Pv33*Se32)+Pv31*(Pv31*Se31+Pv32*Se32+Pv33*Se33));
-	Sv[2][1]+=We_Av* (Pv21*(Pv31*Se11+Pv32*Se21+Pv33*Se31)+Pv22*(Pv31*Se21+Pv32*Se22+Pv33*Se32)+Pv32*(Pv31*Se31+Pv32*Se32+Pv33*Se33));
-	Sv[2][2]+=We_Av* (Pv31*(Pv31*Se11+Pv32*Se21+Pv33*Se31)+Pv32*(Pv31*Se21+Pv32*Se22+Pv33*Se32)+Pv33*(Pv31*Se31+Pv32*Se32+Pv33*Se33));
-    */
-   // 
     Sv[0][0]+=We_Av* Se11;
 	Sv[0][1]+=We_Av* Se12;
 	Sv[0][2]+=We_Av* Se13;
@@ -351,9 +324,12 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
 	Sv[2][0]+=We_Av* Se31;
 	Sv[2][1]+=We_Av* Se32;
 	Sv[2][2]+=We_Av* Se33;
-//	printf("(%f %f %f); (%f %f %f); (%f %f %f)\n", edge_vector_x[jj], edge_vector_y[jj], edge_vector_z[jj], edge_normal_x[jj], edge_normal_y[jj], edge_normal_z[jj], edge_binormal_x[jj], edge_binormal_y[jj], edge_binormal_z[jj]);
 
-    } // END FOR JJ
+    } 
+    // END FOR JJ
+
+    // householder transformationL get rid of n^ components
+    // matrix multiplication Sv[i,j] = Pv[i,a]*Sv[a,b]*Pv^T[b,j]
     Sv[0][0]=(   Pv11*(Sv[0][0]*Pv11+Sv[0][1]*Pv21+Sv[0][2]*Pv31)
                 +Pv12*(Sv[1][0]*Pv11+Sv[1][1]*Pv21+Sv[1][2]*Pv31)
                 +Pv13*(Sv[2][0]*Pv11+Sv[2][1]*Pv21+Sv[2][2]*Pv31));
@@ -383,6 +359,7 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
 	Sv[2][2]=(   Pv31*(Sv[0][0]*Pv13+Sv[0][1]*Pv23+Sv[0][2]*Pv33)
                 +Pv32*(Sv[1][0]*Pv13+Sv[1][1]*Pv23+Sv[1][2]*Pv33)
                 +Pv33*(Sv[2][0]*Pv13+Sv[2][1]*Pv23+Sv[2][2]*Pv33));
+    // into gsl
 	gsl_matrix_set(gsl_Sv, 0,0, Sv[0][0]);
 	gsl_matrix_set(gsl_Sv, 0,1, Sv[0][1]);
 	gsl_matrix_set(gsl_Sv, 0,2, Sv[0][2]);
@@ -393,17 +370,11 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
 	gsl_matrix_set(gsl_Sv, 2,1, Sv[2][1]);
 	gsl_matrix_set(gsl_Sv, 2,2, Sv[2][2]);
 
-//	printf("Se= %f, %f, %f\n    %f, %f, %f\n    %f, %f, %f\n", Se11, Se21, Se31, Se21, Se22, Se32, Se31, Se32, Se33);
-//	printf("Pv= %f, %f, %f\n    %f, %f, %f\n    %f, %f, %f\n", Pv11, Pv21, Pv31, Pv21, Pv22, Pv32, Pv31, Pv32, Pv33);
-//	printf("Sv= %f, %f, %f\n    %f, %f, %f\n    %f, %f, %f\n", Sv[0][0], Sv[0][1], Sv[0][2], Sv[1][0], Sv[1][1], Sv[1][2], Sv[2][0], Sv[2][1], Sv[2][2]);
-
-
+    // calculate eigenvalues and eigenvectors
 	gsl_eigen_symmv(gsl_Sv, Sv_eigen, Sv_eigenV, workspace);
-
-//	printf("Eigenvalues: %f, %f, %f\n", gsl_vector_get(Sv_eigen, 0),gsl_vector_get(Sv_eigen, 1), gsl_vector_get(Sv_eigen, 2) );
-//	printf("Eigenvalues: %f, %f, %f\n", gsl_matrix_get(evec, 0,0),gsl_matrix_get(evec, 0,1), gsl_matrix_get(evec, 0,2) );
-
     gsl_eigen_symmv_sort(Sv_eigen, Sv_eigenV, GSL_EIGEN_SORT_ABS_DESC);
+
+    // get eigenvalues and eigenvectors out
 	eigenval[0]= gsl_vector_get(Sv_eigen, 0);
 	eigenval[1]= gsl_vector_get(Sv_eigen, 1);
 	eigenval[2]= gsl_vector_get(Sv_eigen, 2);
@@ -420,13 +391,7 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     vtx->eig2[2] = gsl_matrix_get(Sv_eigenV,2,2);
     vtx->eig_v2 = eigenval[2];
 
-	//qsort(eigenval, 3, sizeof(ts_double), cmpfunc);
-	if(vtx->idx==0){
-	//printf("Eigenvalues: %f, %f, %f\n", eigenval[0], eigenval[1], eigenval[2] );
-//	exit(0);
-	}
-
-    // Yoav : and the stuff I'm tracking
+    //And the stuff I'm tracking
     //vtx->nx = vertex_normal_x;
     //vtx->ny = vertex_normal_y;
     //vtx->nz = vertex_normal_z;
@@ -435,14 +400,12 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     vtx->mean_curvature2 = (eigenval[0]+ eigenval[1]);
     vtx->gaussian_curvature2 = eigenval[0]*eigenval[1];
 	vtx->mean_energy2 = 4*vtx->xk*(pow(eigenval[0]+eigenval[1]-2*vtx->c,2))*Av;
-
     vtx->gaussian_energy2 = vtx->xk2 * Av * eigenval[0]*eigenval[1];
     
 
 	gsl_matrix_free(gsl_Sv);
 	gsl_vector_free(Sv_eigen);
     gsl_matrix_free(Sv_eigenV);
-//	gsl_matrix_free(evec);
 	gsl_eigen_symmv_free(workspace);
 	return TS_SUCCESS;
 }
@@ -747,15 +710,9 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     
     if (vesicle->tape->type_of_curvature_model==10){
         vtx->energy = vtx->mean_energy2 + vtx->gaussian_energy2;
-        if (vtx == vesicle->vlist->vtx[10]){
-            ts_fprintf(stdout, "Energy by 2 %.17e\n", vtx->energy);
-        }
     }
     else {
         vtx->energy = vtx->mean_energy + vtx->gaussian_energy;
-        if (vtx == vesicle->vlist->vtx[10]){
-            ts_fprintf(stdout, "Actually, energy by 1 %.17e\n", vtx->energy);
-        }
     }
 
     return TS_SUCCESS;
