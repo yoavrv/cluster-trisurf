@@ -202,29 +202,13 @@ if(lm==NULL || lp==NULL) fatal("energy_vertex: Cannot find triangles lm and lp!"
 
 	//mprod[jj]=it->x*(k->y*edge_vector_z[jj]-edge_vector_y[jj]*k->z)-it->y*(k->x*edge_vector_z[jj]-k->z*edge_vector_x[jj])+it->z*(k->x*edge_vector_y[jj]-k->y*edge_vector_x[jj]);
 	mprod[jj]=lm->xnorm*(lp->ynorm*edge_vector_z[jj]-lp->znorm*edge_vector_y[jj]) - lm->ynorm*(lp->xnorm*edge_vector_z[jj]-lp->znorm*edge_vector_z[jj])+ lm->znorm*(lp->xnorm*edge_vector_y[jj]-lp->ynorm*edge_vector_x[jj]);
+    
+    cross_x = lp->ynorm*edge_normal_z[jj] - lp->znorm*edge_normal_y[jj];
+    cross_y = lp->znorm*edge_normal_x[jj] - lp->xnorm*edge_normal_z[jj];
+    cross_z = lp->xnorm*edge_normal_y[jj] - lp->ynorm*edge_normal_x[jj];
 
-    cross_x = lm->ynorm*lp->znorm - lp->ynorm*lm->znorm;
-    cross_y = lm->znorm*lp->xnorm - lp->znorm*lm->xnorm;
-    cross_z = lm->xnorm*lp->ynorm - lp->xnorm*lm->ynorm;
-	phi[jj]=copysign(atan2(sqrt(cross_x*cross_x+cross_y*cross_y+cross_z*cross_z),lm->xnorm*lp->xnorm+lm->ynorm*lp->ynorm+lm->znorm*lp->znorm-1e-10),-mprod[jj])+M_PI;
-/*	if(vtx->idx==0){
-		printf("Angle PHI vertex %d (angle %d): %f\n",vtx->idx,jj,phi[jj]);
-	}
-*/
-//	printf("ACOS arg=%e\n", lm->xnorm*lp->xnorm+lm->ynorm*lp->ynorm+lm->znorm*lp->znorm);
-	//he was multiplied with 2 before...
-//	he[jj]=sqrt( pow((edge_vector_x[jj]),2) + pow((edge_vector_y[jj]), 2) + pow((edge_vector_z[jj]), 2))*cos(phi[jj]/2.0);
-	he[jj]=temp_length*cos(phi[jj]/2.0);
-//	printf("phi[%d]=%f\n", jj,phi[jj]);
-
-    //lets try this identity: cos( (acos(b)+pi)/2) = -sqrt(1-b/2) 
-    if (abs(cos(phi[jj]/2.0) - copysign(sqrt( (1-(lm->xnorm*lp->xnorm+lm->ynorm*lp->ynorm+lm->znorm*lp->znorm)+1e-15) /2), mprod[jj]))>1e-10){
-        fprintf(stdout,"not equal: cos phi/2: %f, sqrt(1/2-cos(phi)/2) : %f, diff: %f\n mprod : %f\n",cos(phi[jj]/2),
-         sqrt( (1 +1e-15 -( lm->xnorm*lp->xnorm+lm->ynorm*lp->ynorm+lm->znorm*lp->znorm))/2), 
-         cos(phi[jj]/2.0)-sqrt( (1-(lm->xnorm*lp->xnorm+lm->ynorm*lp->ynorm+lm->znorm*lp->znorm)) /2), mprod[jj] );
-        fatal("ouch\n",100);
-    }
-
+    he[jj]=temp_length*(cross_x*edge_vector_x[jj] + cross_y*edge_vector_y[jj] + cross_z*edge_vector_z[jj] );
+    
     
 /*
 	if(vtx->idx==0){
