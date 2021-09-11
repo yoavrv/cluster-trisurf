@@ -100,9 +100,9 @@ ts_double mean_cluster_size(ts_vesicle *vesicle, ts_cluster_list* cstlist){
 	ts_double s=0;
 	ts_uint k=0;
 	for (k=0; k<cstlist->n; k++){
-		s += cstlist->cluster[k]->nvtx;
+		s += cstlist->cluster[k]->nvtx*cstlist->cluster[k]->nvtx;
 	}
-	s = s/cstlist->n;
+	s = s/vesicle->vlist->n;
 	return s;
 }
 
@@ -111,9 +111,9 @@ ts_double var_cluster_size(ts_vesicle *vesicle, ts_cluster_list* cstlist, ts_dou
 	ts_double s=0;
 	ts_uint k=0;
 	for (k=0; k<cstlist->n; k++){
-		s += (cstlist->cluster[k]->nvtx-mean_size)*(cstlist->cluster[k]->nvtx-mean_size);
+		s += (cstlist->cluster[k]->nvtx-mean_size)*(cstlist->cluster[k]->nvtx-mean_size)*cstlist->cluster[k]->nvtx;
 	}
-	s = s/(cstlist->n+1); //bessel correction
+	s = s/(vesicle->vlist->n-1); //bessel correction
 	return s;
 }
 
