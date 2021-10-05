@@ -1,6 +1,10 @@
 /* vim: set ts=4 sts=4 sw=4 noet : */
 #ifndef _ENERGY_H
 #define _ENERGY_H
+
+ts_bool swap_triangles(ts_vertex* vtx, ts_uint i1, ts_uint i2);
+ts_bool order_vertex_tri(ts_vertex* vtx);
+ts_bool print_tri_order(ts_vertex* vtx);
 ts_bool mean_curvature_and_energy(ts_vesicle *vesicle);
 inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx);
 inline ts_bool bond_energy(ts_bond *bond,ts_poly *poly);

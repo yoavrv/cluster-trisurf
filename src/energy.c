@@ -19,29 +19,24 @@ int cmpfunc(const void *x, const void *y)
 	else return -1;
 }
 
-ts_bool swap_triangles(ts_vertex* vtx, ts_uint i1, ts_uint i2)
-{
+ts_bool swap_triangles(ts_vertex* vtx, ts_uint i, ts_uint j){
+    // swap triastar triangles at index i and j
     ts_triangle* temptri;
-    //if (i1==i2) return TS_SUCCESS;
-    temptri = vtx->tristar[i1];
-    vtx->tristar[i1] = vtx->tristar[i2];
-    vtx->tristar[i2] = temptri;
+    if (i==j) return TS_SUCCESS;
+    temptri = vtx->tristar[i];
+    vtx->tristar[i] = vtx->tristar[j];
+    vtx->tristar[j] = temptri;
     return TS_SUCCESS;
 }
 
-ts_bool tri_ordered(ts_triangle* t, ts_vertex* v1, ts_vertex* v2)
-{
-    if (    (t->vertex[0]==v1 && t->vertex[1]==v2) 
-         || (t->vertex[1]==v1 && t->vertex[2]==v2)
-         || (t->vertex[2]==v1 && t->vertex[0]==v2)) {
-        return 1;
-    }
-    return 0;
+ts_bool tri_ordered(ts_triangle* t, ts_vertex* v1, ts_vertex* v2){
+    return (    (t->vertex[0]==v1 && t->vertex[1]==v2) 
+             || (t->vertex[1]==v1 && t->vertex[2]==v2)
+             || (t->vertex[2]==v1 && t->vertex[0]==v2)) ;
 }
 
 ts_bool in_tri(ts_triangle* t, ts_vertex* v){
-    if (t->vertex[0]==v || t->vertex[1]==v || t->vertex[2]==v) return 1;
-    return 0;
+    return (t->vertex[0]==v || t->vertex[1]==v || t->vertex[2]==v);
 }
 
 ts_bool print_tri_order(ts_vertex* vtx){
@@ -55,6 +50,68 @@ ts_bool print_tri_order(ts_vertex* vtx){
                                             p_diff(vtx->tristar[jj]->vertex[(jjm+2)%3], vtx));
     }
     fprintf(stdout,"\n");
+}
+
+ts_bool order_vertex_tri(ts_vertex* vtx){
+    // order the triangles of the vertex according to the neighbors
+    // vtx->tristar[i] = (vtx, vtx->neigh[0], vtx->neigh[1])
+    ts_vertex* vl, *vr;
+    ts_uint t, jj, li, ri, rri, lli;
+    ts_triangle* jt;
+    /* reorder the triangles: 
+    - find first triangle with neighbors 0,1 , swap it to 0
+    - 
+    */
+
+    // find first, and also second and last triangles (0,1) (1,[2]),...([end],0) 
+    vl = vtx->neigh[0];
+    vr = vtx->neigh[1];
+    for (t=0; t<vtx->tristar_no; t++){
+        jt = vtx->tristar[t];
+        if (in_tri(jt,vl)){
+            if (in_tri(jt,vr)){
+                jj = t;
+            }
+            else{
+                lli = t;
+            }
+          
+        }
+        else if (in_tri(jt,vr)){
+            rri = t;
+        }  
+    }
+    swap_triangles(vtx, jj, 0);
+
+    if (lli==0) lli=jj;
+    swap_triangles(vtx, lli, vtx->tristar_no-1);
+
+    if (rri==0) rri=jj;
+    if (rri==vtx->tristar_no-1) rri=lli;
+    swap_triangles(vtx, rri, 1);
+
+    // now triangles can only be left of left or right of right
+    ri = 2;
+    li = vtx->neigh_no-1;
+    while (ri<li){ 
+        for (t=ri; t<li; t++){
+            vl = vtx->neigh[li];
+            vr = vtx->neigh[ri];
+            jt = vtx->tristar[t];
+            if (in_tri(jt, vl)){
+                li-=1;
+                swap_triangles(vtx, t, li);
+
+                if (ri+1==li) break;
+            }
+            if (in_tri(jt, vr)){
+                swap_triangles(vtx, t, ri);
+
+                ri+=1;
+                if (ri+1==li) break;
+            }
+        }
+    }
 }
 
 /*long int p_diff(ts_vertex* i, ts_vertex* j){
@@ -509,6 +566,7 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     vl = vtx->neigh[0];
     vr = vtx->neigh[1];
     for (t=0; t<vtx->tristar_no; t++){
+        fprintf(stdout,"%d,",t);
         jt = vtx->tristar[t];
         if (in_tri(jt,vl)){
             if (in_tri(jt,vr)){
@@ -539,8 +597,9 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     ri = 2;
     li = vtx->neigh_no-1;
     // now triangles can only be left of left or right of right
-    while (ri<li){ 
+    while (ri+1<li){ 
         for (t=ri; t<li; t++){
+            fprintf(stdout,"%d,",t);
             vl = vtx->neigh[li];
             vr = vtx->neigh[ri];
             jt = vtx->tristar[t];
@@ -549,14 +608,14 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
                 swap_triangles(vtx, t, li);
                 fprintf(stdout,"swapped left %d, %d\n",t,li);
                 print_tri_order(vtx);
-                if (ri==li) break;
+                if (ri+1==li) break;
             }
             if (in_tri(jt, vr)){
                 swap_triangles(vtx, t, ri);
                 fprintf(stdout,"swapped right %d, %d\n",t,ri);
                 print_tri_order(vtx);
                 ri+=1;
-                if (vl==vr) break;
+                if (ri+1==li) break;
             }
         }
     }
