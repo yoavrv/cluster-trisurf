@@ -46,4 +46,9 @@ ts_bool advance_seen_vertex_to_next_layer(ts_seen_vertex *seen_vertex);
 ts_bool swap_triangles(ts_vertex* vtx, ts_uint i1, ts_uint i2);
 ts_bool order_vertex_triangles(ts_vertex* vtx);
 ts_bool print_tri_order(ts_vertex* vtx);
+
+ts_bool vertex_add_tristar_at(ts_vertex *vtx, ts_triangle *tristarmem, ts_bool i);
+ts_bool vtx_remove_tristar_at(ts_vertex *vtx, ts_bool i);
+ts_bool vertex_add_neigh_at(ts_vertex *vtx, ts_vertex *vtxmem, ts_bool i);
+ts_bool vtx_remove_neigh_at(ts_vertex *vtx, ts_bool i);
 #endif

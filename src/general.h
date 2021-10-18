@@ -192,7 +192,7 @@ struct ts_vertex {
 		/* 1st bit: bonds, 2nd bit: active, 
 		3rd bit: adhesive, 4th bit: anisotropic, 
 		5th bit: reserved, 6th bit: vicsek 
-		7th bit: reserved, 8th bit: reserved*/
+		7th bit: edge, 8th bit: ghost*/
 		ts_bool type; 
 
 		// apparently using a bool for the type flag does nothing, but I don't want to reserve 
@@ -200,14 +200,14 @@ struct ts_vertex {
 
 };
 enum vertex_type {
-	is_bonding_vtx=1,
-	is_active_vtx=2,
-	is_adhesive_vtx=4,
-	is_anisotropic_vtx=8,
-	is_reserved_0_vtx=16,
-	is_vicsek_vtx=32,
-	is_reserved_1_vtx=64,
-	is_ghost_vtx=-128,
+	is_bonding_vtx=1, // bonding vertex, form bond with other bonding vertices
+	is_active_vtx=2, // active vertex under normally directed force
+	is_adhesive_vtx=4, // adhesive vertex, subject to adhesion energy near surfaces
+	is_anisotropic_vtx=8, // anisotropic vertex, requires computing full curvature characteristic
+	is_reserved_0_vtx=16, // reserved type
+	is_vicsek_vtx=32, // vertex under vicsek neighbor-influenced force
+	is_edge_vtx=64, // edge vertex has unordered tristars
+	is_ghost_vtx=-128, // ghost vertex can only be moved artificially
 }; 
 
 
