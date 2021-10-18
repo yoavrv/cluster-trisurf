@@ -286,3 +286,6 @@ ts_bool triangle_list_free(ts_triangle_list *tlist){
     return TS_SUCCESS;
 }
 
+ts_bool in_tri(ts_triangle* t, ts_vertex* v){
+    return (t->vertex[0]==v || t->vertex[1]==v || t->vertex[2]==v);
+}

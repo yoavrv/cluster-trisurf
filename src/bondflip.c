@@ -80,6 +80,10 @@ c
     if(vtx_distance_sq(km,kp) > vesicle->dmax ) return TS_FAIL;
     //   fprintf(stderr,"Bond will not be too long.. Continue.\n");
 
+    //##############################################################################################//
+    // Yoav: Let's make the following case: assume all vertices have ordered triangles, maintain order
+    //
+    
     /* we make a bond flip. this is different than in original fortran */
     // find lm, lp
     // 1. step. We find lm and lp from k->tristar !

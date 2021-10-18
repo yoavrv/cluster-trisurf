@@ -7,6 +7,8 @@
 #include "bond.h"
 #include<stdio.h>
 
+#define p_diff(i, j) ((long int) (i) - (long int) (j))/ (long int) sizeof(*(i))
+
 ts_bool vertex_list_assign_id(ts_vertex_list *vlist, ts_uint id){
 	ts_uint i;	
 	for(i=0;i<vlist->n;i++){
@@ -448,5 +450,132 @@ ts_bool advance_seen_vertex_to_next_layer(ts_seen_vertex *seen_vertex){
     seen_vertex->n_prev = seen_vertex->n_curr;
     seen_vertex->n_curr = seen_vertex->n_next;
     seen_vertex->n_next = seen_vertex->n_top;
+    return TS_SUCCESS;
+}
+
+ts_bool swap_triangles(ts_vertex* vtx, ts_uint i, ts_uint j){
+    // swap triastar triangles at index i and j
+    ts_triangle* temptri;
+    if (i==j) return TS_SUCCESS;
+    if (i >= vtx->tristar_no || j >= vtx->tristar_no){
+        fatal("attempt to swap triangles outside of range tristar_no",3);
+    }
+    if (vtx->tristar[i] == NULL || vtx->tristar[j] == NULL){
+        fatal("Attempt to swap tristars where one does not exist",3);
+    }
+    temptri = vtx->tristar[i];
+    vtx->tristar[i] = vtx->tristar[j];
+    vtx->tristar[j] = temptri;
+    return TS_SUCCESS;
+}
+
+ts_bool tri_ordered(ts_triangle* t, ts_vertex* v1, ts_vertex* v2){
+    return (    (t->vertex[0]==v1 && t->vertex[1]==v2) 
+             || (t->vertex[1]==v1 && t->vertex[2]==v2)
+             || (t->vertex[2]==v1 && t->vertex[0]==v2)) ;
+}
+
+ts_bool in_tri(ts_triangle* t, ts_vertex* v){
+    return (t->vertex[0]==v || t->vertex[1]==v || t->vertex[2]==v);
+}
+
+ts_bool print_tri_order(ts_vertex* vtx){
+    ts_uint jj, jjm;
+    for (jj=0; jj<vtx->tristar_no; jj++){
+        if (vtx->tristar[jj]->vertex[0]==vtx) jjm=0;
+        if (vtx->tristar[jj]->vertex[1]==vtx) jjm=1;
+        if (vtx->tristar[jj]->vertex[2]==vtx) jjm=2;
+        fprintf(stdout,"(%ld, %ld), ", //(long int) vtx->tristar[jj]->vertex[jjm] - (long int) vtx, 
+                                            p_diff(vtx->tristar[jj]->vertex[(jjm+1)%3], vtx),
+                                            p_diff(vtx->tristar[jj]->vertex[(jjm+2)%3], vtx));
+    }
+    fprintf(stdout,"\n");
+}
+
+ts_bool order_vertex_triangles(ts_vertex* vtx){
+    // order the triangles of the vertex according to the neighbors
+    // vtx->tristar[i] = (vtx, vtx->neigh[0], vtx->neigh[1])
+    ts_vertex* vl, *vr;
+    ts_uint t, jj, li, ri, rri, lli;
+    ts_triangle* jt;
+    /* reorder the triangles: 
+    - find first triangle with neighbors 0,1 , swap it to 0
+    - 
+    */
+
+    // find first, and also second and last triangles (0,1) (1,[2]),...([end],0) 
+    vl = vtx->neigh[0];
+    vr = vtx->neigh[1];
+    for (t=0; t<vtx->tristar_no; t++){
+        jt = vtx->tristar[t];
+        if (in_tri(jt,vl)){
+            if (in_tri(jt,vr)){
+                jj = t;
+            }
+            else{
+                lli = t;
+            }
+          
+        }
+        else if (in_tri(jt,vr)){
+            rri = t;
+        }  
+    }
+    swap_triangles(vtx, jj, 0);
+
+    if (lli==0) lli=jj;
+    swap_triangles(vtx, lli, vtx->tristar_no-1);
+
+    if (rri==0) rri=jj;
+    if (rri==vtx->tristar_no-1) rri=lli;
+    swap_triangles(vtx, rri, 1);
+
+    // now triangles can only be left of left or right of right
+    ri = 2;
+    li = vtx->neigh_no-1;
+    while (ri<li){ 
+        for (t=ri; t<li; t++){
+            vl = vtx->neigh[li];
+            vr = vtx->neigh[ri];
+            jt = vtx->tristar[t];
+            if (in_tri(jt, vl)){
+                li-=1;
+                swap_triangles(vtx, t, li);
+
+                if (ri+1==li) break;
+            }
+            if (in_tri(jt, vr)){
+                swap_triangles(vtx, t, ri);
+
+                ri+=1;
+                if (ri+1==li) break;
+            }
+        }
+    }
+}
+
+
+ts_bool vertex_add_tristar_at(ts_vertex *vtx, ts_triangle *tristarmem, ts_bool i){
+    if (i > vtx->tristar_no){
+        fatal("attempt to add tristar above tristar_no");
+    }
+	vtx->tristar_no++;
+	vtx->tristar=(ts_triangle **)realloc(vtx->tristar,vtx->tristar_no*sizeof(ts_triangle *));
+	if(vtx->tristar==NULL){
+			fatal("Reallocation of memory while adding tristar failed.",3);
+	}
+    memmove(vtx->tristar+i+1, vtx->tristar+i,(vtx->tristar_no-i-1)*sizeof(ts_triangle*));
+	vtx->tristar[i]=tristarmem;
+	return TS_SUCCESS;
+}
+
+ts_bool vtx_remove_tristar_at(ts_vertex *vtx, ts_bool i){
+
+    memmove(vtx->tristar+i, vtx->tristar+i+1,(vtx->tristar_no-i-1)*sizeof(ts_triangle*));
+    vtx->tristar_no--;
+    vtx->tristar=(ts_triangle **)realloc(vtx->tristar,vtx->tristar_no*sizeof(ts_triangle *));
+    if(vtx->tristar == NULL){
+            fatal("Reallocation of memory failed during removal of tristar",3);
+        }
     return TS_SUCCESS;
 }

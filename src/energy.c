@@ -19,101 +19,6 @@ int cmpfunc(const void *x, const void *y)
 	else return -1;
 }
 
-ts_bool swap_triangles(ts_vertex* vtx, ts_uint i, ts_uint j){
-    // swap triastar triangles at index i and j
-    ts_triangle* temptri;
-    if (i==j) return TS_SUCCESS;
-    temptri = vtx->tristar[i];
-    vtx->tristar[i] = vtx->tristar[j];
-    vtx->tristar[j] = temptri;
-    return TS_SUCCESS;
-}
-
-ts_bool tri_ordered(ts_triangle* t, ts_vertex* v1, ts_vertex* v2){
-    return (    (t->vertex[0]==v1 && t->vertex[1]==v2) 
-             || (t->vertex[1]==v1 && t->vertex[2]==v2)
-             || (t->vertex[2]==v1 && t->vertex[0]==v2)) ;
-}
-
-ts_bool in_tri(ts_triangle* t, ts_vertex* v){
-    return (t->vertex[0]==v || t->vertex[1]==v || t->vertex[2]==v);
-}
-
-ts_bool print_tri_order(ts_vertex* vtx){
-    ts_uint jj, jjm;
-    for (jj=0; jj<vtx->tristar_no; jj++){
-        if (vtx->tristar[jj]->vertex[0]==vtx) jjm=0;
-        if (vtx->tristar[jj]->vertex[1]==vtx) jjm=1;
-        if (vtx->tristar[jj]->vertex[2]==vtx) jjm=2;
-        fprintf(stdout,"(%ld, %ld), ", //(long int) vtx->tristar[jj]->vertex[jjm] - (long int) vtx, 
-                                            p_diff(vtx->tristar[jj]->vertex[(jjm+1)%3], vtx),
-                                            p_diff(vtx->tristar[jj]->vertex[(jjm+2)%3], vtx));
-    }
-    fprintf(stdout,"\n");
-}
-
-ts_bool order_vertex_tri(ts_vertex* vtx){
-    // order the triangles of the vertex according to the neighbors
-    // vtx->tristar[i] = (vtx, vtx->neigh[0], vtx->neigh[1])
-    ts_vertex* vl, *vr;
-    ts_uint t, jj, li, ri, rri, lli;
-    ts_triangle* jt;
-    /* reorder the triangles: 
-    - find first triangle with neighbors 0,1 , swap it to 0
-    - 
-    */
-
-    // find first, and also second and last triangles (0,1) (1,[2]),...([end],0) 
-    vl = vtx->neigh[0];
-    vr = vtx->neigh[1];
-    for (t=0; t<vtx->tristar_no; t++){
-        jt = vtx->tristar[t];
-        if (in_tri(jt,vl)){
-            if (in_tri(jt,vr)){
-                jj = t;
-            }
-            else{
-                lli = t;
-            }
-          
-        }
-        else if (in_tri(jt,vr)){
-            rri = t;
-        }  
-    }
-    swap_triangles(vtx, jj, 0);
-
-    if (lli==0) lli=jj;
-    swap_triangles(vtx, lli, vtx->tristar_no-1);
-
-    if (rri==0) rri=jj;
-    if (rri==vtx->tristar_no-1) rri=lli;
-    swap_triangles(vtx, rri, 1);
-
-    // now triangles can only be left of left or right of right
-    ri = 2;
-    li = vtx->neigh_no-1;
-    while (ri<li){ 
-        for (t=ri; t<li; t++){
-            vl = vtx->neigh[li];
-            vr = vtx->neigh[ri];
-            jt = vtx->tristar[t];
-            if (in_tri(jt, vl)){
-                li-=1;
-                swap_triangles(vtx, t, li);
-
-                if (ri+1==li) break;
-            }
-            if (in_tri(jt, vr)){
-                swap_triangles(vtx, t, ri);
-
-                ri+=1;
-                if (ri+1==li) break;
-            }
-        }
-    }
-}
-
 /*long int p_diff(ts_vertex* i, ts_vertex* j){
     return ((long int) i - (long int) j)/ (long int) sizeof(*i);
 }*/
@@ -230,66 +135,7 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     Pv12=Pv21; Pv13=Pv31; Pv23=Pv32; //for clarity: hopefully compiler gets rid of these
 
 
-    // reorder the triangles: // find first triangle
-    vl = vtx->neigh[0];
-    vr = vtx->neigh[1];
-    for (t=0; t<vtx->tristar_no; t++){
-        jt = vtx->tristar[t];
-        if (in_tri(jt,vl)){
-            if (in_tri(jt,vr)){
-                jj = t;
-            }
-            else{
-                lli = t;
-            }
-          
-        }
-        else if (in_tri(jt,vr)){
-            rri = t;
-        }  
-    }
-    swap_triangles(vtx, jj, 0);
-
-    if (lli==0) lli=jj;
-    swap_triangles(vtx, lli, vtx->tristar_no-1);
-
-    if (rri==0) rri=jj;
-    if (rri==vtx->tristar_no-1) rri=lli;
-    swap_triangles(vtx, rri, 1);
-
-
-    ri = 2;
-    li = vtx->neigh_no-1;
-    // now triangles can only be left of left or right of right
-    while (ri<li){ 
-        for (t=ri; t<li; t++){
-            vl = vtx->neigh[li];
-            vr = vtx->neigh[ri];
-            jt = vtx->tristar[t];
-            if (in_tri(jt, vl)){
-                li-=1;
-                swap_triangles(vtx, t, li);
-
-                if (ri==li) break;
-            }
-            if (in_tri(jt, vr)){
-                swap_triangles(vtx, t, ri);
-
-                ri+=1;
-                if (vl==vr) break;
-            }
-        }
-    }
-    if (vtx==vesicle->vlist->vtx[183] && 0) {
-        fprintf(stdout,"I'm on %p, I read nodes \n", vtx);
-        for (jj=0; jj<vtx->neigh_no; jj++){
-            fprintf(stdout,"%ld, ", p_diff(vtx->neigh[jj],vtx));
-        }
-        fprintf(stdout,"\n");
-        print_tri_order(vtx);
-        fprintf(stdout,"\n");
-    }
-    // the triangles *should* be ordered
+    order_vertex_triangles(vtx); // make sure triangles are ordered
 
     for(jj=0;jj<vtx->neigh_no;jj++){
 	edge_vector_x[jj]=vtx->neigh[jj]->x-vtx->x;
@@ -526,7 +372,7 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     ts_double a_dot_b, a_cross_b_x, a_cross_b_y, a_cross_b_z, mag_a_cross_b;
     ts_bool model=vesicle->tape->type_of_curvature_model;
 
- /*   
+ /*  debugging tristar order in vertex 
     if (vtx == vesicle->vlist->vtx[183] && vtx->ad_w == 7){
     fprintf(stdout,"%ld",p_diff(vtx,vesicle->vlist->vtx[0]));
     fprintf(stdout,"I'm on %p, I read nodes ", vtx);
@@ -635,7 +481,7 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     fprintf(stdout,"\n");
     fatal("goodbye!",100);
     }
-*/
+//*/
 
 
     for(jj=1; jj<=vtx->neigh_no;jj++){

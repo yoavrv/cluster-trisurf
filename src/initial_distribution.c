@@ -19,6 +19,7 @@ ts_vesicle *initial_distribution_dipyramid(ts_uint nshell, ts_uint ncmax1, ts_ui
 	ts_fprintf(stdout,"Starting initial_distribution on vesicle with %u shells!...\n",nshell);
 	ts_bool retval;
 	ts_uint no_vertices=5*nshell*nshell+2;	
+	ts_uint i;
 	ts_vesicle *vesicle=init_vesicle(no_vertices,ncmax1,ncmax2,ncmax3,stepsize);
 	vesicle->nshell=nshell;
 	//retval = vtx_set_global_values(vesicle);
@@ -30,6 +31,9 @@ ts_vesicle *initial_distribution_dipyramid(ts_uint nshell, ts_uint ncmax1, ts_ui
 	retval = init_triangle_neighbours(vesicle);
 	retval = init_common_vertex_triangle_neighbours(vesicle);
 	retval = init_normal_vectors(vesicle->tlist);
+	for (i=0; i<vesicle->vlist->n; i++){
+		order_vertex_triangles(vesicle->vlist->vtx[i]); // make absolutly sure all vtx->tristar are ordered
+	}
 	//retval = mean_curvature_and_energy(vesicle); sweeping happens after initial population anyway
 	ts_fprintf(stdout,"initial_distribution finished!\n");
 	if(retval);
