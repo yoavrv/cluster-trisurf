@@ -563,7 +563,7 @@ ts_bool order_vertex_triangles(ts_vertex* vtx){
 
 
 // add tristar to vertex at index- shift other vertex. use to maintain tristar order
-ts_bool vertex_add_tristar_at(ts_vertex *vtx, ts_triangle *tristarmem, ts_bool i){
+ts_bool vertex_insert_tristar_at(ts_vertex *vtx, ts_triangle *tristarmem, ts_bool i){
     if (i > vtx->tristar_no){
         fatal("attempt to add tristar above tristar_no",3);
     }
@@ -597,7 +597,7 @@ ts_bool vtx_remove_tristar_at(ts_vertex *vtx, ts_bool i){
 }
 
 // It is the caller's responsibility to 1. add the vertex to the neighbor's list, 2. maintain order
-ts_bool vertex_add_neigh_at(ts_vertex *vtx, ts_vertex *vtxmem, ts_bool i){
+ts_bool vertex_insert_neigh_at(ts_vertex *vtx, ts_vertex *vtxmem, ts_bool i){
 
     if ( i>vtx->neigh_no){
         fatal("attempt to add neighbor above neigh_no",3);

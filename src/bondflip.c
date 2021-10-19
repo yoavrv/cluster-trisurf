@@ -503,6 +503,7 @@ c      |lm2 \ | / lp2 |              |lm2 \   / lp2 |
 c      +------it------+              +----- it -----+
 c
 */
+// same as bondflip but ensure vertices remained ordered in their tristar too
     ts_vertex *it=bond->vtx1;
     ts_vertex *k=bond->vtx2;
     ts_uint nei,neip,neim;
@@ -543,6 +544,19 @@ c
         fatal("In bondflip, cannot determine km and kp!",999);
     }
 
+    if(it->type & is_edge_vtx || km->type & is_edge_vtx || k->type & is_edge_vtx || kp->type & is_edge_vtx){
+        // not even bothering for the mixed case
+        // hoping compiler can throw out repeated steps when composing
+        retval = single_bondflip_timestep(vesicle, bond, rn);
+        if (!(it->type & is_edge_vtx)) order_vertex_tri(it);
+        if (!(km->type & is_edge_vtx)) order_vertex_tri(km);
+        if (!( k->type & is_edge_vtx)) order_vertex_tri(k);
+        if (!(kp->type & is_edge_vtx)) order_vertex_tri(kp);
+        return retval;
+    }
+
+    // We now assume all vertices are ordered in neighbors and tristars 
+
     //  fprintf(stderr,"I WAS HERE! after the 4 vertices are known!\n");
 
     /* test if the membrane is wrapped too much, so that kp is nearest neighbour of
@@ -555,9 +569,6 @@ c
     if(vtx_distance_sq(km,kp) > vesicle->dmax ) return TS_FAIL;
     //   fprintf(stderr,"Bond will not be too long.. Continue.\n");
 
-    //##############################################################################################//
-    // Yoav: Let's make the following case: assume all vertices have ordered triangles, maintain order
-    //
     
     /* we make a bond flip. this is different than in original fortran */
     // find lm, lp
