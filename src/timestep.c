@@ -255,15 +255,10 @@ ts_bool single_timestep(ts_vesicle *vesicle,ts_double *vmsr, ts_double *bfsr, cl
     stopwatch=clock();
     for(i=0;i<3*vesicle->vlist->n;i++){
         b=rand() % vesicle->blist->n;
-        if (i==103){ 
-            ts_fprintf(stdout,"bond is %u\n",b);
-            ts_fprintf(stdout,"its pointer is %p\n",vesicle->blist->bond[b]);
-        }
         //find a bond and return a pointer to a bond...
         //call single_bondflip_timestep...
         retval=single_bondflip_timestep(vesicle,vesicle->blist->bond[b],rnvec);
         // b++; retval=TS_FAIL;
-        //if (i==103) fatal("here!",3);
         if(retval==TS_SUCCESS) bfsrcnt++;        
     }
     *time_3+=clock()-stopwatch; //time bondflip

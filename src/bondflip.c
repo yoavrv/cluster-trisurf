@@ -59,7 +59,7 @@ c
     neip=nei+1;  // I don't like it.. Smells like I must have it in correct order
     neim=nei-1;
     if(neip>=it->neigh_no) neip=0;
-    if((ts_int)neim<0) neim=it->neigh_no-1; /* casting is essential... If not there the neim is never <0 !!! */
+    if(nei==0) neim=it->neigh_no-1; /* casting is essential... If not there the neim is never <0 !!! */
     //  fprintf(stderr,"The numbers are: %u %u\n",neip, neim);
     km=it->neigh[neim];  // We located km and kp
     kp=it->neigh[neip];
@@ -72,10 +72,7 @@ c
 
     /* test if the membrane is wrapped too much, so that kp is nearest neighbour of
     * km. If it is true, then don't flip! */
-    if (bond == vesicle->blist->bond[0]){
-        ts_fprintf(stdout,"km->neigh_no=%p\n",km->neigh);
-        fatal("reached here",3);
-    }
+
     for(i=0;i<km->neigh_no;i++){
         if(km->neigh[i] == kp) return TS_FAIL;
     }
