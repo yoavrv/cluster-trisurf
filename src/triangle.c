@@ -23,9 +23,9 @@
   */
 ts_triangle_list *init_triangle_list(){
     ts_triangle_list *tlist=(ts_triangle_list *)malloc(sizeof(ts_triangle_list));
-	tlist->n = 0;
-	tlist->tria=NULL;
-	return tlist;
+    tlist->n = 0;
+    tlist->tria=NULL;
+    return tlist;
 }
 
 /** @brief Add the triangle to the triangle list and create necessary data
@@ -103,12 +103,12 @@ ts_triangle *triangle_add(ts_triangle_list *tlist, ts_vertex *vtx1, ts_vertex *v
 
 ts_bool triangle_add_neighbour(ts_triangle *tria, ts_triangle *ntria){
     if(tria==NULL || ntria==NULL) return TS_FAIL;
-	tria->neigh_no++;
-	tria->neigh=realloc(tria->neigh,tria->neigh_no*sizeof(ts_triangle *));
-	if(tria->neigh == NULL)
-			fatal("Reallocation of memory failed during insertion of triangle neighbour in triangle_add_neighbour",3);
-	tria->neigh[tria->neigh_no-1]=ntria; 
-	return TS_SUCCESS;
+    tria->neigh_no++;
+    tria->neigh=realloc(tria->neigh,tria->neigh_no*sizeof(ts_triangle *));
+    if(tria->neigh == NULL)
+            fatal("Reallocation of memory failed during insertion of triangle neighbour in triangle_add_neighbour",3);
+    tria->neigh[tria->neigh_no-1]=ntria; 
+    return TS_SUCCESS;
 }
 
 /** @brief Remove the neigbours from triangle.
@@ -140,7 +140,7 @@ ts_bool triangle_add_neighbour(ts_triangle *tria, ts_triangle *ntria){
   *		
   */
 ts_bool triangle_remove_neighbour(ts_triangle *tria, ts_triangle *ntria){
-    ts_uint i,j=0; 
+    ts_small_idx i,j=0; 
     if(tria==NULL || ntria==NULL) return TS_FAIL;
 
     for(i=0;i<tria->neigh_no;i++){
@@ -154,12 +154,12 @@ ts_bool triangle_remove_neighbour(ts_triangle *tria, ts_triangle *ntria){
     }
     tria->neigh_no--;
     tria->neigh=(ts_triangle **)realloc(tria->neigh,tria->neigh_no*sizeof(ts_triangle *));
-	if(tria->neigh == NULL){
-		fprintf(stderr,"Ooops: tria->neigh_no=%d\n",tria->neigh_no);
-		fatal("Reallocation of memory failed during removal of vertex neighbour in triangle_remove_neighbour",100);
-	}
-/* we repeat the procedure for neighbour */
-	j=0;
+    if(tria->neigh == NULL){
+        fprintf(stderr,"Ooops: tria->neigh_no=%d\n",tria->neigh_no);
+        fatal("Reallocation of memory failed during removal of vertex neighbour in triangle_remove_neighbour",100);
+    }
+    /* we repeat the procedure for neighbour */
+    j=0;
     for(i=0;i<ntria->neigh_no;i++){
         if(ntria->neigh[i]!=tria){
             ntria->neigh[j]=ntria->neigh[i];
@@ -171,10 +171,10 @@ ts_bool triangle_remove_neighbour(ts_triangle *tria, ts_triangle *ntria){
     }
     ntria->neigh_no--;
     ntria->neigh=(ts_triangle **)realloc(ntria->neigh,ntria->neigh_no*sizeof(ts_triangle *));
-	if(ntria->neigh == NULL){
-		fprintf(stderr,"Ooops: ntria->neigh_no=%d\n",ntria->neigh_no);
-		fatal("Reallocation of memory failed during removal of vertex neighbour in triangle_remove_neighbour",100);
-	}
+    if(ntria->neigh == NULL){
+        fprintf(stderr,"Ooops: ntria->neigh_no=%d\n",ntria->neigh_no);
+        fatal("Reallocation of memory failed during removal of vertex neighbour in triangle_remove_neighbour",100);
+    }
     return TS_SUCCESS;
 }
 
@@ -209,45 +209,45 @@ ts_bool triangle_remove_neighbour(ts_triangle *tria, ts_triangle *ntria){
   *		
   */
 ts_bool triangle_normal_vector(ts_triangle *tria){
-	ts_double x21,x31,y21,y31,z21,z31,xden;
-	x21=tria->vertex[1]->x - tria->vertex[0]->x;
-	x31=tria->vertex[2]->x - tria->vertex[0]->x;
-	y21=tria->vertex[1]->y - tria->vertex[0]->y;
-	y31=tria->vertex[2]->y - tria->vertex[0]->y;
-	z21=tria->vertex[1]->z - tria->vertex[0]->z;
-	z31=tria->vertex[2]->z - tria->vertex[0]->z;
+    ts_double x21,x31,y21,y31,z21,z31,xden;
+    x21=tria->vertex[1]->x - tria->vertex[0]->x;
+    x31=tria->vertex[2]->x - tria->vertex[0]->x;
+    y21=tria->vertex[1]->y - tria->vertex[0]->y;
+    y31=tria->vertex[2]->y - tria->vertex[0]->y;
+    z21=tria->vertex[1]->z - tria->vertex[0]->z;
+    z31=tria->vertex[2]->z - tria->vertex[0]->z;
 
-	tria->xnorm=y21*z31 - z21*y31;
-	tria->ynorm=z21*x31 - x21*z31;
-	tria->znorm=x21*y31 - y21*x31;
-	xden=tria->xnorm*tria->xnorm +
+    tria->xnorm=y21*z31 - z21*y31; // a=1-0, b=2-0: norm = axb
+    tria->ynorm=z21*x31 - x21*z31;
+    tria->znorm=x21*y31 - y21*x31;
+    xden=tria->xnorm*tria->xnorm +
          tria->ynorm*tria->ynorm + 
          tria->znorm*tria->znorm;
 #ifdef TS_DOUBLE_DOUBLE
-	xden=sqrt(xden);
+    xden=sqrt(xden);
 #endif
 #ifdef TS_DOUBLE_FLOAT
-	xden=sqrtf(xden);
+    xden=sqrtf(xden);
 #endif
 #ifdef TS_DOUBLE_LONGDOUBLE
-	xden=sqrtl(xden);
+    xden=sqrtl(xden);
 #endif
-	tria->xnorm=tria->xnorm/xden;
-	tria->ynorm=tria->ynorm/xden;
-	tria->znorm=tria->znorm/xden;	
+    tria->xnorm=tria->xnorm/xden;
+    tria->ynorm=tria->ynorm/xden;
+    tria->znorm=tria->znorm/xden;	
 
-/*  Here it is an excellent point to recalculate volume of the triangle and
- *  store it into datastructure. Volume is required at least by constant volume
- *  calculation of vertex move and bondflip and spherical harmonics. */
+    /*  Here it is an excellent point to recalculate volume of the triangle and
+    *  store it into datastructure. Volume is required at least by constant volume
+    *  calculation of vertex move and bondflip and spherical harmonics. */
     tria->volume=(tria->vertex[0]->x+ tria->vertex[1]->x + tria->vertex[2]->x) * tria->xnorm + 
-       (tria->vertex[0]->y+ tria->vertex[1]->y + tria->vertex[2]->y) * tria->ynorm + 
-    (tria->vertex[0]->z+ tria->vertex[1]->z + tria->vertex[2]->z) * tria->znorm;
+                 (tria->vertex[0]->y+ tria->vertex[1]->y + tria->vertex[2]->y) * tria->ynorm + 
+                 (tria->vertex[0]->z+ tria->vertex[1]->z + tria->vertex[2]->z) * tria->znorm;
     tria->volume=-xden*tria->volume/18.0;
-/*  Also, area can be calculated in each triangle */
+    /*  Also, area can be calculated in each triangle */
     tria->area=xden/2;
 
 
-	return TS_SUCCESS;
+    return TS_SUCCESS;
 }
 
 /** @brief Frees the memory allocated for data structure of triangle list
@@ -276,9 +276,9 @@ ts_bool triangle_normal_vector(ts_triangle *tria){
   *		
   */
 ts_bool triangle_list_free(ts_triangle_list *tlist){
-    ts_uint i;
+    ts_idx i;
     for(i=0;i<tlist->n;i++){
-    	if(tlist->tria[i]->neigh!=NULL) free(tlist->tria[i]->neigh);
+        if(tlist->tria[i]->neigh!=NULL) free(tlist->tria[i]->neigh);
         free(tlist->tria[i]);
     }
     free(tlist->tria);

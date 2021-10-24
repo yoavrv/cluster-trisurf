@@ -2,10 +2,11 @@
 #ifndef _GENERAL_H
 #define _GENERAL_H
 
-#include<stdarg.h>
-#include<stdio.h>
-#include<gsl/gsl_complex.h>
-/* @brief This is a header file, defining general constants and structures.
+#include <stdio.h>
+#include <stdarg.h>
+#include <gsl/gsl_complex.h>
+
+/** @brief This is a header file, defining general constants and structures.
   * @file header.h
   * @author Samo Penic
   * @date 5.3.2001
@@ -111,6 +112,22 @@ typedef unsigned char ts_uchar;
  */
 typedef char ts_bool;
 
+/* * Yoav: Can't remember what's what with the indice
+* I'm just going to typedef an index that will be used everywhere we have arr[i]
+so I can stop confusing int and uint have consistent wraparound behaviors
+out of bound might be simpler: it's always i greater than vec->max
+*/
+// currently 21/10/21: mainly excluding math-capabale things: nshell,
+// ncmaxes (because heck if I know what goes in the calculations there) and cellno (by extension),
+// and spherical harmonics indexes.
+// also not touching the FORTRAN indexes with a ten foot pole in intial distribution
+typedef unsigned char ts_small_idx; // for tiny indices <<64, mostly short circular neighbor vectors
+typedef unsigned int ts_idx; // for big indices
+typedef unsigned long ts_massive_idx; //for mcsweeps
+ts_small_idx next_small(ts_small_idx i, ts_small_idx max);
+ts_idx next_idx(ts_idx i, ts_idx max);
+ts_small_idx prev_small(ts_small_idx i, ts_small_idx max);
+ts_idx prev_idx(ts_idx i, ts_idx max);
 
 /* STRUCTURES */
 
@@ -121,6 +138,7 @@ typedef char ts_bool;
 #define TS_COORD_CARTESIAN 0
 #define TS_COORD_SPHERICAL 1
 #define TS_COORD_CYLINDRICAL 2
+// ^ coordinates in the vtu file?
 
 typedef struct {
     ts_double e1;
@@ -134,80 +152,80 @@ typedef struct {
  *  ts_vertex holds the data for one single point (bead, vertex). To understand how to use it
  *  here is a detailed description of the fields in the data structure. */
 struct ts_vertex {
-		ts_double x; /**< The x coordinate of vertex. */
+        ts_double x; /**< The x coordinate of vertex. */
         ts_double y; /**< The y coordinate of vertex. */
         ts_double z; /**< The z coordinate of vertex. */
         ts_double mean_curvature;
-		ts_double gaussian_curvature; // to be determined: mean, Gaussian curvature or c1,c2
-		ts_double mean_energy;
-		ts_double gaussian_energy;
+        ts_double gaussian_curvature; // to be determined: mean, Gaussian curvature or c1,c2
+        ts_double mean_energy;
+        ts_double gaussian_energy;
         ts_double energy;
         //ts_double energy_h;
         ts_double xk; //bending rigidity
-		ts_double xk2; //second bending modulus (Gaussian/ deviatoric?): should be excess (Gauss-Bonet)
-		ts_double w;
-		ts_double c;
-		ts_double nx; // normal vector
-		ts_double ny;
-		ts_double nz;
-		ts_double nx2; // normal vector
-		ts_double ny2;
-		ts_double nz2;
-		ts_double f;  // force
-		ts_double fx; // force vector
-		ts_double fy;
-		ts_double fz;
-		ts_double ad_w; // adhesive surface bonding
-		ts_double d;  // spontaneous curvature deviator
-		ts_double tx; // director vector
-		ts_double ty;
-		ts_double tz;
-		ts_double eig0[3];
-		ts_double eig1[3];
-		ts_double eig2[3];
-		ts_double new_c1;
-		ts_double new_c2;
-		ts_double eig_v0;
-		ts_double eig_v1;
-		ts_double eig_v2;
-		ts_double mean_curvature2;
-		ts_double gaussian_curvature2; 
-		ts_double mean_energy2;
-		ts_double gaussian_energy2;
-		struct ts_vertex **neigh; /**< The pointer that holds neigh_no pointers to this structure. */
-		struct ts_triangle **tristar; /**< The list of triangles this vertex belongs to. This is an array of pointers to ts_triangle structure of tristar_no length */
+        ts_double xk2; //second bending modulus (Gaussian/ deviatoric?): should be excess (Gauss-Bonet)
+        ts_double w;
+        ts_double c;
+        ts_double nx; // normal vector
+        ts_double ny;
+        ts_double nz;
+        ts_double nx2; // normal vector
+        ts_double ny2;
+        ts_double nz2;
+        ts_double f;  // force
+        ts_double fx; // force vector
+        ts_double fy;
+        ts_double fz;
+        ts_double ad_w; // adhesive surface bonding
+        ts_double d;  // spontaneous curvature deviator
+        ts_double tx; // director vector
+        ts_double ty;
+        ts_double tz;
+        ts_double eig0[3];
+        ts_double eig1[3];
+        ts_double eig2[3];
+        ts_double new_c1;
+        ts_double new_c2;
+        ts_double eig_v0;
+        ts_double eig_v1;
+        ts_double eig_v2;
+        ts_double mean_curvature2;
+        ts_double gaussian_curvature2; 
+        ts_double mean_energy2;
+        ts_double gaussian_energy2;
+        struct ts_vertex **neigh; /**< The pointer that holds neigh_no pointers to this structure. */
+        struct ts_triangle **tristar; /**< The list of triangles this vertex belongs to. This is an array of pointers to ts_triangle structure of tristar_no length */
         struct ts_bond **bond; /**< Array of pointers of lenght bond_no that stores information on bonds. */
         struct ts_cell *cell; /**< Which cell do we belong to? */
-		struct ts_poly *grafted_poly;
-		struct ts_cluster *cluster;
-		ts_uint idx; //vertex index
-		ts_uint id;	 //filament index
-		// number of neighbors, of all types
-		// these never really go beyond even 12, so
-		// we can squeeze to char
-		// (n.n is capped at 19 at vertexmove backup[], 10 at (currently broken) constvol)
-		ts_bool neigh_no; /**< The number of neighbours. */
-		ts_bool tristar_no; //number of triangle-neighbors
-		ts_bool bond_no;
-		/* 1st bit: bonds, 2nd bit: active, 
-		3rd bit: adhesive, 4th bit: anisotropic, 
-		5th bit: reserved, 6th bit: vicsek 
-		7th bit: edge, 8th bit: ghost*/
-		ts_bool type; 
+        struct ts_poly *grafted_poly;
+        struct ts_cluster *cluster;
+        ts_idx idx; //vertex index
+        ts_idx id;	//filament index
+        // number of neighbors, of all types
+        // these never really go beyond even 12, so
+        // we can squeeze to char
+        // (n.n is capped at 19 at vertexmove backup[], 10 at (currently broken) constvol)
+        ts_small_idx neigh_no; /**< The number of neighbours. */
+        ts_small_idx tristar_no; //number of triangle-neighbors
+        ts_small_idx bond_no;
+        /* 1st bit: bonds, 2nd bit: active, 
+        3rd bit: adhesive, 4th bit: anisotropic, 
+        5th bit: reserved, 6th bit: vicsek 
+        7th bit: edge, 8th bit: ghost*/
+        ts_bool type; 
 
-		// apparently using a bool for the type flag does nothing, but I don't want to reserve 
-		// flags for all 32 bytes of an int
+        // apparently using a bool for the type flag does nothing, but I don't want to reserve 
+        // flags for all 32 bytes of an int
 
 };
 enum vertex_type {
-	is_bonding_vtx=1, // bonding vertex, form bond with other bonding vertices
-	is_active_vtx=2, // active vertex under normally directed force
-	is_adhesive_vtx=4, // adhesive vertex, subject to adhesion energy near surfaces
-	is_anisotropic_vtx=8, // anisotropic vertex, requires computing full curvature characteristic
-	is_reserved_0_vtx=16, // reserved type
-	is_vicsek_vtx=32, // vertex under vicsek neighbor-influenced force
-	is_edge_vtx=64, // edge vertex has unordered tristars
-	is_ghost_vtx=-128, // ghost vertex can only be moved artificially
+    is_bonding_vtx=1, // bonding vertex, form bond with other bonding vertices
+    is_active_vtx=2, // active vertex under normally directed force
+    is_adhesive_vtx=4, // adhesive vertex, subject to adhesion energy near surfaces
+    is_anisotropic_vtx=8, // anisotropic vertex, requires computing full curvature characteristic
+    is_reserved_0_vtx=16, // reserved type
+    is_vicsek_vtx=32, // vertex under vicsek neighbor-influenced force
+    is_edge_vtx=64, // edge vertex has unordered tristars
+    is_ghost_vtx=-128, // ghost vertex can only be moved artificially
 }; 
 
 
@@ -215,69 +233,69 @@ typedef struct ts_vertex ts_vertex;
 
 typedef struct {
     ts_vertex **vtx;
-	ts_uint n;
+    ts_idx n;
 
 } ts_vertex_list;
 
 struct ts_bond {
     ts_double bond_length;
-	ts_double energy;
-	ts_double x,y,z;
-	ts_vertex *vtx1;
-	ts_vertex *vtx2;
-	ts_uint idx;
+    ts_double energy;
+    ts_double x,y,z;
+    ts_vertex *vtx1;
+    ts_vertex *vtx2;
+    ts_idx idx;
 };
 typedef struct ts_bond ts_bond;
 
 struct ts_bond_list {
     ts_bond **bond;
-	ts_uint n;
+    ts_idx n;
 };
 typedef struct ts_bond_list ts_bond_list;
 
 struct ts_triangle {
-	ts_double xnorm;
-	ts_double ynorm;
-	ts_double znorm;
+    ts_double xnorm;
+    ts_double ynorm;
+    ts_double znorm;
     ts_double area; // firstly needed for sh.c
     ts_double volume; // firstly needed for sh.c
-	ts_double energy;
-	ts_vertex *vertex[3];
-	struct ts_triangle **neigh;
-	ts_uint idx;
-	ts_uint neigh_no;
+    ts_double energy;
+    ts_vertex *vertex[3];
+    struct ts_triangle **neigh;
+    ts_idx idx;
+    ts_small_idx neigh_no;
 };
 typedef struct ts_triangle ts_triangle;
 
 struct ts_triangle_list{
-	ts_double a0;
-	ts_triangle **tria;
-	ts_uint n;
+    ts_double a0;
+    ts_triangle **tria;
+    ts_idx n;
 };
 typedef struct ts_triangle_list ts_triangle_list;
 
 
 typedef struct ts_cell {
     ts_vertex **vertex;
-	ts_uint idx;
-	ts_uint nvertex;
+    ts_idx idx;
+    ts_small_idx nvertex;
 } ts_cell; 
 
 typedef struct ts_cell_list{
     ts_double dcell;
     ts_double shift;
-	ts_double dmin_interspecies;
-	ts_cell **cell;
-	ts_uint ncmax[3];
+    ts_double dmin_interspecies;
+    ts_cell **cell;
+    ts_uint ncmax[3]; // no idea what kind of indexing goes on here
     ts_uint cellno;
-	ts_uint max_occupancy;
+    ts_small_idx max_occupancy;
 } ts_cell_list;
 
 
 typedef struct {
-	ts_double *vtx_relR; //stuff taken from vertex
-	ts_double* vtx_solAngle;
-	ts_uint n_vtx; //vlist->n
+    ts_double *vtx_relR; //stuff taken from vertex
+    ts_double* vtx_solAngle;
+    ts_idx n_vtx; //vlist->n
     ts_uint l;
     ts_double **ulm;
     gsl_complex **ulmComplex;
@@ -290,134 +308,134 @@ typedef struct {
 
 
 struct ts_poly {
-	ts_double k;
-	ts_vertex_list *vlist;
-	ts_bond_list *blist;
-	ts_vertex *grafted_vtx;
+    ts_double k;
+    ts_vertex_list *vlist;
+    ts_bond_list *blist;
+    ts_vertex *grafted_vtx;
 };
 typedef struct ts_poly ts_poly;
 
 
 struct ts_poly_list {
-	ts_poly **poly;
-	ts_uint	n;
+    ts_poly **poly;
+    ts_idx n;
 };
 typedef struct ts_poly_list ts_poly_list;
 
 
 typedef struct{
-	ts_float z_max;
-	ts_float z_min;
-	ts_bool force_switch;
+    ts_float z_max;
+    ts_float z_min;
+    ts_bool force_switch;
 } ts_confinement_plane;
 
 
 typedef struct {
-	ts_double R_nucleus;
-	ts_double R_nucleusX;
-	ts_double R_nucleusY;
-	ts_double R_nucleusZ;
-	ts_double xkA0;
+    ts_double R_nucleus;
+    ts_double R_nucleusX;
+    ts_double R_nucleusY;
+    ts_double R_nucleusZ;
+    ts_double xkA0;
     ts_double constvolprecision;
     ts_double xk0; // bending modulus
-	ts_double xk2; // second bending modulus (Gaussian/ deviatoric?): should be excess (Gauss-Bonet)
-	ts_double dmax;
-	ts_double dmin_interspecies;
-	ts_double stepsize;
-	ts_double kspring;
-	ts_double xi;
-	ts_double pressure;
-	ts_double c0;
-	ts_double w;
-	ts_double F;
-	ts_double plane_d;
-	ts_double plane_F;
-	ts_double vicsek_strength;
-	ts_double vicsek_radius;
-	ts_double adhesion_cuttoff;
-	ts_double adhesion_strength;
-	ts_double z_adhesion;
-	ts_double adhesion_radius;
-	//  long int brezveze0;
+    ts_double xk2; // second bending modulus (Gaussian/ deviatoric?): should be excess (Gauss-Bonet)
+    ts_double dmax;
+    ts_double dmin_interspecies;
+    ts_double stepsize;
+    ts_double kspring;
+    ts_double xi;
+    ts_double pressure;
+    ts_double c0;
+    ts_double w;
+    ts_double F;
+    ts_double plane_d;
+    ts_double plane_F;
+    ts_double vicsek_strength;
+    ts_double vicsek_radius;
+    ts_double adhesion_cuttoff;
+    ts_double adhesion_strength;
+    ts_double z_adhesion;
+    ts_double adhesion_radius;
+    //  long int brezveze0;
     //	long int brezveze1;
     //	long int brezveze2;
-	long int iterations;
-	long int mcsweeps;
-	ts_ulong random_seed;
-	ts_int inititer;
-	ts_uint number_of_vertices_with_c0;
-	ts_int nshell;
-	ts_int ncxmax;
-	ts_int ncymax;
-	ts_int nczmax;
-	ts_int npoly;
-	ts_int nmono;
-	ts_int internal_poly;
-	ts_int nfil;
-	ts_int nfono;
-	ts_int shc;
-	ts_bool pswitch;
+    ts_idx iterations;
+    ts_massive_idx mcsweeps;
+    ts_ulong random_seed;
+    ts_idx inititer;
+    ts_idx number_of_vertices_with_c0;
+    ts_uint nshell;
+    ts_uint ncxmax;
+    ts_uint ncymax;
+    ts_uint nczmax;
+    ts_idx npoly;
+    ts_idx nmono;
+    ts_idx internal_poly;
+    ts_idx nfil;
+    ts_idx nfono;
+    ts_uint shc; // related to max l of the spherical harmonics
+    ts_bool pswitch;
     ts_bool constvolswitch;
     ts_bool constareaswitch;
-	ts_bool stretchswitch;
-	ts_bool quiet;
-	ts_bool plane_confinement_switch;
-	ts_bool type_of_adhesion_model;
-	ts_bool allow_xy_plane_movement;
-	ts_bool force_balance_along_z_axis;
-	ts_bool adhesion_switch;
-	ts_bool type_of_bond_model;
-	ts_bool type_of_curvature_model;
-	ts_bool type_of_force_model;
-	//char *multiprocessing;
+    ts_bool stretchswitch;
+    ts_bool quiet;
+    ts_bool plane_confinement_switch;
+    ts_bool type_of_adhesion_model;
+    ts_bool allow_xy_plane_movement;
+    ts_bool force_balance_along_z_axis;
+    ts_bool adhesion_switch;
+    ts_bool type_of_bond_model;
+    ts_bool type_of_curvature_model;
+    ts_bool type_of_force_model;
+    //char *multiprocessing;
 } ts_tape;
 
 
 
 
 typedef struct {
-	//ts_double bending_rigidity;
-	ts_double dmax;
-	ts_double stepsize;
-   	ts_double cm[3];
-	ts_double volume;
-	ts_double spring_constant;
-	ts_double pressure;
-	ts_double R_nucleus;
-	ts_double R_nucleusX;
-	ts_double R_nucleusY;
-	ts_double R_nucleusZ;
-	ts_double nucleus_center[3];
-	ts_double area;
-	ts_double adhesion_center;
-	ts_tape *tape;
-	ts_spharm *sphHarmonics;
-	// Polymers outside the vesicle and attached to the vesicle membrane (polymer brush):
-	ts_poly_list *poly_list;
-	// Filaments inside the vesicle (not attached to the vesicel membrane:
-	ts_poly_list *filament_list;
-	ts_vertex_list *vlist;
-	ts_bond_list *blist;
-	ts_triangle_list *tlist;
-	ts_cell_list *clist;
-	ts_confinement_plane confinement_plane;
-	ts_uint nshell;
-	ts_bool pswitch;
+    //ts_double bending_rigidity;
+    ts_double dmax;
+    ts_double stepsize;
+    ts_double cm[3];
+    ts_double volume;
+    ts_double spring_constant;
+    ts_double pressure;
+    ts_double R_nucleus;
+    ts_double R_nucleusX;
+    ts_double R_nucleusY;
+    ts_double R_nucleusZ;
+    ts_double nucleus_center[3];
+    ts_double area;
+    ts_double adhesion_center;
+    ts_tape *tape;
+    ts_spharm *sphHarmonics;
+    // Polymers outside the vesicle and attached to the vesicle membrane (polymer brush):
+    ts_poly_list *poly_list;
+    // Filaments inside the vesicle (not attached to the vesicel membrane:
+    ts_poly_list *filament_list;
+    ts_vertex_list *vlist;
+    ts_bond_list *blist;
+    ts_triangle_list *tlist;
+    ts_cell_list *clist;
+    ts_confinement_plane confinement_plane;
+    ts_uint nshell;
+    ts_bool pswitch;
 } ts_vesicle;
 
 
 
 struct ts_cluster{
-	ts_vertex **vtx;
-	ts_uint nvtx;
-	ts_uint idx;
+    ts_vertex **vtx;
+    ts_idx nvtx;
+    ts_idx idx;
 };
 
 typedef struct ts_cluster ts_cluster;
 
 typedef struct{
-	ts_cluster **cluster;
-	ts_uint n;
+    ts_cluster **cluster;
+    ts_idx n;
 } ts_cluster_list;
 
 // list of "seen" vertex for layer-based breadth-first search
@@ -428,12 +446,12 @@ typedef struct{
 // * n_prev, first vertex of the completed layer before the current one
 // notice! seen_vertex->vtx[seen_vertex->n_top] is NEVER a valid vertex
 typedef struct {
-	ts_vertex **vtx;
-	ts_uint n_prev;
-	ts_uint n_curr;
-	ts_uint n_next;
-	ts_uint n_top;
-	ts_uint size;
+    ts_vertex **vtx;
+    ts_idx n_prev;
+    ts_idx n_curr;
+    ts_idx n_next;
+    ts_idx n_top;
+    ts_idx size;
 } ts_seen_vertex;
 
 /* GLOBAL VARIABLES */

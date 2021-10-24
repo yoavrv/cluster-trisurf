@@ -1,5 +1,5 @@
 /* vim: set ts=4 sts=4 sw=4 noet : */
-#include<stdlib.h>
+#include <stdlib.h>
 #include "general.h"
 #include "vertex.h"
 
@@ -11,7 +11,7 @@ ts_bond_list *init_bond_list(){
 }
 
 ts_bond  *bond_add(ts_bond_list *blist, ts_vertex *vtx1, ts_vertex *vtx2){
-    ts_uint i;
+    ts_idx i;
     /* no vertices must be null! */
     if(vtx1==NULL || vtx2==NULL) return NULL;
     /* Verify if the bond already exists... Don't do multiple bonds */
@@ -47,7 +47,7 @@ ts_bool bond_vector(ts_bond *bond){
 
 
 ts_bool bond_list_free(ts_bond_list *blist){
-    ts_uint i;
+    ts_idx i;
     for(i=0;i<blist->n;i++){
     free(blist->bond[i]);
     }

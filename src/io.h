@@ -9,6 +9,7 @@ static ts_bool restore=0;
 static char tape[1024]; */
 int force_from_tape;
 char tapetxt[128000]; //stores text file of the tape
+
 typedef struct{
 	ts_int force_from_tape;
 	ts_int reset_iteration_count;
@@ -73,7 +74,7 @@ ts_bool write_adhesion_position(FILE *fh, ts_vesicle *vesicle);
  *	@param *text is a description line (max. 255 characters) to be included in the file
  */
 ts_bool write_vertex_vtk_file(ts_vesicle *vesicle,ts_char *filename, ts_char *text);
-ts_bool write_vertex_xml_file(ts_vesicle *vesicle, ts_uint timestepno, ts_cluster_list *cstlist);
+ts_bool write_vertex_xml_file(ts_vesicle *vesicle, ts_idx timestepno, ts_cluster_list *cstlist);
 ts_bool write_master_xml_file(ts_char *filename);
 ts_bool write_pov_file(ts_vesicle *vesicle, char *filename);
 
@@ -83,8 +84,8 @@ ts_bool tape_free(ts_tape *tape);
 ts_bool getcmdline_tape(cfg_t *cfg, char *opts);
 ts_bool cmdline_to_tape(cfg_t *cfg, char *key, char *val);
 ts_bool print_help(FILE *fd);
-ts_bool dump_state(ts_vesicle *vesicle, ts_uint iteration);
-ts_vesicle *restore_state(ts_uint *iteration, ts_tape* tape);
+ts_bool dump_state(ts_vesicle *vesicle, ts_idx iteration);
+ts_vesicle *restore_state(ts_idx *iteration, ts_tape* tape);
 
 ts_bool update_tapetxt(char *tape_txt, char *cmd_line_tape_args);
 #endif

@@ -3,11 +3,17 @@
 #include "general.h"
 #include "cell.h"
 #include "frame.h"
-
-
 #include "triangle.h"
+
+/** @brief restore center mass of vesicle to 0,0,?0
+ *  
+ *  remove centerm from all vertices
+ *  in several cases, does not update cm from z changes
+ *
+ *  @returns TS_SUCCESS on success
+*/
 ts_bool centermass(ts_vesicle *vesicle){
-    ts_uint i,j, n=vesicle->vlist->n;
+    ts_idx i,j, n=vesicle->vlist->n;
     ts_vertex **vtx=vesicle->vlist->vtx;
 	ts_double temp_z_cm=0;
     vesicle->cm[0]=0;
@@ -50,7 +56,7 @@ ts_bool centermass(ts_vesicle *vesicle){
         vtx[i]->y-=vesicle->cm[1];
         vtx[i]->z-=vesicle->cm[2]; 
     } 
-//move polymers for the same vector as we moved vesicle
+	//move polymers for the same vector as we moved vesicle
 	for(i=0;i<vesicle->poly_list->n;i++){
 		for(j=0;j<vesicle->poly_list->poly[i]->vlist->n;j++){
 			vesicle->poly_list->poly[i]->vlist->vtx[j]->x-=vesicle->cm[0];
@@ -58,7 +64,7 @@ ts_bool centermass(ts_vesicle *vesicle){
 			vesicle->poly_list->poly[i]->vlist->vtx[j]->z-=vesicle->cm[2];
 		}
     }
-//move filaments for the same vector as we moved vesicle
+	//move filaments for the same vector as we moved vesicle
 	for(i=0;i<vesicle->filament_list->n;i++){
 		for(j=0;j<vesicle->filament_list->poly[i]->vlist->n;j++){
 			vesicle->filament_list->poly[i]->vlist->vtx[j]->x-=vesicle->cm[0];
@@ -66,7 +72,7 @@ ts_bool centermass(ts_vesicle *vesicle){
 			vesicle->filament_list->poly[i]->vlist->vtx[j]->z-=vesicle->cm[2];
 		}
     }
-//move nucleus for the same vector as we moved vesicle
+	//move nucleus for the same vector as we moved vesicle
 	vesicle->nucleus_center[0]-=vesicle->cm[0];
 	vesicle->nucleus_center[1]-=vesicle->cm[1];
 	vesicle->nucleus_center[2]-=vesicle->cm[2];
@@ -85,36 +91,47 @@ ts_bool centermass(ts_vesicle *vesicle){
     return TS_SUCCESS;
 }
 
+// update cell occupation (? which is not done each vertex move)
 ts_bool cell_occupation(ts_vesicle *vesicle){
-    ts_uint i,j,cellidx, n=vesicle->vlist->n;
+	ts_idx i, j, n=vesicle->vlist->n;
+    ts_uint cellidx;
+	ts_cell_list *clist=vesicle->clist; //aliases for less wide code
+	ts_vertex_list *vlist;
+	ts_poly_list *poly_list=vesicle->poly_list;
+	ts_poly_list *filament_list=vesicle->filament_list;
 
-    cell_list_cell_occupation_clear(vesicle->clist);
+    cell_list_cell_occupation_clear(clist);
+
+	vlist = vesicle->vlist;
     for(i=0;i<n;i++){
-    cellidx=vertex_self_avoidance(vesicle, vesicle->vlist->vtx[i]);
-//	already done in cell_add_vertex
-//    vesicle->vlist->vtx[i]->cell=vesicle->clist->cell[cellidx];
+    	cellidx=vertex_self_avoidance(vesicle, vlist->vtx[i]);
+		//	already done in cell_add_vertex
+		// vesicle->vlist->vtx[i]->cell=vesicle->clist->cell[cellidx];
 
-    cell_add_vertex(vesicle->clist->cell[cellidx],vesicle->vlist->vtx[i]);
+    	cell_add_vertex(clist->cell[cellidx], vlist->vtx[i]);
     }
 
-//Add all polymers to cells
-if(vesicle->poly_list!=NULL){
-    for(i=0;i<vesicle->poly_list->n;i++){
-	for(j=0;j<vesicle->poly_list->poly[i]->vlist->n;j++){
-    	cellidx=vertex_self_avoidance(vesicle, vesicle->poly_list->poly[i]->vlist->vtx[j]);
-    	cell_add_vertex(vesicle->clist->cell[cellidx],vesicle->poly_list->poly[i]->vlist->vtx[j]);
+	//Add all polymers to cells
+	if(poly_list!=NULL){
+    	for(i=0;i<poly_list->n;i++){
+			vlist = poly_list->poly[i]->vlist;
+			for(j=0;j<vlist->n;j++){
+    			cellidx=vertex_self_avoidance(vesicle, vlist->vtx[j]);
+    			cell_add_vertex(clist->cell[cellidx],vlist->vtx[j]);
+			}
+    	}
 	}
-    }
-}
-//Add all filaments to cells
-if(vesicle->filament_list!=NULL){
-     for(i=0;i<vesicle->filament_list->n;i++){
-	for(j=0;j<vesicle->filament_list->poly[i]->vlist->n;j++){
-    	cellidx=vertex_self_avoidance(vesicle, vesicle->filament_list->poly[i]->vlist->vtx[j]);
-    	cell_add_vertex(vesicle->clist->cell[cellidx],vesicle->filament_list->poly[i]->vlist->vtx[j]);
-	}
-    }
-}   
+
+	//Add all filaments to cells
+	if(filament_list!=NULL){
+    	for(i=0;i<filament_list->n;i++){
+			vlist = filament_list->poly[i]->vlist;
+			for(j=0;j<vlist->n;j++){
+    			cellidx=vertex_self_avoidance(vesicle, vlist->vtx[j]);
+    			cell_add_vertex(clist->cell[cellidx], vlist->vtx[j]);
+			}
+    	}
+	}   
 
     return TS_SUCCESS;
 }

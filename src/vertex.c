@@ -1,24 +1,25 @@
 /* vim: set ts=4 sts=4 sw=4 noet : */
-#include<stdlib.h>
-#include<math.h>
-#include<string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <string.h>
 #include "general.h"
 #include "vertex.h"
 #include "bond.h"
-#include<stdio.h>
+#include "triangle.h"
 
 #define p_diff(i, j) ((long int) (i) - (long int) (j))/ (long int) sizeof(*(i))
 
-ts_bool vertex_list_assign_id(ts_vertex_list *vlist, ts_uint id){
-	ts_uint i;	
+ts_bool vertex_list_assign_id(ts_vertex_list *vlist, ts_idx id){
+	ts_idx i;	
 	for(i=0;i<vlist->n;i++){
 		vlist->vtx[i]->id = id;
 	}
 	return TS_SUCCESS;
 }
 
-ts_vertex_list *init_vertex_list(ts_uint N){	
-	ts_int i;
+ts_vertex_list *init_vertex_list(ts_idx N){	
+	ts_idx i;
     ts_vertex_list *vlist=(ts_vertex_list *)malloc(sizeof(ts_vertex_list));
     
 	if(N==0){
@@ -36,21 +37,21 @@ ts_vertex_list *init_vertex_list(ts_uint N){
         vlist->vtx[i]->idx=i;
 
     /* initialize Ylm for spherical hamonics DONE in sh.c */
-/*    for(i=0;i<l;i++){
+    /* 
+    for(i=0;i<l;i++){
         vlist->vtx[i]->Ylm[i]=(ts_double **)calloc(2*i+1,sizeof(ts_double *));
         for(j=0;j<(2*i+1);j++){
             clist->vtx[i]->Ylm[i][j]=(ts_double *)calloc(sizeof(ts_double));
         }
     }
-*/
-
+    */
 
     }
     vlist->n=N;
 	return vlist;
 }
 
-ts_seen_vertex *init_seen_vertex(ts_uint max_size){
+ts_seen_vertex *init_seen_vertex(ts_idx max_size){
     ts_seen_vertex *seen_vtx = (ts_seen_vertex *) malloc(sizeof(ts_seen_vertex));
     if (seen_vtx==NULL){
         fatal("Fatal error reserving memory space for seen_vertex!", 100);
@@ -69,7 +70,7 @@ ts_seen_vertex *init_seen_vertex(ts_uint max_size){
 }
 
 ts_bool vtx_add_neighbour(ts_vertex *vtx, ts_vertex *nvtx){
-    ts_uint i;
+    ts_small_idx i;
     /* no neighbour can be null! */
     if(vtx==NULL || nvtx==NULL) return TS_FAIL;
     
@@ -77,48 +78,48 @@ ts_bool vtx_add_neighbour(ts_vertex *vtx, ts_vertex *nvtx){
     for(i=0; i<vtx->neigh_no;i++){
         if(vtx->neigh[i]==nvtx) return TS_FAIL;
     }
-    ts_uint nn=++vtx->neigh_no;
+    ts_small_idx nn=++vtx->neigh_no;
     vtx->neigh=(ts_vertex **)realloc(vtx->neigh, nn*sizeof(ts_vertex *));
     vtx->neigh[nn-1]=nvtx;
-/* This was a bug in creating DIPYRAMID (the neighbours were not in right
- * order).
- */
+    /* This was a bug in creating DIPYRAMID (the neighbours were not in right
+    * order).
+    */
     /* pa se sosedu dodamo vertex */
     /*if it is already a neighbour don't add it to the list */
-/*
+    /*
     for(i=0; i<nvtx->data->neigh_no;i++){
         if(nvtx->data->neigh[i]==vtx) return TS_FAIL;
-    } 
+    }
     nn=++nvtx->data->neigh_no;
     nvtx->data->neigh=(ts_vertex **)realloc(nvtx->data->neigh, nn*sizeof(ts_vertex *));
     nvtx->data->neigh[nn-1]=vtx;
-*/
+    */
 
     return TS_SUCCESS;
 }
 
 /* TODO: optimize this. test this. */
 ts_bool vtx_remove_neighbour(ts_vertex *vtx, ts_vertex *nvtx){
-/* find a neighbour */
-/* remove it from the list while shifting remaining neighbours up */
-    ts_uint i,j=0;
+    /* find a neighbour */
+    /* remove it from the list while shifting remaining neighbours up */
+    ts_small_idx i,j=0;
     for(i=0;i<vtx->neigh_no;i++){
-//		fprintf(stderr,"neigh_addr=%ld\n", (long)vtx->neigh[i]);
+        // fprintf(stderr,"neigh_addr=%ld\n", (long)vtx->neigh[i]);
         if(vtx->neigh[i]!=nvtx){
             vtx->neigh[j]=vtx->neigh[i];
             j++;
         }
     }
-//	fprintf(stderr,"remove_neighbour: vtx1_addr=%ld, vtx2_addr=%ld\n",(long)vtx,(long)nvtx);
-/* resize memory. potentionally time consuming */
+    //	fprintf(stderr,"remove_neighbour: vtx1_addr=%ld, vtx2_addr=%ld\n",(long)vtx,(long)nvtx);
+    /* resize memory. potentionally time consuming */
     vtx->neigh_no--;
     vtx->neigh=(ts_vertex **)realloc(vtx->neigh,vtx->neigh_no*sizeof(ts_vertex *));
     if(vtx->neigh == NULL && vtx->neigh_no!=0)
         fatal("(1) Reallocation of memory failed during removal of vertex neighbour in vtx_remove_neighbour",100);
-//fprintf(stderr,"first alloc");
-/* repeat for the neighbour */
-/* find a neighbour */
-/* remove it from the list while shifting remaining neighbours up */
+    //fprintf(stderr,"first alloc");
+    /* repeat for the neighbour */
+    /* find a neighbour */
+    /* remove it from the list while shifting remaining neighbours up */
 	j=0;
     for(i=0;i<nvtx->neigh_no;i++){
         if(nvtx->neigh[i]!=vtx){
@@ -126,11 +127,11 @@ ts_bool vtx_remove_neighbour(ts_vertex *vtx, ts_vertex *nvtx){
             j++;
         }
     }
-/* resize memory. potentionally time consuming. */
-//	fprintf(stderr,"Neigbours=%d\n",nvtx->neigh_no);
+    /* resize memory. potentionally time consuming. */
+    // fprintf(stderr,"Neigbours=%d\n",nvtx->neigh_no);
     nvtx->neigh_no--;
-    		nvtx->neigh=(ts_vertex **)realloc(nvtx->neigh,nvtx->neigh_no*sizeof(ts_vertex *));
-//	fprintf(stderr,"Neigbours=%d\n",nvtx->neigh_no);
+    nvtx->neigh=(ts_vertex **)realloc(nvtx->neigh,nvtx->neigh_no*sizeof(ts_vertex *));
+    // fprintf(stderr,"Neigbours=%d\n",nvtx->neigh_no);
     if(nvtx->neigh == NULL && nvtx->neigh_no!=0)
         fatal("(2) Reallocation of memory failed during removal of vertex neighbour in vtx_remove_neighbour",100);
 
@@ -138,7 +139,7 @@ ts_bool vtx_remove_neighbour(ts_vertex *vtx, ts_vertex *nvtx){
 }
 
 
-
+// create and add bond between two vertices
 ts_bool vtx_add_bond(ts_bond_list *blist,ts_vertex *vtx1,ts_vertex *vtx2){
     ts_bond *bond;
     bond=bond_add(blist,vtx1,vtx2);
@@ -152,26 +153,27 @@ ts_bool vtx_add_bond(ts_bond_list *blist,ts_vertex *vtx1,ts_vertex *vtx2){
    // vtx2->data->bond=(ts_bond **)realloc(vtx2->data->bond, vtx2->data->bond_no*sizeof(ts_bond *)); 
     vtx1->bond[vtx1->bond_no-1]=bond;
     vtx2->bond[vtx2->bond_no-1]=bond;
-   // vtx2->ata->bond[vtx2->data->bond_no-1]=bond;
+   // vtx2->data->bond[vtx2->data->bond_no-1]=bond;
     return TS_SUCCESS;
 }
 
+// add neighbors and connect with bond?
 ts_bool vtx_add_cneighbour(ts_bond_list *blist, ts_vertex *vtx1, ts_vertex *vtx2){
     ts_bool retval;
     retval=vtx_add_neighbour(vtx1,vtx2);
-  //  retval=vtx_add_neighbour(vtx2,vtx1);
-    if(retval==TS_SUCCESS)
-    retval=vtx_add_bond(blist,vtx1,vtx2); 
+    // retval=vtx_add_neighbour(vtx2,vtx1);
+    if(retval==TS_SUCCESS){
+        retval=vtx_add_bond(blist,vtx1,vtx2);
+    }
     return retval;
 }
 
 /*TODO: write and optimize this urgently before use! */
-ts_bool vtx_remove_cneighbour(ts_bond_list *blist, ts_vertex *vtx1, ts_vertex
-*vtx2){
-//    ts_bool retval;
-/* remove the bond */
-//retval=vtx_remove_bond(blist,vtx1,vtx2);
-/* remove the vertices */
+ts_bool vtx_remove_cneighbour(ts_bond_list *blist, ts_vertex *vtx1, ts_vertex *vtx2){
+    // ts_bool retval;
+    /* remove the bond */
+    //retval=vtx_remove_bond(blist,vtx1,vtx2);
+    /* remove the vertices */
     return TS_SUCCESS;
 }
 
@@ -185,7 +187,7 @@ ts_bool vtx_free(ts_vertex  *vtx){
 }
 
 ts_bool vtx_list_free(ts_vertex_list *vlist){
-    int i;
+    ts_idx i;
     for(i=0;i<vlist->n;i++){
 		if(vlist->vtx[i]!=NULL) vtx_free(vlist->vtx[i]);
     }
@@ -220,7 +222,7 @@ inline ts_double vtx_distance_sq(ts_vertex *vtx1, ts_vertex *vtx2){
 ts_bool vtx_set_global_values(ts_vesicle *vesicle){ 
     // as it's set now: override any specific values! must use before initial distribution/ XML parsing!
     // (besides, if it's a real global value, it shouldn't be on the vertices anyway- in vesicle, depend on type)
-    ts_uint i; 
+    ts_idx i; 
 
     for(i=0;i<vesicle->vlist->n;i++){
         vesicle->vlist->vtx[i]->xk=vesicle->tape->xk0;
@@ -244,7 +246,7 @@ ts_bool vtx_set_global_values(ts_vesicle *vesicle){
         vesicle->vlist->vtx[i]->gaussian_energy2=0;
         vesicle->vlist->vtx[i]->new_c1=0;
         vesicle->vlist->vtx[i]->new_c2=0;
-        vesicle->vlist->vtx[i]->type=is_adhesive_vtx; // nonbonding, passive, adhesive, isotropic
+        vesicle->vlist->vtx[i]->type=is_adhesive_vtx; // nonbonding, passive, adhesive, isotropic, nonedge,
 		vesicle->vlist->vtx[i]->w=0;
 		vesicle->vlist->vtx[i]->c=0;
 		vesicle->vlist->vtx[i]->f=0;
@@ -285,9 +287,9 @@ inline ts_double vtx_direct(ts_vertex *vtx1, ts_vertex *vtx2, ts_vertex *vtx3){
     ts_double dX3=vtx3->x-vtx1->x;
     ts_double dY3=vtx3->y-vtx1->y;
     ts_double dZ3=vtx3->z-vtx1->z;
-    ts_double direct=vtx1->x*(dY2*dZ3 -dZ2*dY3)+ 
-        vtx1->y*(dZ2*dX3-dX2*dZ3)+
-        vtx1->z*(dX2*dY3-dY2*dX3);
+    ts_double direct=vtx1->x*(dY2*dZ3-dZ2*dY3)+ 
+                     vtx1->y*(dZ2*dX3-dX2*dZ3)+
+                     vtx1->z*(dX2*dY3-dY2*dX3);
     return(direct);    
 }
 
@@ -306,26 +308,31 @@ inline ts_bool vertex_add_tristar(ts_vertex *vtx, ts_triangle *tristarmem){
 /* Insert neighbour is a function that is required in bondflip. It inserts a
  * neighbour exactly in the right place. */
 inline ts_bool vtx_insert_neighbour(ts_vertex *vtx, ts_vertex *nvtx, ts_vertex *vtxm){
-//nvtx is a vertex that is to be inserted after vtxm!
-        ts_uint i,j,midx;
+        //nvtx is a vertex that is to be inserted after vtxm!
+        ts_idx i,j,midx;
         vtx->neigh_no++;
         if(vtxm==NULL ||  nvtx==NULL || vtx==NULL)
-                fatal("vertex_insert_neighbour: one of pointers has been zero.. Cannot proceed.",3);
-        //We need to reallocate space! The pointer *neight must be zero if not having neighbours jey (if neigh_no was 0 at thime of calling
+            fatal("vertex_insert_neighbour: one of pointers has been zero.. Cannot proceed.",3);
+        //We need to reallocate space! The pointer *neight must be zero if not having neighbours jey (if neigh_no was 0 at time of calling
         vtx->neigh=realloc(vtx->neigh,vtx->neigh_no*sizeof(ts_vertex *));
         if(vtx->neigh == NULL){
             fatal("Reallocation of memory failed during insertion of vertex neighbour in vertex_insert_neighbour",3);
         }
         midx=0;
-        for(i=0;i<vtx->neigh_no-1;i++) if(vtx->neigh[i]==vtxm) {midx=i; break;}
-     //   fprintf(stderr,"midx=%d, vseh=%d\n",midx,vtx->neigh_no-2);
+        for(i=0;i<vtx->neigh_no-1;i++){
+            if(vtx->neigh[i]==vtxm){
+                midx=i;
+                break;
+            }
+        }
+        // fprintf(stderr,"midx=%d, vseh=%d\n",midx,vtx->neigh_no-2);
         if(midx==vtx->neigh_no-2) {
             vtx->neigh[vtx->neigh_no-1]=nvtx;
         } else {
             for(j=vtx->neigh_no-2;j>midx;j--) {
                 vtx->neigh[j+1]=vtx->neigh[j];
-//                vtx->bond_length[j+1]=vtx->bond_length[j];
-//                vtx->bond_length_dual[j+1]=vtx->bond_length_dual[j];
+                //  vtx->bond_length[j+1]=vtx->bond_length[j];
+                //  vtx->bond_length_dual[j+1]=vtx->bond_length_dual[j];
             }
             vtx->neigh[midx+1]=nvtx;
         }
@@ -337,7 +344,7 @@ inline ts_bool vtx_insert_neighbour(ts_vertex *vtx, ts_vertex *nvtx, ts_vertex *
 /* TODO: Check whether it is important to keep the numbering of tristar
  * elements in some order or not! */
 inline ts_bool vtx_remove_tristar(ts_vertex *vtx, ts_triangle *tristar){
-    ts_uint i,j=0;
+    ts_small_idx i,j=0;
     for(i=0;i<vtx->tristar_no;i++){
         if(vtx->tristar[i]!=tristar){
             vtx->tristar[j]=vtx->tristar[i];
@@ -352,10 +359,10 @@ inline ts_bool vtx_remove_tristar(ts_vertex *vtx, ts_triangle *tristar){
     return TS_SUCCESS;
 }
 
-
+// push vertex into the top of the current layer
 ts_bool add_vtx_to_seen(ts_seen_vertex *seen_vtx, ts_vertex *vtx){
-    if (seen_vtx->n_top == seen_vtx->size)
-    {
+    if (seen_vtx->n_top == seen_vtx->size){
+        // in case we run out of space: dynamically reallocate
         seen_vtx->size *= 2;
         seen_vtx->vtx = realloc(seen_vtx->vtx, sizeof(ts_vertex *) * seen_vtx->size);
         if (seen_vtx->vtx == NULL)
@@ -389,13 +396,13 @@ ts_bool vtx_duplicate(ts_vertex *cvtx, ts_vertex *ovtx){
 
 //TODO: needs to be done
 ts_vertex **vtx_neigh_copy(ts_vertex_list *vlist,ts_vertex *ovtx){
-        return NULL;
+    return NULL;
 }
 
 
 
 ts_vertex_list *vertex_list_copy(ts_vertex_list *ovlist){
-    ts_uint i;
+    ts_idx i;
     ts_vertex_list *vlist=(ts_vertex_list *)malloc(sizeof(ts_vertex_list));
     vlist=memcpy((void *)vlist, (void *)ovlist, sizeof(ts_vertex_list));
     ts_vertex **vtx=(ts_vertex **)malloc(vlist->n*sizeof(ts_vertex *));
@@ -411,6 +418,7 @@ ts_vertex_list *vertex_list_copy(ts_vertex_list *ovlist){
     return vlist;
 }
 
+// check if vertex is in first 3 layers
 ts_bool is_in_seen_vertex(ts_seen_vertex *seen_vertex, ts_vertex *vtx){
     /* check if vertex was already accounted for in the "seen_vertex" list
 
@@ -439,7 +447,7 @@ ts_bool is_in_seen_vertex(ts_seen_vertex *seen_vertex, ts_vertex *vtx){
                                                                  A1
                                                                   _ <-check_up_to
     */
-    ts_uint i;
+    ts_idx i;
     for ( i=seen_vertex->n_prev ; i < seen_vertex->n_top ; i++){
         if (seen_vertex->vtx[i] == vtx) return 1;
     }
@@ -454,7 +462,7 @@ ts_bool advance_seen_vertex_to_next_layer(ts_seen_vertex *seen_vertex){
 }
 
 // swap triastar triangles at index i and j
-ts_bool swap_triangles(ts_vertex* vtx, ts_uint i, ts_uint j){
+ts_bool swap_triangles(ts_vertex* vtx, ts_small_idx i, ts_small_idx j){
     ts_triangle* temptri;
     if (i==j) return TS_SUCCESS;
     if (i >= vtx->tristar_no || j >= vtx->tristar_no){
@@ -469,30 +477,26 @@ ts_bool swap_triangles(ts_vertex* vtx, ts_uint i, ts_uint j){
     return TS_SUCCESS;
 }
 
-// check if traingle is ordered wrt to v1,v2 ordered
+// check if triangle is ordered wrt to v1,v2 ordered
 ts_bool tri_ordered(ts_triangle* t, ts_vertex* v1, ts_vertex* v2){
     return (    (t->vertex[0]==v1 && t->vertex[1]==v2) 
              || (t->vertex[1]==v1 && t->vertex[2]==v2)
              || (t->vertex[2]==v1 && t->vertex[0]==v2)) ;
 }
 
-// check if vertex v is in triangle t
-ts_bool in_tri(ts_triangle* t, ts_vertex* v){
-    return (t->vertex[0]==v || t->vertex[1]==v || t->vertex[2]==v);
-}
-
 // debug: print the order of triangles at a vertex, denoted by the two other neighbors
 ts_bool print_tri_order(ts_vertex* vtx){
-    ts_uint jj, jjm;
+    ts_small_idx jj, jjm=2;
     for (jj=0; jj<vtx->tristar_no; jj++){
         if (vtx->tristar[jj]->vertex[0]==vtx) jjm=0;
         if (vtx->tristar[jj]->vertex[1]==vtx) jjm=1;
-        if (vtx->tristar[jj]->vertex[2]==vtx) jjm=2;
+        // if (vtx->tristar[jj]->vertex[2]==vtx) jjm=2;
         fprintf(stdout,"(%ld, %ld), ", //(long int) vtx->tristar[jj]->vertex[jjm] - (long int) vtx, 
                                             p_diff(vtx->tristar[jj]->vertex[(jjm+1)%3], vtx),
                                             p_diff(vtx->tristar[jj]->vertex[(jjm+2)%3], vtx));
     }
     fprintf(stdout,"\n");
+    return TS_SUCCESS;
 }
 
 // order the triangles of the vertex according to the neighbors
@@ -500,7 +504,7 @@ ts_bool print_tri_order(ts_vertex* vtx){
 ts_bool order_vertex_triangles(ts_vertex* vtx){
 
     ts_vertex* vl, *vr;
-    ts_uint t, jj, li, ri, rri, lli;
+    ts_small_idx t, jj=0, li, ri, rri=0, lli=1;
     ts_triangle* jt;
     /* reorder the triangles: 
     - find first triangle with neighbors 0,1 , swap it to 0
@@ -528,13 +532,13 @@ ts_bool order_vertex_triangles(ts_vertex* vtx){
             rri = t;
         }  
     }
-    swap_triangles(vtx, jj, 0);
+    swap_triangles(vtx, jj, 0); // move (0,1) to 0
 
-    if (lli==0) lli=jj;
+    if (lli==0) lli=jj; // if 0 was occupied by (end,0), it is now at jj 
     swap_triangles(vtx, lli, vtx->tristar_no-1);
 
-    if (rri==0) rri=jj;
-    if (rri==vtx->tristar_no-1) rri=lli;
+    if (rri==0) rri=jj; // if 0 was occupied by (1,2), it is now at jj
+    if (rri==vtx->tristar_no-1) rri=lli; // if end was occupied by (1,2), it is now at lli
     swap_triangles(vtx, rri, 1);
 
     // now triangles can only be left of left or right of right
@@ -559,11 +563,12 @@ ts_bool order_vertex_triangles(ts_vertex* vtx){
             }
         }
     }
+    return TS_SUCCESS;
 }
 
 
 // add tristar to vertex at index- shift other vertex. use to maintain tristar order
-ts_bool vertex_insert_tristar_at(ts_vertex *vtx, ts_triangle *tristarmem, ts_bool i){
+ts_bool vtx_insert_tristar_at(ts_vertex *vtx, ts_triangle *tristarmem, ts_small_idx i){
     if (i > vtx->tristar_no){
         fatal("attempt to add tristar above tristar_no",3);
     }
@@ -580,7 +585,7 @@ ts_bool vertex_insert_tristar_at(ts_vertex *vtx, ts_triangle *tristarmem, ts_boo
 }
 
 // add tristar from vertex at index- shift other vertex. use to maintain tristar order
-ts_bool vtx_remove_tristar_at(ts_vertex *vtx, ts_bool i){
+ts_bool vtx_remove_tristar_at(ts_vertex *vtx, ts_small_idx i){
 
     if ( i >= vtx->tristar_no ){
         fatal("attempt to remove triangle above tristar_no",3);
@@ -597,7 +602,7 @@ ts_bool vtx_remove_tristar_at(ts_vertex *vtx, ts_bool i){
 }
 
 // It is the caller's responsibility to 1. add the vertex to the neighbor's list, 2. maintain order
-ts_bool vertex_insert_neigh_at(ts_vertex *vtx, ts_vertex *vtxmem, ts_bool i){
+ts_bool vtx_insert_neigh_at(ts_vertex *vtx, ts_vertex *vtxmem, ts_small_idx i){
 
     if ( i>vtx->neigh_no){
         fatal("attempt to add neighbor above neigh_no",3);
@@ -615,7 +620,7 @@ ts_bool vertex_insert_neigh_at(ts_vertex *vtx, ts_vertex *vtxmem, ts_bool i){
 }
 
 // It is the caller's responsibility to remove the vertex from the neighbor's list
-ts_bool vtx_remove_neigh_at(ts_vertex *vtx, ts_bool i){
+ts_bool vtx_remove_neigh_at(ts_vertex *vtx, ts_small_idx i){
 
     if ( i>=vtx->neigh_no){
         fatal("attempt to remove vertex above neigh_no",3);

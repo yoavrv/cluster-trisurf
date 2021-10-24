@@ -1,7 +1,6 @@
 /* vim: set ts=4 sts=4 sw=4 noet : */
 #include<stdio.h>
 #include<stdlib.h>
-#include "general.h"
 #include<stdarg.h>
 
 #include <sys/time.h>
@@ -13,14 +12,16 @@
 #include <errno.h>
 #include <string.h>
 
+#include "general.h"
+
 ts_uint ts_fprintf(FILE *fd, char *fmt, ...){
 if(quiet) return TS_SUCCESS;
-	va_list ap;
-	va_start(ap,fmt);
-	char tmbuf[255];
-	struct timeval now;
-  	gettimeofday(&now, 0);
-	strftime(tmbuf, sizeof tmbuf, "%Y-%m-%d %H:%M:%S", localtime(&now.tv_sec));
+    va_list ap;
+    va_start(ap,fmt);
+    char tmbuf[255];
+    struct timeval now;
+      gettimeofday(&now, 0);
+    strftime(tmbuf, sizeof tmbuf, "%Y-%m-%d %H:%M:%S", localtime(&now.tv_sec));
 fprintf(fd, "[%s] ",tmbuf); 
 vfprintf(fd, fmt, ap); /* Call vfprintf */
 va_end(ap); /* Cleanup the va_list */
@@ -28,12 +29,12 @@ return TS_SUCCESS;
 }
 
 void err(char *text){
-	ts_fprintf(stderr,"Err: %s\n", text);
+    ts_fprintf(stderr,"Err: %s\n", text);
 }
 
 void fatal(char *text, ts_int errcode){
-	ts_fprintf(stderr,"Fatal: %s. TERMINATED!\n", text);
-	exit(errcode);
+    ts_fprintf(stderr,"Fatal: %s. TERMINATED!\n", text);
+    exit(errcode);
 }
 
 
@@ -61,7 +62,7 @@ int createPidFile(const char *progName, const char *pidFile, int flags)
     fd = open(pidFile, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
     if (fd == -1){
         ts_fprintf(stderr,"Could not open PID file %s", pidFile);
-	fatal("Cannot continue (1)",1);
+    fatal("Cannot continue (1)",1);
 }
     if (flags & CPF_CLOEXEC) {
 
@@ -75,38 +76,38 @@ int createPidFile(const char *progName, const char *pidFile, int flags)
         flags = fcntl(fd, F_GETFD);                     /* Fetch flags */
         if (flags == -1){
             ts_fprintf(stderr,"Could not get flags for PID file %s", pidFile);
-	fatal("Cannot continue (2)",1);
+    fatal("Cannot continue (2)",1);
 }
         flags |= FD_CLOEXEC;                            /* Turn on FD_CLOEXEC */
 
         if (fcntl(fd, F_SETFD, flags) == -1)            /* Update flags */
             ts_fprintf(stderr,"Could not set flags for PID file %s", pidFile);
-		fatal("Cannot continue (3)",1);
-	    
+        fatal("Cannot continue (3)",1);
+        
     }
 
     if (lockRegion(fd, F_WRLCK, SEEK_SET, 0, 0) == -1) {
         if (errno  == EAGAIN || errno == EACCES){
             ts_fprintf(stderr,"PID file '%s' is locked; probably "
                      "'%s' is already running", pidFile, progName);
-		fatal("Cannot continue (4)",1);
+        fatal("Cannot continue (4)",1);
 }
         else{
             ts_fprintf(stderr,"Unable to lock PID file '%s'", pidFile);
-	fatal("Cannot continue (5)",1);
+    fatal("Cannot continue (5)",1);
 }
     }
 
     if (ftruncate(fd, 0) == -1){
         ts_fprintf(stderr,"Could not truncate PID file '%s'", pidFile);
-	fatal("Cannot continue (6)",1);
+    fatal("Cannot continue (6)",1);
 }
 
     snprintf(buf, BUF_SIZE, "%ld\n", (long) getpid());
     if (write(fd, buf, strlen(buf)) != strlen(buf)){
 
         ts_fprintf(stderr,"Writing to PID file '%s'", pidFile);
-	fatal("Cannot continue (7)",1);
+    fatal("Cannot continue (7)",1);
 }
     return fd;
 }
@@ -115,8 +116,7 @@ int createPidFile(const char *progName, const char *pidFile, int flags)
 
 /* Lock a file region (private; public interfaces below) */
 
-static int
-lockReg(int fd, int cmd, int type, int whence, int start, off_t len)
+static int lockReg(int fd, int cmd, int type, int whence, int start, off_t len)
 {
     struct flock fl;
 
@@ -128,13 +128,37 @@ lockReg(int fd, int cmd, int type, int whence, int start, off_t len)
     return fcntl(fd, cmd, &fl);
 }
 
-
-int                     /* Lock a file region using nonblocking F_SETLK */
-lockRegion(int fd, int type, int whence, int start, int len)
+ /* Lock a file region using nonblocking F_SETLK */
+int lockRegion(int fd, int type, int whence, int start, int len)
 {
     return lockReg(fd, F_SETLK, type, whence, start, len);
 }
 
 char *libVersion(){
-	return TS_VERSION;
+    return TS_VERSION;
+}
+
+// next index after i in cyclic vector size max (i++)%max
+ts_small_idx next_small(ts_small_idx i, ts_small_idx max){
+    if (i>=max) fatal("index out of bounds",3);
+    if (i+1==max) return 0;
+    return i+1;
+}
+// next index after i in cyclic vector size max (i++)%max
+ts_idx next_idx(ts_idx i, ts_idx max){
+    if (i>=max) fatal("index out of bounds",3);
+    if (i+1==max) return 0;
+    return i+1;
+}
+// previous index after i in cyclic vector size max (i--)%max
+ts_small_idx prev_small(ts_small_idx i, ts_small_idx max){
+    if (i>=max) fatal("index out of bounds",3);
+    if (i==0) return max-1;
+    return i-1;
+}
+// previous index after i in cyclic vector size max (i--)%max
+ts_idx prev_idx(ts_idx i, ts_idx max){
+    if (i>=max) fatal("index out of bounds",3);
+    if (i==0) return max-1;
+    return i-1;
 }

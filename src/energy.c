@@ -1,28 +1,21 @@
 /* vim: set ts=4 sts=4 sw=4 noet : */
-#include<stdlib.h>
-#include "general.h"
-#include "energy.h"
-#include "vertex.h"
-#include<math.h>
-#include<stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <stdio.h>
 #include <gsl/gsl_vector_complex.h>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_eigen.h>
-
-#define p_diff(i, j) ((long int) (i) - (long int) (j))/ (long int) sizeof(*(i))
+#include "general.h"
+#include "energy.h"
+#include "vertex.h"
 
 
 int cmpfunc(const void *x, const void *y)
 {
-	double diff=	fabs(*(double*)x) - fabs(*(double*)y);
-	if(diff<0) return 1;
-	else return -1;
+    double diff = fabs(*(double*)x) - fabs(*(double*)y);
+    if(diff<0) return 1;
+    else return -1;
 }
-
-/*long int p_diff(ts_vertex* i, ts_vertex* j){
-    return ((long int) i - (long int) j)/ (long int) sizeof(*i);
-}*/
-
 
 /** @brief Wrapper that calculates energy of every vertex in vesicle
  *  
@@ -57,17 +50,25 @@ ts_bool mean_curvature_and_energy(ts_vesicle *vesicle){
  *  @returns TS_SUCCESS on successful calculation
 */
 inline ts_bool bond_energy(ts_bond *bond,ts_poly *poly){
-//TODO: This value to be changed and implemented in data structure:
-	ts_double d_relaxed=1.0;
-	bond->energy=poly->k*pow(bond->bond_length-d_relaxed,2);
-	return TS_SUCCESS;
+    //TODO: This value to be changed and implemented in data structure:
+    ts_double d_relaxed=1.0;
+    bond->energy=poly->k*pow(bond->bond_length-d_relaxed,2);
+    return TS_SUCCESS;
 };
 
 
+/** @brief anisotropic subfunction of vertex_energy.
+ *
+ *  This function is experimental, branch from vertex_energy for anisotropic proteins 
+ *  to calculate the tensor-based curvature values c1,c2 and principle directions,
+ *  calculate the energy, and save it all on the vertex
+ *
+ *  @returns TS_SUCCESS on successful calculation
+*/
 inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     // direct copy from Samo git repository
     // ...almost
-    ts_uint jj, i, j;
+    ts_small_idx jj, i;
     ts_double edge_vector_x[7]={0,0,0,0,0,0,0};
     ts_double edge_vector_y[7]={0,0,0,0,0,0,0};
     ts_double edge_vector_z[7]={0,0,0,0,0,0,0};
@@ -80,14 +81,7 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     ts_double vertex_normal_x=0.0;
     ts_double vertex_normal_y=0.0;
     ts_double vertex_normal_z=0.0;
-//    ts_triangle *triedge[2]={NULL,NULL};
-    
-    ts_vertex* vl, *vr;
-    ts_uint t, li, ri, rri, lli;
-    ts_triangle* jt;
 
-    ts_uint nei,neip,neim;
-    ts_vertex *it, *k, *kp,*km;
     ts_triangle *lm=NULL, *lp=NULL;
     ts_double sumnorm;
     ts_double temp_length;
@@ -95,102 +89,105 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
 
     ts_double Se11=0, Se21=0, Se22=0, Se31=0, Se32=0, Se33=0;
     ts_double Pv11, Pv21, Pv22, Pv31, Pv32, Pv33;
-    ts_double Se12, Se13, Se23, Pv12, Pv13, Pv23;//alias for clarity: hopefully compiler removes
+    ts_double Se12, Se13, Se23, Pv12, Pv13, Pv23; 
+    //alias for clarity of symmetric matrices: hopefully the compiler removes them
+
     ts_double We;
     ts_double Av, We_Av;
 
-	ts_double eigenval[3];
+    ts_double eigenval[3];
 
-	gsl_matrix *gsl_Sv=gsl_matrix_alloc(3,3);
+    gsl_matrix *gsl_Sv=gsl_matrix_alloc(3,3);
     gsl_matrix *Sv_eigenV=gsl_matrix_alloc(3,3);
-	gsl_vector *Sv_eigen=gsl_vector_alloc(3);
-	gsl_eigen_symmv_workspace *workspace=gsl_eigen_symmv_alloc(3);
+    gsl_vector *Sv_eigen=gsl_vector_alloc(3);
+    gsl_eigen_symmv_workspace *workspace=gsl_eigen_symmv_alloc(3);
 
-	ts_double mprod[7], phi[7], he[7];
-	ts_double Sv[3][3]={{0,0,0},{0,0,0},{0,0,0}};
+    // ts_double mprod[7], phi[7];
+    ts_double he[7];
+    ts_double Sv[3][3]={{0,0,0},{0,0,0},{0,0,0}};
 
 
 
-	Av=0;
-	for(i=0; i<vtx->tristar_no; i++){
-		vertex_normal_x=(vertex_normal_x - vtx->tristar[i]->xnorm*vtx->tristar[i]->area);
-		vertex_normal_y=(vertex_normal_y - vtx->tristar[i]->ynorm*vtx->tristar[i]->area);
-		vertex_normal_z=(vertex_normal_z - vtx->tristar[i]->znorm*vtx->tristar[i]->area);
-		Av+=vtx->tristar[i]->area/3;
-	}
-	temp_length=sqrt(pow(vertex_normal_x,2)+pow(vertex_normal_y,2)+pow(vertex_normal_z,2));
-	vertex_normal_x=vertex_normal_x/temp_length;
-	vertex_normal_y=vertex_normal_y/temp_length;
-	vertex_normal_z=vertex_normal_z/temp_length;
+    Av=0;
+    for(i=0; i<vtx->tristar_no; i++){
+        vertex_normal_x=(vertex_normal_x - vtx->tristar[i]->xnorm*vtx->tristar[i]->area);
+        vertex_normal_y=(vertex_normal_y - vtx->tristar[i]->ynorm*vtx->tristar[i]->area);
+        vertex_normal_z=(vertex_normal_z - vtx->tristar[i]->znorm*vtx->tristar[i]->area);
+        Av+=vtx->tristar[i]->area/3;
+    }
+    temp_length=sqrt(pow(vertex_normal_x,2)+pow(vertex_normal_y,2)+pow(vertex_normal_z,2));
+    vertex_normal_x=vertex_normal_x/temp_length;
+    vertex_normal_y=vertex_normal_y/temp_length;
+    vertex_normal_z=vertex_normal_z/temp_length;
     vtx->nx2 = vertex_normal_x;
     vtx->ny2 = vertex_normal_y;
     vtx->nz2 = vertex_normal_z;
 
-	Pv11=(pow(vertex_normal_x,2)+pow(vertex_normal_y,2)+pow(vertex_normal_z,2))-vertex_normal_x*vertex_normal_x;
-	Pv22=(pow(vertex_normal_x,2)+pow(vertex_normal_y,2)+pow(vertex_normal_z,2))-vertex_normal_y*vertex_normal_y;
-	Pv33=(pow(vertex_normal_x,2)+pow(vertex_normal_y,2)+pow(vertex_normal_z,2))-vertex_normal_z*vertex_normal_z;
-	Pv21=vertex_normal_x*vertex_normal_y;
-	Pv31=vertex_normal_x*vertex_normal_z;
-	Pv32=vertex_normal_y*vertex_normal_z;
-    Pv12=Pv21; Pv13=Pv31; Pv23=Pv32; //for clarity: hopefully compiler gets rid of these
+    Pv11=(pow(vertex_normal_x,2)+pow(vertex_normal_y,2)+pow(vertex_normal_z,2))-vertex_normal_x*vertex_normal_x;
+    Pv22=(pow(vertex_normal_x,2)+pow(vertex_normal_y,2)+pow(vertex_normal_z,2))-vertex_normal_y*vertex_normal_y;
+    Pv33=(pow(vertex_normal_x,2)+pow(vertex_normal_y,2)+pow(vertex_normal_z,2))-vertex_normal_z*vertex_normal_z;
+    Pv21=vertex_normal_x*vertex_normal_y;
+    Pv31=vertex_normal_x*vertex_normal_z;
+    Pv32=vertex_normal_y*vertex_normal_z;
+    Pv12=Pv21; Pv13=Pv31; Pv23=Pv32; //alia for clarity of the symmetric matrix calculation
 
 
-    order_vertex_triangles(vtx); // make sure triangles are ordered
+    order_vertex_triangles(vtx); // make sure triangles are ordered!
 
     for(jj=0;jj<vtx->neigh_no;jj++){
-	edge_vector_x[jj]=vtx->neigh[jj]->x-vtx->x;
-	edge_vector_y[jj]=vtx->neigh[jj]->y-vtx->y;
-	edge_vector_z[jj]=vtx->neigh[jj]->z-vtx->z;
+    // !!! We start a VERY long loop over jj !!!
 
-	//Here we calculate normalized edge vector
 
-	temp_length=sqrt(edge_vector_x[jj]*edge_vector_x[jj]+edge_vector_y[jj]*edge_vector_y[jj]+edge_vector_z[jj]*edge_vector_z[jj]);
-	edge_vector_x[jj]=edge_vector_x[jj]/temp_length;
-	edge_vector_y[jj]=edge_vector_y[jj]/temp_length;
-	edge_vector_z[jj]=edge_vector_z[jj]/temp_length;
+    edge_vector_x[jj]=vtx->neigh[jj]->x-vtx->x;
+    edge_vector_y[jj]=vtx->neigh[jj]->y-vtx->y;
+    edge_vector_z[jj]=vtx->neigh[jj]->z-vtx->z;
 
-	//end normalization
-//	printf("(%f %f %f)\n", vertex_normal_x, vertex_normal_y, vertex_normal_z);
-/*
-	if(vtx->idx==0){
-		printf("Edge vector for vertex %d (vector %d): %f, %f, %f\n",vtx->idx,jj,edge_vector_x[jj], edge_vector_y[jj], edge_vector_z[jj]);
-	}
-*/  
-    lm = vtx->tristar[jj];
+    //Here we calculate normalized edge vector
+
+    temp_length=sqrt(edge_vector_x[jj]*edge_vector_x[jj]+edge_vector_y[jj]*edge_vector_y[jj]+edge_vector_z[jj]*edge_vector_z[jj]);
+    edge_vector_x[jj]=edge_vector_x[jj]/temp_length;
+    edge_vector_y[jj]=edge_vector_y[jj]/temp_length;
+    edge_vector_z[jj]=edge_vector_z[jj]/temp_length;
+
+
+    // vtx are ordered: for edge v->i, lm={v,i-1,i} lp={v,i,i+1}, so we can get the two triangles
+    lp = vtx->tristar[jj];
     if (jj==0){
-        lp = vtx->tristar[vtx->tristar_no-1];
+        lm = vtx->tristar[vtx->tristar_no-1];
     }
     else{
-        lp = vtx->tristar[jj-1];
+        lm = vtx->tristar[jj-1];
     } 
 
-	//Triangle normals are NORMALIZED!
+    //Triangle normals are NORMALIZED!
 
-	sumnorm=sqrt( pow((lm->xnorm + lp->xnorm),2) + pow((lm->ynorm + lp->ynorm), 2) + pow((lm->znorm + lp->znorm), 2));
+    // we want to get the edge normal ne = nf+nf
 
-	edge_normal_x[jj]=-(lm->xnorm+ lp->xnorm)/sumnorm;
-	edge_normal_y[jj]=-(lm->ynorm+ lp->ynorm)/sumnorm;
-	edge_normal_z[jj]=-(lm->znorm+ lp->znorm)/sumnorm;
+    sumnorm=sqrt( pow((lm->xnorm + lp->xnorm),2) + pow((lm->ynorm + lp->ynorm), 2) + pow((lm->znorm + lp->znorm), 2));
+
+    edge_normal_x[jj]=-(lm->xnorm + lp->xnorm)/sumnorm;
+    edge_normal_y[jj]=-(lm->ynorm + lp->ynorm)/sumnorm;
+    edge_normal_z[jj]=-(lm->znorm + lp->znorm)/sumnorm;
 
 
-	edge_binormal_x[jj]=(edge_normal_y[jj]*edge_vector_z[jj])-(edge_normal_z[jj]*edge_vector_y[jj]);
-	edge_binormal_y[jj]=-(edge_normal_x[jj]*edge_vector_z[jj])+(edge_normal_z[jj]*edge_vector_x[jj]);
-	edge_binormal_z[jj]=(edge_normal_x[jj]*edge_vector_y[jj])-(edge_normal_y[jj]*edge_vector_x[jj]);
+    edge_binormal_x[jj]= (edge_normal_y[jj]*edge_vector_z[jj])-(edge_normal_z[jj]*edge_vector_y[jj]);
+    edge_binormal_y[jj]=-(edge_normal_x[jj]*edge_vector_z[jj])+(edge_normal_z[jj]*edge_vector_x[jj]);
+    edge_binormal_z[jj]= (edge_normal_x[jj]*edge_vector_y[jj])-(edge_normal_y[jj]*edge_vector_x[jj]);
 
-    cross_x = lp->ynorm*edge_normal_z[jj] - lp->znorm*edge_normal_y[jj];
-    cross_y = lp->znorm*edge_normal_x[jj] - lp->xnorm*edge_normal_z[jj];
-    cross_z = lp->xnorm*edge_normal_y[jj] - lp->ynorm*edge_normal_x[jj];
+    cross_x = lm->ynorm*edge_normal_z[jj] - lm->znorm*edge_normal_y[jj];
+    cross_y = lm->znorm*edge_normal_x[jj] - lm->xnorm*edge_normal_z[jj];
+    cross_z = lm->xnorm*edge_normal_y[jj] - lm->ynorm*edge_normal_x[jj];
 
     he[jj]=temp_length*(cross_x*edge_vector_x[jj] + cross_y*edge_vector_y[jj] + cross_z*edge_vector_z[jj] );
     
-    // old style
+    // old style: uncomment here and their variables above
     /*
-	mprod[jj]=lm->xnorm*(lp->ynorm*edge_vector_z[jj]-lp->znorm*edge_vector_y[jj]) - lm->ynorm*(lp->xnorm*edge_vector_z[jj]-lp->znorm*edge_vector_x[jj])+ lm->znorm*(lp->xnorm*edge_vector_y[jj]-lp->ynorm*edge_vector_x[jj]);
+    mprod[jj]=lm->xnorm*(lp->ynorm*edge_vector_z[jj]-lp->znorm*edge_vector_y[jj]) - lm->ynorm*(lp->xnorm*edge_vector_z[jj]-lp->znorm*edge_vector_x[jj])+ lm->znorm*(lp->xnorm*edge_vector_y[jj]-lp->ynorm*edge_vector_x[jj]);
 
     cross_x = lm->ynorm*lp->znorm - lp->ynorm*lm->znorm;
     cross_y = lm->znorm*lp->xnorm - lp->znorm*lm->xnorm;
     cross_z = lm->xnorm*lp->ynorm - lp->xnorm*lm->ynorm;
-	phi[jj]=copysign(atan2(sqrt(cross_x*cross_x+cross_y*cross_y+cross_z*cross_z),lm->xnorm*lp->xnorm+lm->ynorm*lp->ynorm+lm->znorm*lp->znorm-1e-10),-mprod[jj])+M_PI;
+    phi[jj]=copysign(atan2(sqrt(cross_x*cross_x+cross_y*cross_y+cross_z*cross_z),lm->xnorm*lp->xnorm+lm->ynorm*lp->ynorm+lm->znorm*lp->znorm-1e-10),-mprod[jj])+M_PI;
     We = temp_length*cos(phi[jj]/2.0); //temporarily for testing: We is set later
     
     if (fabs(We - he[jj])>1e-7){
@@ -199,88 +196,87 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     }
     */
     
-/*
-	if(vtx->idx==0){
-		printf("H operator of edge vertex %d (edge %d): %f\n",vtx->idx,jj,he[jj]);
-	}
-*/
-	Se11=-edge_binormal_x[jj]*edge_binormal_x[jj]*he[jj];
-	Se21=-edge_binormal_x[jj]*edge_binormal_y[jj]*he[jj];
-	Se22=-edge_binormal_y[jj]*edge_binormal_y[jj]*he[jj];
-	Se31=-edge_binormal_x[jj]*edge_binormal_z[jj]*he[jj];
-	Se32=-edge_binormal_y[jj]*edge_binormal_z[jj]*he[jj];
-	Se33=-edge_binormal_z[jj]*edge_binormal_z[jj]*he[jj];
+    /*
+    if(vtx->idx==0){
+        printf("H operator of edge vertex %d (edge %d): %f\n",vtx->idx,jj,he[jj]);
+    }
+    */
+    Se11=-edge_binormal_x[jj]*edge_binormal_x[jj]*he[jj];
+    Se21=-edge_binormal_x[jj]*edge_binormal_y[jj]*he[jj];
+    Se22=-edge_binormal_y[jj]*edge_binormal_y[jj]*he[jj];
+    Se31=-edge_binormal_x[jj]*edge_binormal_z[jj]*he[jj];
+    Se32=-edge_binormal_y[jj]*edge_binormal_z[jj]*he[jj];
+    Se33=-edge_binormal_z[jj]*edge_binormal_z[jj]*he[jj];
     Se12=Se21; Se13=Se31; Se23=Se32; //for clarity: hopefully compiler gets rid of these
 
-	We=vertex_normal_x*edge_normal_x[jj]+vertex_normal_y*edge_normal_y[jj]+vertex_normal_z*edge_normal_z[jj];
-	We_Av=We/Av;
+    We=vertex_normal_x*edge_normal_x[jj]+vertex_normal_y*edge_normal_y[jj]+vertex_normal_z*edge_normal_z[jj];
+    We_Av=We/Av;
 
 
     Sv[0][0]+=We_Av* Se11;
-	Sv[0][1]+=We_Av* Se12;
-	Sv[0][2]+=We_Av* Se13;
-	
-	Sv[1][0]+=We_Av* Se21;
-	Sv[1][1]+=We_Av* Se22;
-	Sv[1][2]+=We_Av* Se23;
+    Sv[0][1]+=We_Av* Se12;
+    Sv[0][2]+=We_Av* Se13;
+    
+    Sv[1][0]+=We_Av* Se21;
+    Sv[1][1]+=We_Av* Se22;
+    Sv[1][2]+=We_Av* Se23;
 
-	Sv[2][0]+=We_Av* Se31;
-	Sv[2][1]+=We_Av* Se32;
-	Sv[2][2]+=We_Av* Se33;
+    Sv[2][0]+=We_Av* Se31;
+    Sv[2][1]+=We_Av* Se32;
+    Sv[2][2]+=We_Av* Se33;
 
-    } 
-    // END FOR JJ
+    } // END FOR JJ
 
-    // householder transformationL get rid of n^ components
+    // householder transformation: get rid of n^ components
     // matrix multiplication Sv[i,j] = Pv[i,a]*Sv[a,b]*Pv^T[b,j]
     Sv[0][0]=(   Pv11*(Sv[0][0]*Pv11+Sv[0][1]*Pv21+Sv[0][2]*Pv31)
                 +Pv12*(Sv[1][0]*Pv11+Sv[1][1]*Pv21+Sv[1][2]*Pv31)
                 +Pv13*(Sv[2][0]*Pv11+Sv[2][1]*Pv21+Sv[2][2]*Pv31));
-	Sv[0][1]=(   Pv11*(Sv[0][0]*Pv12+Sv[0][1]*Pv22+Sv[0][2]*Pv32)
+    Sv[0][1]=(   Pv11*(Sv[0][0]*Pv12+Sv[0][1]*Pv22+Sv[0][2]*Pv32)
                 +Pv12*(Sv[1][0]*Pv12+Sv[1][1]*Pv22+Sv[1][2]*Pv32)
                 +Pv13*(Sv[2][0]*Pv12+Sv[2][1]*Pv22+Sv[2][2]*Pv32));
-	Sv[0][2]=(   Pv11*(Sv[0][0]*Pv13+Sv[0][1]*Pv23+Sv[0][2]*Pv33)
+    Sv[0][2]=(   Pv11*(Sv[0][0]*Pv13+Sv[0][1]*Pv23+Sv[0][2]*Pv33)
                 +Pv12*(Sv[1][0]*Pv13+Sv[1][1]*Pv23+Sv[1][2]*Pv33)
                 +Pv13*(Sv[2][0]*Pv13+Sv[2][1]*Pv23+Sv[2][2]*Pv33));
-	
+    
     Sv[1][0]=(   Pv21*(Sv[0][0]*Pv11+Sv[0][1]*Pv21+Sv[0][2]*Pv31)
                 +Pv22*(Sv[1][0]*Pv11+Sv[1][1]*Pv21+Sv[1][2]*Pv31)
                 +Pv23*(Sv[2][0]*Pv11+Sv[2][1]*Pv21+Sv[2][2]*Pv31));
-	Sv[1][1]=(   Pv21*(Sv[0][0]*Pv12+Sv[0][1]*Pv22+Sv[0][2]*Pv32)
+    Sv[1][1]=(   Pv21*(Sv[0][0]*Pv12+Sv[0][1]*Pv22+Sv[0][2]*Pv32)
                 +Pv22*(Sv[1][0]*Pv12+Sv[1][1]*Pv22+Sv[1][2]*Pv32)
                 +Pv23*(Sv[2][0]*Pv12+Sv[2][1]*Pv22+Sv[2][2]*Pv32));
-	Sv[1][2]=(   Pv21*(Sv[0][0]*Pv13+Sv[0][1]*Pv23+Sv[0][2]*Pv33)
+    Sv[1][2]=(   Pv21*(Sv[0][0]*Pv13+Sv[0][1]*Pv23+Sv[0][2]*Pv33)
                 +Pv22*(Sv[1][0]*Pv13+Sv[1][1]*Pv23+Sv[1][2]*Pv33)
                 +Pv23*(Sv[2][0]*Pv13+Sv[2][1]*Pv23+Sv[2][2]*Pv33));
     
     Sv[2][0]=(   Pv31*(Sv[0][0]*Pv11+Sv[0][1]*Pv21+Sv[0][2]*Pv31)
                 +Pv32*(Sv[1][0]*Pv11+Sv[1][1]*Pv21+Sv[1][2]*Pv31)
                 +Pv33*(Sv[2][0]*Pv11+Sv[2][1]*Pv21+Sv[2][2]*Pv31));
-	Sv[2][1]=(   Pv31*(Sv[0][0]*Pv12+Sv[0][1]*Pv22+Sv[0][2]*Pv32)
+    Sv[2][1]=(   Pv31*(Sv[0][0]*Pv12+Sv[0][1]*Pv22+Sv[0][2]*Pv32)
                 +Pv32*(Sv[1][0]*Pv12+Sv[1][1]*Pv22+Sv[1][2]*Pv32)
                 +Pv33*(Sv[2][0]*Pv12+Sv[2][1]*Pv22+Sv[2][2]*Pv32));
-	Sv[2][2]=(   Pv31*(Sv[0][0]*Pv13+Sv[0][1]*Pv23+Sv[0][2]*Pv33)
+    Sv[2][2]=(   Pv31*(Sv[0][0]*Pv13+Sv[0][1]*Pv23+Sv[0][2]*Pv33)
                 +Pv32*(Sv[1][0]*Pv13+Sv[1][1]*Pv23+Sv[1][2]*Pv33)
                 +Pv33*(Sv[2][0]*Pv13+Sv[2][1]*Pv23+Sv[2][2]*Pv33));
     // into gsl
-	gsl_matrix_set(gsl_Sv, 0,0, Sv[0][0]);
-	gsl_matrix_set(gsl_Sv, 0,1, Sv[0][1]);
-	gsl_matrix_set(gsl_Sv, 0,2, Sv[0][2]);
-	gsl_matrix_set(gsl_Sv, 1,0, Sv[1][0]);
-	gsl_matrix_set(gsl_Sv, 1,1, Sv[1][1]);
-	gsl_matrix_set(gsl_Sv, 1,2, Sv[1][2]);
-	gsl_matrix_set(gsl_Sv, 2,0, Sv[2][0]);
-	gsl_matrix_set(gsl_Sv, 2,1, Sv[2][1]);
-	gsl_matrix_set(gsl_Sv, 2,2, Sv[2][2]);
+    gsl_matrix_set(gsl_Sv, 0,0, Sv[0][0]);
+    gsl_matrix_set(gsl_Sv, 0,1, Sv[0][1]);
+    gsl_matrix_set(gsl_Sv, 0,2, Sv[0][2]);
+    gsl_matrix_set(gsl_Sv, 1,0, Sv[1][0]);
+    gsl_matrix_set(gsl_Sv, 1,1, Sv[1][1]);
+    gsl_matrix_set(gsl_Sv, 1,2, Sv[1][2]);
+    gsl_matrix_set(gsl_Sv, 2,0, Sv[2][0]);
+    gsl_matrix_set(gsl_Sv, 2,1, Sv[2][1]);
+    gsl_matrix_set(gsl_Sv, 2,2, Sv[2][2]);
 
     // calculate eigenvalues and eigenvectors
-	gsl_eigen_symmv(gsl_Sv, Sv_eigen, Sv_eigenV, workspace);
+    gsl_eigen_symmv(gsl_Sv, Sv_eigen, Sv_eigenV, workspace);
     gsl_eigen_symmv_sort(Sv_eigen, Sv_eigenV, GSL_EIGEN_SORT_ABS_DESC);
 
     // get eigenvalues and eigenvectors out
-	eigenval[0]= gsl_vector_get(Sv_eigen, 0);
-	eigenval[1]= gsl_vector_get(Sv_eigen, 1);
-	eigenval[2]= gsl_vector_get(Sv_eigen, 2);
+    eigenval[0]= gsl_vector_get(Sv_eigen, 0);
+    eigenval[1]= gsl_vector_get(Sv_eigen, 1);
+    eigenval[2]= gsl_vector_get(Sv_eigen, 2);
     vtx->eig0[0] = gsl_matrix_get(Sv_eigenV,0,0);
     vtx->eig0[1] = gsl_matrix_get(Sv_eigenV,1,0);
     vtx->eig0[2] = gsl_matrix_get(Sv_eigenV,2,0);
@@ -302,15 +298,15 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     //vtx->curvature2 = eigenval[0]*eigenval[1];
     vtx->mean_curvature2 = (eigenval[0]+ eigenval[1]);
     vtx->gaussian_curvature2 = eigenval[0]*eigenval[1];
-	vtx->mean_energy2 = 4*vtx->xk*(pow(eigenval[0]+eigenval[1]-2*vtx->c,2))*Av;
+    vtx->mean_energy2 = 4*vtx->xk*(pow(eigenval[0]+eigenval[1]-2*vtx->c,2))*Av;
     vtx->gaussian_energy2 = vtx->xk2 * Av * eigenval[0]*eigenval[1];
     
 
-	gsl_matrix_free(gsl_Sv);
-	gsl_vector_free(Sv_eigen);
+    gsl_matrix_free(gsl_Sv);
+    gsl_vector_free(Sv_eigen);
     gsl_matrix_free(Sv_eigenV);
-	gsl_eigen_symmv_free(workspace);
-	return TS_SUCCESS;
+    gsl_eigen_symmv_free(workspace);
+    return TS_SUCCESS;
 }
 
 
@@ -358,11 +354,9 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
 */
 inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
         
-    ts_uint li, ri;
-    ts_uint t;
-    ts_vertex *vl, *vr;
-    ts_uint jj;
-    ts_uint jjp,jjm;
+    
+    ts_small_idx jj;
+    ts_small_idx jjp,jjm;
     ts_vertex *j,*jp, *jm;
     ts_triangle *jt;
     ts_double s=0.0,xh=0.0,yh=0.0,zh=0.0,txn=0.0,tyn=0.0,tzn=0.0;
@@ -372,7 +366,10 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     ts_double a_dot_b, a_cross_b_x, a_cross_b_y, a_cross_b_z, mag_a_cross_b;
     ts_bool model=vesicle->tape->type_of_curvature_model;
 
- /*  debugging tristar order in vertex 
+    /*  debugging tristar order in vertex 
+    ts_small_idx li, ri;
+    ts_small_idx t;
+    ts_vertex *vl, *vr;
     if (vtx == vesicle->vlist->vtx[183] && vtx->ad_w == 7){
     fprintf(stdout,"%ld",p_diff(vtx,vesicle->vlist->vtx[0]));
     fprintf(stdout,"I'm on %p, I read nodes ", vtx);
@@ -390,15 +387,15 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     fprintf(stdout,"\ndiscombobulating:");
     // still in construction phase
     t=get_epoch();	
-	if (vesicle->tape->random_seed!=0){
-		srand48(vesicle->tape->random_seed);
-		ts_fprintf(stdout,"simulation seed = %lu\n",vesicle->tape->random_seed);
-	}
-	else{
-		srand48(t);
-		ts_fprintf(stdout,"simulation seed %lu\n",t);
-		vesicle->tape->random_seed = t;
-	}
+    if (vesicle->tape->random_seed!=0){
+        srand48(vesicle->tape->random_seed);
+        ts_fprintf(stdout,"simulation seed = %lu\n",vesicle->tape->random_seed);
+    }
+    else{
+        srand48(t);
+        ts_fprintf(stdout,"simulation seed %lu\n",t);
+        vesicle->tape->random_seed = t;
+    }
     for (t=0; t<vtx->tristar_no; t++){
         jj = lrand48()%vtx->tristar_no;
         swap_triangles(vtx, t, jj);
@@ -481,9 +478,9 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     fprintf(stdout,"\n");
     fatal("goodbye!",100);
     }
-//*/
+    */
 
-
+    // to do: use the fact that triangles should be ordered
     for(jj=1; jj<=vtx->neigh_no;jj++){
         jjp=jj+1;
         if(jjp>vtx->neigh_no) jjp=1;
@@ -555,9 +552,9 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
 
 
 
-        // angle stuff
-        //angle_sum += atan(ctp) + atan(ctm); // simple but slow!
-        /// get the angle m-vtx-j
+        // angle stuff for gaussian curvature
+        // angle_sum += atan(ctp) + atan(ctm); // simple but slow!
+        // get the angle m-vtx-j
         // atan2(|axb|,a*b) was recommended at mathwork forum (cosin has small angle problems, and still need a sqrt)
         a_dot_b = (jm->x-vtx->x)*(j->x-vtx->x)+
                   (jm->y-vtx->y)*(j->y-vtx->y)+
@@ -597,11 +594,11 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     //also great point to update normal: note that the triangle normal is inwards
     norml=sqrt(txn*txn+tyn*tyn+tzn*tzn);
     vtx->nx=-txn/norml;
-	vtx->ny=-tyn/norml;
-	vtx->nz=-tzn/norml;
-// c is forced curvature energy for each vertex. Should be set to zero for
-// normal circumstances.
-/* the following statement is an expression for $\frac{1}{2}\int(c_1+c_2-c_0^\prime)^2\mathrm{d}A$, where $c_0^\prime=2c_0$ (twice the spontaneous curvature)  */
+    vtx->ny=-tyn/norml;
+    vtx->nz=-tzn/norml;
+    // c is spontaneous curvature energy for each vertex. Should be set to zero for
+    // normal circumstances.
+    /* the following statement is an expression for $\frac{1}{2}\int(c_1+c_2-c_0^\prime)^2\mathrm{d}A$, where $c_0^\prime=2c_0$ (twice the spontaneous curvature)  */
     vtx->mean_energy=vtx->xk* 0.5*s*(vtx->mean_curvature-vtx->c)*(vtx->mean_curvature-vtx->c);
     
     vtx->gaussian_curvature = (2*M_PI- angle_sum)/s;
@@ -609,11 +606,11 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     vtx->gaussian_energy = vtx->xk2 * s * vtx->gaussian_curvature;
 
     
-    if (vesicle->tape->type_of_curvature_model==10 || vesicle->tape->type_of_curvature_model==11) {
+    if (model==10 || model==11) {
         curvature_tensor_energy_vertex(vesicle, vtx);
     }
     
-    if (vesicle->tape->type_of_curvature_model==10){
+    if (model==10){
         vtx->energy = vtx->mean_energy2 + vtx->gaussian_energy2;
     }
     else {
@@ -626,48 +623,57 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
 
 
 ts_bool sweep_attraction_bond_energy(ts_vesicle *vesicle){
-	int i;
-	for(i=0;i<vesicle->blist->n;i++){
-		attraction_bond_energy(vesicle, vesicle->blist->bond[i]);
-	}
-	return TS_SUCCESS;
+    ts_idx i;
+    for(i=0;i<vesicle->blist->n;i++){
+        attraction_bond_energy(vesicle, vesicle->blist->bond[i]);
+    }
+    return TS_SUCCESS;
 }
 
 
 inline ts_bool attraction_bond_energy(ts_vesicle *vesicle, ts_bond *bond){
 
     if (vesicle->tape->type_of_bond_model==0){ // bonding type bond together
-	    if((bond->vtx1->type&is_bonding_vtx && bond->vtx2->type&is_bonding_vtx)){
+        if((bond->vtx1->type&is_bonding_vtx && bond->vtx2->type&is_bonding_vtx)){
             // f(w1,w2)
-		    bond->energy=-0.5*(bond->vtx1->w+bond->vtx2->w);
-	    }
-	    else {
-		    bond->energy=0.0;
-	    }
+            bond->energy=-0.5*(bond->vtx1->w+bond->vtx2->w);
+        }
+        else {
+            bond->energy=0.0;
+        }
     }
     if (vesicle->tape->type_of_bond_model==1){ // bond by same type
-	    if((bond->vtx1->type&is_bonding_vtx && bond->vtx2->type==bond->vtx1->type)){
+        if((bond->vtx1->type&is_bonding_vtx && bond->vtx2->type==bond->vtx1->type)){
             // f(w1,w2)
-		    bond->energy=-0.5*(bond->vtx1->w+bond->vtx2->w);
-	    }
-	    else {
-		    bond->energy=0.0;
-	    }
+            bond->energy=-0.5*(bond->vtx1->w+bond->vtx2->w);
+        }
+        else {
+            bond->energy=0.0;
+        }
     }
-	return TS_SUCCESS;
+    return TS_SUCCESS;
 }
 
-
+/** @brief return the work from the vertex move under force move W = -F(vtx) * dx(vtx,vtx_old)
+ *  
+ *  function work differently depending on vesicle->tape->model
+ *  0: force in normal direction F = vtx->f * vtx->n
+ *  1: inhibation F*=No_inactive/No_neigh
+ *  2: inhibation F*=No_c>=0/No_neigh
+ *  3: F=0 for any neighbor with c0<0
+ *  16: Vicsek model, constant weight
+ *  17: Vicsek model, ~ 1/R
+ *
+ *  @param *vesicle: the vesicle (which includes model and vertexlist)
+ *  @param *vtx pointer to moved vertex
+ *  @param *vtx_old pointer to backed-up pre-move vertex
+ *  @returns ts_double work -fdx
+*/
 ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_old){
-	// modified to include Vicsek Interaction and basic inhibition models
-    // 0: force in normal direction
-    // 1: inhibation F*=No_inactive/No_neigh
-    // 2: inhibation F*=No_c>=0/No_neigh
-    // 3: F=0 for neigh c0<0
-    //16: Vicsek model, constant weight
-    //17: Vicsek model, ~ 1/R
+    // modified to include Vicsek Interaction and basic inhibition models
 
-    
+
+
     // quit if there is no force
     if(fabs(vtx->f)<1e-15) return 0.0;
 
@@ -676,45 +682,45 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
     ts_double vicsek_radius= vesicle->tape->vicsek_radius;
 
     ts_double norml,ddp=0.0;
-	//ts_double xnorm=0.0,ynorm=0.0,znorm=0.0;
-	ts_double vixnorm=0.0,viynorm=0.0,viznorm=0.0;
+    //ts_double xnorm=0.0,ynorm=0.0,znorm=0.0;
+    ts_double vixnorm=0.0,viynorm=0.0,viznorm=0.0;
 
     //stupid loop variables don't go in stupid for loop due to stupid C89 compiler
-    ts_uint i, j, curr_dist;
+    ts_idx i, j, curr_dist;
     
     // estimated mallocation size for the cluster: roughly ~pi*r^2
-    ts_uint max_vtx_seen=3*(( (int) vicsek_radius)+1)*(( (int) vicsek_radius)+1);
+    ts_idx max_vtx_seen=3*(( (int) vicsek_radius)+1)*(( (int) vicsek_radius)+1);
     // allocate the struct for the "seen vertex" (defined in general.h, functions in vertex.c)
     ts_seen_vertex *seen_vtx; //initalize in vicsek
 
-    ts_uint No_neigh_activating; // number of activating neighbors
+    ts_uint No_neigh_activating; // number of activating neighbors: actual number, not an index!
     ts_double inhibition_factor;
 
 
 
     // if vicsek type and vicsek model is relevant
-    if ( vtx->type&is_vicsek_vtx && (model==16 || model==17) && fabs(vicsek_strength)>1e-15 && fabs(vicsek_radius)>1e-15) {
+    if ( vtx->type&is_vicsek_vtx && (model==16 || model==17) 
+        && fabs(vicsek_strength)>1e-15 && fabs(vicsek_radius)>1e-15) {
         
         //vicsek model
         //force directed by Vicsek sum-over-neighbors-normals
 
-	
         //prime vertex normal
-	    vixnorm=vtx->nx;
-	    viynorm=vtx->ny;
-	    viznorm=vtx->nz;
+        vixnorm=vtx->nx;
+        viynorm=vtx->ny;
+        viznorm=vtx->nz;
 
         //initialize seen_vtx
         seen_vtx = init_seen_vertex(max_vtx_seen);
         // we have now seen the prime vertex
         add_vtx_to_seen(seen_vtx, vtx);
-        
-    
+
+
         // Breadth first search using seen_vtx, layer by layer,
         // until reaching layer that is outside the maximum radius
         for (curr_dist=1 ; curr_dist<=vicsek_radius; curr_dist++){
             advance_seen_vertex_to_next_layer(seen_vtx);
-            
+
             // The for loops are split by layers
             // The new "next" layer is being built from
             // the neighbors of the completed "current" layer
@@ -782,29 +788,28 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
         //having finished summing the normals, normalize the resulting vector
         norml=sqrt(vixnorm*vixnorm+viynorm*viynorm+viznorm*viznorm);
         vixnorm/=norml;
-	    viynorm/=norml;
-	    viznorm/=norml;
+        viynorm/=norml;
+        viznorm/=norml;
 
-	    /*calculate ddp, Viscek force directed displacement*/
-	    vtx->fx=vixnorm;
+        /*calculate ddp, Viscek force directed displacement*/
+        vtx->fx=vixnorm;
         vtx->fy=viynorm;
         vtx->fz=viznorm;
 
-	    //don't forget to free! 
+        //don't forget to free! 
         seen_vertex_free(seen_vtx);
 
-    //end if (!Vicsek)
-    }
+    } //end if (!Vicsek)
     else {
         //regular "force in normal direction"
         vtx->fx = vtx->nx;
         vtx->fy = vtx->ny;
         vtx->fz = vtx->nz;
     }
-    
+
     // now we calculate the final force and work
 
-    
+
     //we recalculate the force based on inhibition: we want the real force to be recorded!
 
     // HIV_Gag inhibition model
@@ -855,20 +860,28 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 
 
     /*calculate ddp, normal force directed displacement*/
-	ddp=vtx->fx*(vtx->x-vtx_old->x)+vtx->fy*(vtx->y-vtx_old->y)+vtx->fz*(vtx->z-vtx_old->z);
+    ddp=vtx->fx*(vtx->x-vtx_old->x)+vtx->fy*(vtx->y-vtx_old->y)+vtx->fz*(vtx->z-vtx_old->z);
 
     
     /*calculate dE*/
     return -vtx->f*ddp;
-//end function
 }
 
+
+/** @brief get work from residual force on the vesicle due to force balance on z
+ *  
+ *
+ *  @param *vesicle: the vesicle (which includes model and vertexlist)
+ *  @param *vtx pointer to moved vertex
+ *  @param *vtx_old pointer to backed-up pre-move vertex
+ *  @returns ts_double work
+*/
 ts_double direct_force_from_Fz_balance(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_old){
     // calculate the Fz force balance
-    //     We could separat from direct_force_energy()
+    //     We could separate from direct_force_energy()
     //     since F_direct(old) = F_direct + Fz_balance \hat{z}
     //     W = F_direct * dX + Fz_balance * dz
-    // Force is cached once and only once! : not recalculated!
+    // Total force is cached once and only once! : only update at each step
     // Changing this behavior is weird: once, or always, work identically, 
     // once every 2 works identically, once every 64 works identically, 
     // but 65-128 don't!.
@@ -888,78 +901,95 @@ ts_double direct_force_from_Fz_balance(ts_vesicle *vesicle, ts_vertex *vtx, ts_v
     }
 
     if (Fz>0){
-	    return Fz*(vtx->z-vtx_old->z)/vesicle->vlist->n;
+        return Fz*(vtx->z-vtx_old->z)/vesicle->vlist->n;
     }
     else{
         return 0;
     }	
-	
+    
 }
 
 inline ts_double total_force_on_vesicle(ts_vesicle *vesicle){
-	ts_uint i;
-	ts_double fz=0;
-	/*find normal of the vertex as sum of all the normals of the triangles surrounding it. */
+    ts_idx i;
+    ts_double fz=0;
+    /*find normal of the vertex as sum of all the normals of the triangles surrounding it. */
     for (i=0;i<vesicle->vlist->n;i++){
-		if(vesicle->vlist->vtx[i]->type&is_active_vtx){
-			fz+=vesicle->vlist->vtx[i]->fz;
-		}
-	}
+        if(vesicle->vlist->vtx[i]->type&is_active_vtx){
+            fz+=vesicle->vlist->vtx[i]->fz;
+        }
+    }
     return fz;
-	
+    
 }
 
+/** @brief return adhesion energy difference E_ad(vtx)-E_ad(vtx_old)
+ *  
+ *  functions differently depending on vesicle->adhesion_model:
+ *  1: step potential
+ *  2: parabolic potential
+ *  3: spherical substrate (parabolic)
+ *  4: cylindrical substrate (parabolic)
+ *  
+ *  @param *vesicle: the vesicle (which includes model, adhesion substrate values)
+ *  @param *vtx pointer to moved vertex
+ *  @param *vtx_old pointer to backed-up pre-move vertex
+ *  @returns ts_double energy difference in state
+*/
 ts_double adhesion_energy_diff(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_old){
     ts_double delta_energy=0;
-    ts_double z=vtx->z, z_old=vtx_old->z;
-    ts_double z0=vesicle->tape->z_adhesion, dz=vesicle->tape->adhesion_cuttoff;
-    ts_double c0=vesicle->adhesion_center, r=vesicle->tape->adhesion_radius;
-    //1 for step potential
-	if(vesicle->tape->type_of_adhesion_model==1){
+    ts_double z=vtx->z;
+    ts_double z_old=vtx_old->z;
+    ts_double z0=vesicle->tape->z_adhesion;
+    ts_double dz=vesicle->tape->adhesion_cuttoff;
+    ts_double c0=vesicle->adhesion_center;
+    ts_double r=vesicle->tape->adhesion_radius;
 
-		if( (vtx->type&is_adhesive_vtx) && (abs(z-z0)<dz) ){
-				delta_energy-=vtx->ad_w;
-		}
-		if( (vtx_old->type&is_adhesive_vtx) &&(abs(z_old-z0)<dz) ){
-				delta_energy+=vtx_old->ad_w;
-		}
-	}
+    //1 for step potential
+    if(vesicle->tape->type_of_adhesion_model==1){
+
+        if( (vtx->type&is_adhesive_vtx) && (abs(z-z0)<dz) ){
+                delta_energy-=vtx->ad_w;
+        }
+        if( (vtx_old->type&is_adhesive_vtx) &&(abs(z_old-z0)<dz) ){
+                delta_energy+=vtx_old->ad_w;
+        }
+    }
 
     //2 for parabolic potential
-	else if(vesicle->tape->type_of_adhesion_model==2){
+    else if(vesicle->tape->type_of_adhesion_model==2){
 
         // can't combine them well: each has (theoretically) different adhesion
-		if( (vtx->type&is_adhesive_vtx) && ((z-z0)<=dz )){
-				delta_energy-=(vtx->ad_w/pow(dz,2))*pow(z - dz,2);
-		}
-		if( (vtx_old->type&is_adhesive_vtx) && ((z_old-z0)>dz) ){
-				delta_energy+=(vtx_old->ad_w/pow(dz,2))*pow(z_old - dz,2);
-		}
-	}
+        if( (vtx->type&is_adhesive_vtx) && ((z-z0)<=dz )){
+                delta_energy-=(vtx->ad_w/pow(dz,2))*pow(z - dz,2);
+        }
+        if( (vtx_old->type&is_adhesive_vtx) && ((z_old-z0)>dz) ){
+                delta_energy+=(vtx_old->ad_w/pow(dz,2))*pow(z_old - dz,2);
+        }
+    }
 
     //3 for sphrerical adhesion substrate with constant potential
-	else if(vesicle->tape->type_of_adhesion_model==3){
-		if( (vtx->type&is_adhesive_vtx) && (pow(pow(c0-z,2) + pow(vtx->x,2) + pow(vtx->y,2),0.5) - r < dz)){
-			delta_energy-=vtx->ad_w;
-		}
-		if( (vtx_old->type&is_adhesive_vtx) && (pow(pow(c0-z_old,2) + pow(vtx_old->x,2) + pow(vtx_old->y,2),0.5) - r < dz)){
-			delta_energy+=vtx_old->ad_w;
-		}
-	}
+    else if(vesicle->tape->type_of_adhesion_model==3){
+        if( (vtx->type&is_adhesive_vtx) && (pow(pow(c0-z,2) + pow(vtx->x,2) + pow(vtx->y,2),0.5) - r < dz)){
+            delta_energy-=vtx->ad_w;
+        }
+        if( (vtx_old->type&is_adhesive_vtx) && (pow(pow(c0-z_old,2) + pow(vtx_old->x,2) + pow(vtx_old->y,2),0.5) - r < dz)){
+            delta_energy+=vtx_old->ad_w;
+        }
+    }
     
     //4 for cylindrical adhesive substrate with constant potential
-	else if(vesicle->tape->type_of_adhesion_model==4){
-		if( (vtx->type&is_adhesive_vtx) && (pow(pow(c0 -z,2) + pow(vtx->x,2),0.5) - r < dz)){
-			delta_energy-=vtx->ad_w;
-		}
-		if( (vtx_old->type&is_adhesive_vtx) && (pow(pow(c0 - z_old,2) + pow(vtx_old->x,2),0.5) - r < dz)){
-			delta_energy+=vtx_old->ad_w;
-		}
-	}
+    else if(vesicle->tape->type_of_adhesion_model==4){
+        if( (vtx->type&is_adhesive_vtx) && (pow(pow(c0 -z,2) + pow(vtx->x,2),0.5) - r < dz)){
+            delta_energy-=vtx->ad_w;
+        }
+        if( (vtx_old->type&is_adhesive_vtx) && (pow(pow(c0 - z_old,2) + pow(vtx_old->x,2),0.5) - r < dz)){
+            delta_energy+=vtx_old->ad_w;
+        }
+    }
 
     return delta_energy;
 }
 
 void stretchenergy(ts_vesicle *vesicle, ts_triangle *triangle){
-	triangle->energy=vesicle->tape->xkA0/2.0*pow((triangle->area/vesicle->tlist->a0-1.0),2);
+    triangle->energy=vesicle->tape->xkA0/2.0*pow((triangle->area/vesicle->tlist->a0-1.0),2);
 }

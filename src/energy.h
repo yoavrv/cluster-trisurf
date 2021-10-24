@@ -15,5 +15,5 @@ ts_double adhesion_energy_diff(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *v
 
 void stretchenergy(ts_vesicle *vesicle, ts_triangle *triangle);
 
-inline ts_bool was_vertex_seen(ts_vertex **seen_vtx, ts_vertex *vtx, ts_uint check_from, ts_uint check_up_to);
+inline ts_bool was_vertex_seen(ts_vertex **seen_vtx, ts_vertex *vtx, ts_idx check_from, ts_idx check_up_to);
 #endif

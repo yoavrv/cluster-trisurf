@@ -1,6 +1,6 @@
 /* vim: set ts=4 sts=4 sw=4 noet : */
-#include<math.h>
-#include<stdlib.h>
+#include <math.h>
+#include <stdlib.h>
 #include "general.h"
 #include "sh.h"
 #include "io.h"
@@ -85,53 +85,53 @@ ts_bool sph_free(ts_spharm *sph){
 
 /* Gives you legendre polynomials. Taken from NR, p. 254 */
 ts_double plgndr(ts_int l, ts_int m, ts_double x){
-	ts_double fact, pll, pmm, pmmp1, somx2;
-	ts_int i,ll;
+    ts_double fact, pll, pmm, pmmp1, somx2;
+    ts_int i,ll;
 
 #ifdef TS_DOUBLE_DOUBLE
-	if(m<0 || m>l || fabs(x)>1.0)
-		fatal("Bad arguments in routine plgndr",1);
+    if(m<0 || m>l || fabs(x)>1.0)
+        fatal("Bad arguments in routine plgndr",1);
 #endif
 #ifdef TS_DOUBLE_FLOAT
-	if(m<0 || m>l || fabsf(x)>1.0)
-		fatal("Bad arguments in routine plgndr",1);
+    if(m<0 || m>l || fabsf(x)>1.0)
+        fatal("Bad arguments in routine plgndr",1);
 #endif
 #ifdef TS_DOUBLE_LONGDOUBLE
-	if(m<0 || m>l || fabsl(x)>1.0)
-		fatal("Bad arguments in routine plgndr",1);
+    if(m<0 || m>l || fabsl(x)>1.0)
+        fatal("Bad arguments in routine plgndr",1);
 #endif
-	pmm=1.0;
-	if (m>0) {
+    pmm=1.0;
+    if (m>0) {
 #ifdef TS_DOUBLE_DOUBLE
-		somx2=sqrt((1.0-x)*(1.0+x));
+        somx2=sqrt((1.0-x)*(1.0+x));
 #endif
 #ifdef TS_DOUBLE_FLOAT
-		somx2=sqrtf((1.0-x)*(1.0+x));
+        somx2=sqrtf((1.0-x)*(1.0+x));
 #endif
 #ifdef TS_DOUBLE_LONGDOUBLE
-		somx2=sqrtl((1.0-x)*(1.0+x));
+        somx2=sqrtl((1.0-x)*(1.0+x));
 #endif
-		fact=1.0;
-		for (i=1; i<=m;i++){
-			pmm *= -fact*somx2;
-			fact +=2.0;
-		}
-	}
+        fact=1.0;
+        for (i=1; i<=m;i++){
+            pmm *= -fact*somx2;
+            fact +=2.0;
+        }
+    }
 
-	if (l == m) return pmm;
-	else {
-		pmmp1=x*(2*m+1)*pmm;
-		if(l==(m+1)) return(pmmp1);
-		else {
-			pll=0; /* so it can not be uninitialized */
-			for(ll=m+2;ll<=l;ll++){
-				pll=(x*(2*ll-1)*pmmp1-(ll+m-1)*pmm)/(ll-m);
-				pmm=pmmp1;
-				pmmp1=pll;
-			}
-			return(pll);
-		}
-	}
+    if (l == m) return pmm;
+    else {
+        pmmp1=x*(2*m+1)*pmm;
+        if(l==(m+1)) return(pmmp1);
+        else {
+            pll=0; /* so it can not be uninitialized */
+            for(ll=m+2;ll<=l;ll++){
+                pll=(x*(2*ll-1)*pmmp1-(ll+m-1)*pmm)/(ll-m);
+                pmm=pmmp1;
+                pmmp1=pll;
+            }
+            return(pll);
+        }
+    }
 }
 
 
@@ -169,36 +169,36 @@ ts_bool precomputeShCoeff(ts_spharm *sph){
  *
  * (Miha's definition that is different from common definition for  factor srqt(1/(2*pi)) */
 ts_double shY(ts_int l,ts_int m,ts_double theta,ts_double fi){
-	ts_double fac1, fac2, K;
-	int i;
+    ts_double fac1, fac2, K;
+    int i;
 
-	if(l<0 || m>l || m<-l)
-		fatal("Error using shY function!",1);
+    if(l<0 || m>l || m<-l)
+        fatal("Error using shY function!",1);
 
-	fac1=1.0;
-	for(i=1; i<=l-abs(m);i++){
-		fac1 *= i;
-	}
-	fac2=1.0;
-	for(i=1; i<=l+abs(m);i++){
-		fac2 *= i;
-	}
+    fac1=1.0;
+    for(i=1; i<=l-abs(m);i++){
+        fac1 *= i;
+    }
+    fac2=1.0;
+    for(i=1; i<=l+abs(m);i++){
+        fac2 *= i;
+    }
 
-	if(m==0){
-		K=sqrt(1.0/(2.0*M_PI));
-	}
-	else if (m>0) {
-		K=sqrt(1.0/(M_PI))*cos(m*fi);
-	} 
-	else {
-		//K=pow(-1.0,abs(m))*sqrt(1.0/(2.0*M_PI))*cos(m*fi);
-		if(abs(m)%2==0)
-		K=sqrt(1.0/(M_PI))*cos(m*fi);
-		else
-		K=-sqrt(1.0/(M_PI))*cos(m*fi);
-	}
-	
-	return K*sqrt((2.0*l+1.0)/2.0*(ts_double)(fac1/fac2))*plgndr(l,abs(m),cos(theta));	
+    if(m==0){
+        K=sqrt(1.0/(2.0*M_PI));
+    }
+    else if (m>0) {
+        K=sqrt(1.0/(M_PI))*cos(m*fi);
+    } 
+    else {
+        //K=pow(-1.0,abs(m))*sqrt(1.0/(2.0*M_PI))*cos(m*fi);
+        if(abs(m)%2==0)
+        K=sqrt(1.0/(M_PI))*cos(m*fi);
+        else
+        K=-sqrt(1.0/(M_PI))*cos(m*fi);
+    }
+    
+    return K*sqrt((2.0*l+1.0)/2.0*(ts_double)(fac1/fac2))*plgndr(l,abs(m),cos(theta));	
 }
 
 
@@ -316,11 +316,12 @@ ts_bool preparationSh(ts_vesicle *vesicle, ts_double r0){
 
 
 ts_bool calculateYlmi(ts_vesicle *vesicle){
-    ts_int i,j,k;
+    ts_int i,j;
+    ts_idx k;
     ts_spharm *sph=vesicle->sphHarmonics;
     ts_coord *coord=(ts_coord *)malloc(sizeof(ts_coord));
     ts_double fi, theta;
-	ts_int m;
+    ts_int m;
     ts_vertex *cvtx;
     for(k=0;k<vesicle->vlist->n;k++){
         cvtx=vesicle->vlist->vtx[k];
@@ -330,35 +331,34 @@ ts_bool calculateYlmi(ts_vesicle *vesicle){
         theta=coord->e3; 
         for(i=1; i<sph->l; i++){
             for(j=0;j<i;j++){
-			m=j+1;
-//Nastudiraj!!!!!
+                m=j+1;
+                //Nastudiraj!!!!!
                 sph->Ylmi[i][j][k]=sph->co[i][m]*cos((m-i-1)*fi)*pow(-1,m-i-1)*plgndr(i,abs(m-i-1),cos(theta));
-		if(i==2 && j==0){
-	/*	fprintf(stderr," **** vtx %d ****\n", k+1);
-		fprintf(stderr,"m-i-1 =%d\n",m-i-1);
-		fprintf(stderr,"fi =%e\n",fi);
-		fprintf(stderr,"(m-i-1)*fi =%e\n",((ts_double)(m-i-1))*fi);
-		fprintf(stderr,"-2*fi =%e\n",-2*fi);
-		fprintf(stderr,"m =%d\n",m);
-	
-		fprintf(stderr," cos(m-i-1)=%e\n",cos((m-i-1)*fi));
-		fprintf(stderr," cos(-2*fi)=%e\n",cos(-2*fi));
-		fprintf(stderr," sph->co[i][m]=%e\n",sph->co[i][m]);
-		fprintf(stderr," plgndr(i,abs(m-i-1),cos(theta))=%e\n",plgndr(i,abs(m-i-1),cos(theta)));
-*/
-		}
+                if(i==2 && j==0){
+                    /*	fprintf(stderr," **** vtx %d ****\n", k+1);
+                    fprintf(stderr,"m-i-1 =%d\n",m-i-1);
+                    fprintf(stderr,"fi =%e\n",fi);
+                    fprintf(stderr,"(m-i-1)*fi =%e\n",((ts_double)(m-i-1))*fi);
+                    fprintf(stderr,"-2*fi =%e\n",-2*fi);
+                    fprintf(stderr,"m =%d\n",m);
+    
+                    fprintf(stderr," cos(m-i-1)=%e\n",cos((m-i-1)*fi));
+                    fprintf(stderr," cos(-2*fi)=%e\n",cos(-2*fi));
+                    fprintf(stderr," sph->co[i][m]=%e\n",sph->co[i][m]);
+                    fprintf(stderr," plgndr(i,abs(m-i-1),cos(theta))=%e\n",plgndr(i,abs(m-i-1),cos(theta)));
+                    */
+                }
             }
-//Nastudiraj!!!!!
-		j=i;
-		m=j+1;
-                sph->Ylmi[i][j][k]=sph->co[i][m]*plgndr(i,0,cos(theta));
+            //Nastudiraj!!!!!
+            j=i;
+            m=j+1;
+            sph->Ylmi[i][j][k]=sph->co[i][m]*plgndr(i,0,cos(theta));
             for(j=i+1;j<2*i+1;j++){
-			m=j+1;
-//Nastudiraj!!!!!
+                m=j+1;
+                //Nastudiraj!!!!!
                 sph->Ylmi[i][j][k]=sph->co[i][m]*sin((m-i-1)*fi)*plgndr(i,m-i-1,cos(theta));
             }
         }
-
     }
     free(coord);
     return TS_SUCCESS;
@@ -367,14 +367,14 @@ ts_bool calculateYlmi(ts_vesicle *vesicle){
 
 
 ts_bool calculateUlm(ts_vesicle *vesicle){
-    ts_uint i,j,k;
+    ts_uint i,j;
+    ts_idx k;
     ts_double solAngle_x_relR;
     for(i=0;i<vesicle->sphHarmonics->l;i++){
         for(j=0;j<2*i+1;j++) vesicle->sphHarmonics->ulm[i][j]=0.0;
     }
 
-//TODO: call calculateYlmi !!!
-
+    //TODO: call calculateYlmi !!!
 
     for(k=0;k<vesicle->vlist->n; k++){
         solAngle_x_relR = vesicle->sphHarmonics->vtx_solAngle[k]*vesicle->sphHarmonics->vtx_relR[k];
@@ -382,10 +382,8 @@ ts_bool calculateUlm(ts_vesicle *vesicle){
             for(j=0;j<2*i+1;j++){
                 vesicle->sphHarmonics->ulm[i][j]+= solAngle_x_relR*vesicle->sphHarmonics->Ylmi[i][j][k];
             }
-
         }
     }
-
     return TS_SUCCESS;
 }
 
@@ -399,37 +397,37 @@ ts_spharm *sph=vesicle->sphHarmonics;
 ts_int i,j;
 for(i=0;i<sph->l;i++){
     for(j=0;j<2*i+1;j++){
-	/* DEBUG fprintf(stderr,"sph->sumUlm2[%d][%d]=%e\n",i,j,sph->ulm[i][j]* sph->ulm[i][j]); */
+    /* DEBUG fprintf(stderr,"sph->sumUlm2[%d][%d]=%e\n",i,j,sph->ulm[i][j]* sph->ulm[i][j]); */
         sph->sumUlm2[i][j]+=sph->ulm[i][j]* sph->ulm[i][j];
     }
 }
-	sph->N++;
+    sph->N++;
 return TS_SUCCESS;
 }
 
 
 ts_bool saveAvgUlm2(ts_vesicle *vesicle){
 
-	FILE *fh;
+    FILE *fh;
     char filename[10000];
     strcpy(filename, command_line_args.path);
     strcat(filename, "sph2out.dat");
-	fh=fopen(filename, "w");
-	if(fh==NULL){
-		err("Cannot open file %s for writing");
-		return TS_FAIL;
-	}
+    fh=fopen(filename, "w");
+    if(fh==NULL){
+        err("Cannot open file %s for writing");
+        return TS_FAIL;
+    }
 
-	ts_spharm *sph=vesicle->sphHarmonics;
-	ts_int i,j;
-	fprintf(fh,"l,\tm,\tulm^2avg\n");
-	for(i=0;i<sph->l;i++){
-    		for(j=0;j<2*i+1;j++){
-		fprintf(fh,"%d,\t%d,\t%e\n", i, j-i, sph->sumUlm2[i][j]/(ts_double)sph->N);
+    ts_spharm *sph=vesicle->sphHarmonics;
+    ts_int i,j;
+    fprintf(fh,"l,\tm,\tulm^2avg\n");
+    for(i=0;i<sph->l;i++){
+            for(j=0;j<2*i+1;j++){
+        fprintf(fh,"%d,\t%d,\t%e\n", i, j-i, sph->sumUlm2[i][j]/(ts_double)sph->N);
 
-    		}
+            }
     fprintf(fh,"\n");
-	}
-	fclose(fh);
-	return TS_SUCCESS;
+    }
+    fclose(fh);
+    return TS_SUCCESS;
 }

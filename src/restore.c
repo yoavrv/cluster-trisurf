@@ -24,7 +24,7 @@ ts_vesicle *parseDump(char *dumpfname) {
 	xmlNodePtr cur, cur1,cur2, root, tape_node=NULL, vesicle_node=NULL;
 	ts_vesicle *vesicle=NULL;
 	doc = xmlParseFile(dumpfname);
-	int i;
+	ts_idx i;
 	if (doc == NULL ) {
 		fatal("Dump file could not be found or parsed. It is correct file?",1);
 	}
@@ -168,7 +168,7 @@ ts_vesicle *parseTrisurfTag(xmlDocPtr doc, xmlNodePtr cur){
 #endif
 	/*parse xml subtree */
 	xmlChar *nvtx, *npoly, *nmono;
-	nvtx = xmlGetProp(cur, (xmlChar *)"nvtx");
+	nvtx =xmlGetProp(cur, (xmlChar *)"nvtx");
 	npoly=xmlGetProp(cur, (xmlChar *)"npoly");
 	nmono=xmlGetProp(cur, (xmlChar *)"nmono");
 	update_tapetxt(tapetxt, command_line_args.tape_opts);
@@ -267,7 +267,7 @@ ts_bool parseTrisurfVtxn(ts_vertex_list *vlist, xmlDocPtr doc, xmlNodePtr cur){
 	while(token!=NULL){
 		neighi=atoi(token);
 		//fprintf(stderr,"%u", neighi);
-		vtx_add_neighbour(vtx,vlist->vtx[neighi]);
+		vtx_add_neighbour(vtx, vlist->vtx[neighi]);
 		token=strtok(NULL," ");
 	}	
 	xmlFree(neighs);
@@ -279,15 +279,20 @@ ts_bool parseTrisurfTria(ts_vesicle *vesicle, xmlDocPtr doc, xmlNodePtr cur){
 	char *tria;
 	char *vtx[3];
 	
-	ts_uint i,j;
+	ts_small_idx i;
+	ts_idx j;
 	triangles = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
 	tria=(char *)triangles;
 	vtx[0]=strtok(tria," ");
-	for(i=1;i<3;i++)	vtx[i]=strtok(NULL," ");
+	for(i=1;i<3;i++){
+		vtx[i]=strtok(NULL," ");
+	}
 	j=0;
 	while(vtx[2]!=NULL){
 		triangle_add(vesicle->tlist, vesicle->vlist->vtx[atoi(vtx[0])],vesicle->vlist->vtx[atoi(vtx[1])],vesicle->vlist->vtx[atoi(vtx[2])]);
-		for(i=0;i<3;i++)	vtx[i]=strtok(NULL," ");
+		for(i=0;i<3;i++){
+			vtx[i]=strtok(NULL," ");
+		}
 		j++;
 	}	
 	//fprintf(stderr,"Parsing triangles %s j=%d\n",triangles,j);	
@@ -301,18 +306,23 @@ ts_bool parseTrisurfTriaNeigh(ts_vesicle *vesicle, xmlDocPtr doc, xmlNodePtr cur
 	xmlChar *triangles;
 	char *tria;
 	char *ntria[3];
-	ts_uint i,j;
+	ts_small_idx i;
+	ts_idx j;
 	triangles = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
 	tria=(char *)triangles;
 	ntria[0]=strtok(tria," ");
-	for(i=1;i<3;i++)	ntria[i]=strtok(NULL," ");
+	for(i=1;i<3;i++) {
+		ntria[i]=strtok(NULL," ");
+	}
 	j=0;
 	while(ntria[2]!=NULL){
 		triangle_add_neighbour(vesicle->tlist->tria[j],vesicle->tlist->tria[atoi(ntria[0])]);
 		triangle_add_neighbour(vesicle->tlist->tria[j],vesicle->tlist->tria[atoi(ntria[1])]);
 		triangle_add_neighbour(vesicle->tlist->tria[j],vesicle->tlist->tria[atoi(ntria[2])]);
 		j++;
-		for(i=0;i<3;i++)	ntria[i]=strtok(NULL," ");
+		for(i=0;i<3;i++){
+			ntria[i]=strtok(NULL," ");
+		}
 	}	
 	//fprintf(stderr,"Parsing triangle neighbors j=%d\n",j);	
 
@@ -716,7 +726,7 @@ ts_bool parseXMLVertexPosition(ts_vesicle *vesicle,xmlDocPtr doc, xmlNodePtr cur
 	xmlNodePtr child = cur->xmlChildrenNode;
 	xmlChar *points;
 	char *pts;
-	int i, idx, polyidx, monoidx, filidx, fonoidx;
+	int i, idx, polyidx, monoidx, filidx, fonoidx; // too scared of integer/unsigned divisions
 	char *token[3];
 	while (child != NULL) {
 		if ((!xmlStrcmp(child->name, (const xmlChar *)"DataArray"))){
@@ -745,7 +755,9 @@ ts_bool parseXMLVertexPosition(ts_vesicle *vesicle,xmlDocPtr doc, xmlNodePtr cur
 					vesicle->filament_list->poly[filidx]->vlist->vtx[fonoidx]->y=atof(token[1]);
 					vesicle->filament_list->poly[filidx]->vlist->vtx[fonoidx]->z=atof(token[2]);
 				}
-				for(i=0;i<2;i++)	token[i]=strtok(NULL," ");	
+				for(i=0;i<2;i++){
+					token[i]=strtok(NULL," ");
+				}
 				token[2]=strtok(NULL,"\n");
 				idx++;
 			}
@@ -779,7 +791,7 @@ ts_bool parseXMLBonds(ts_vesicle *vesicle,xmlDocPtr doc, xmlNodePtr cur){
 					//fprintf(stderr,"Bonds in vesicle count idx=%d\n",idx);
 				}
 				else {
-				//find grafted vtx
+					//find grafted vtx
 					if(vesicle->tape->npoly && vesicle->tape->nmono && (vesicle->tape->nmono-1)==(idx-3*(vesicle->vlist->n-2))%(vesicle->tape->nmono)
 						&& idx<(3*vesicle->vlist->n-2+vesicle->tape->nmono*vesicle->tape->npoly)){
 						temp_cnt++;

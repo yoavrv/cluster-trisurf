@@ -35,7 +35,7 @@ ts_bool cluster_add_vertex(ts_cluster *cluster, ts_vertex *vtx){
 ts_bool cluster_list_compact(ts_cluster_list *cstlist){
 
 
-	ts_uint i,n=cstlist->n;
+	ts_idx i,n=cstlist->n;
 	
 	for(i=0;i<cstlist->n;i++){
 		if(cstlist->cluster[i]==NULL){
@@ -56,22 +56,22 @@ ts_bool cluster_list_compact(ts_cluster_list *cstlist){
 
 
 ts_bool cluster_join(ts_cluster_list *cstlist, ts_cluster *cluster1, ts_cluster *cluster2){
-	ts_cluster *master_cluster,*slave_cluster;
-	ts_uint i;
+	ts_cluster *cannibal_cluster,*murdered_cluster; //changed to less offensive language as to not disturb anyone
+	ts_idx i;
 	if(cluster1->idx<cluster2->idx){
-		master_cluster=cluster1;
-		slave_cluster=cluster2;
+		cannibal_cluster=cluster1;
+		murdered_cluster=cluster2;
 	} else {
-		master_cluster=cluster2;
-		slave_cluster=cluster1;
+		cannibal_cluster=cluster2;
+		murdered_cluster=cluster1;
 	}
-	for(i=0;i<slave_cluster->nvtx;i++){
-		cluster_add_vertex(master_cluster,slave_cluster->vtx[i]);
+	for(i=0;i<murdered_cluster->nvtx;i++){
+		cluster_add_vertex(cannibal_cluster,murdered_cluster->vtx[i]);
 	}
 	//find cluster in the list and free the location of the cluster
 	for(i=0;i<cstlist->n;i++){
-		if(cstlist->cluster[i]==slave_cluster){
-			cluster_free(slave_cluster);
+		if(cstlist->cluster[i]==murdered_cluster){
+			cluster_free(murdered_cluster);
 			cstlist->cluster[i]=NULL;
 		}
 	}
@@ -88,7 +88,7 @@ ts_bool cluster_free(ts_cluster *cluster){
 }
 
 ts_bool cluster_list_free(ts_cluster_list *cstlist){
-	ts_uint i;
+	ts_idx i;
 	if(cstlist!=NULL){
 		for(i=0;i<cstlist->n;i++){
 			cluster_free(cstlist->cluster[i]);
@@ -102,7 +102,7 @@ ts_bool cluster_list_free(ts_cluster_list *cstlist){
 
 /* This is a stub function. User should check whether the vertex is clustering or not. */
 ts_bool is_clusterable(ts_vertex *vtx){
-	if(fabs(vtx->c)>1e-16){
+	if(vtx->type & (is_active_vtx | is_bonding_vtx)){
 		return 1;
 	}
 	else {
@@ -112,7 +112,7 @@ ts_bool is_clusterable(ts_vertex *vtx){
 
 
 ts_cluster *cluster_vertex_neighbor(ts_vertex *vtx){
-	int j;
+	ts_idx j;
 	for(j=0;j<vtx->neigh_no;j++){
 		if(vtx->neigh[j]->cluster!=NULL)
 			return vtx->neigh[j]->cluster;
@@ -122,7 +122,7 @@ ts_cluster *cluster_vertex_neighbor(ts_vertex *vtx){
 
 ts_bool cluster_vertex_neighbor_check(ts_cluster_list *cstlist, ts_vertex *vtx){
 
-	int j;
+	ts_idx j;
 	for(j=0;j<vtx->neigh_no;j++){
 		if(vtx->neigh[j]->cluster!=NULL){
 			if(vtx->neigh[j]->cluster!=vtx->cluster){
@@ -136,7 +136,7 @@ ts_bool cluster_vertex_neighbor_check(ts_cluster_list *cstlist, ts_vertex *vtx){
 
 ts_bool clusterize_vesicle(ts_vesicle *vesicle, ts_cluster_list *cstlist){
 
-	int i;
+	ts_idx i;
 	ts_vertex *vtx;
 	ts_cluster *cst;
 	for(i=0;i<vesicle->vlist->n;i++){

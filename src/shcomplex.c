@@ -1,14 +1,14 @@
 /* vim: set ts=4 sts=4 sw=4 noet : */
-#include<math.h>
-#include<stdlib.h>
-#include<string.h>
-#include<gsl/gsl_complex.h>
-#include<gsl/gsl_complex_math.h>
-#include<gsl/gsl_sf_legendre.h>
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
+#include <gsl/gsl_complex.h>
+#include <gsl/gsl_complex_math.h>
+#include <gsl/gsl_sf_legendre.h>
 
-#include<gsl/gsl_matrix.h>
-#include<gsl/gsl_vector.h>
-#include<gsl/gsl_linalg.h>
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_vector.h>
+#include <gsl/gsl_linalg.h>
 #include "general.h"
 #include "sh.h"
 #include "shcomplex.h"
@@ -43,7 +43,7 @@ ts_spharm *complex_sph_init(ts_vertex_list *vlist, ts_uint l){
     }
 
     /* lets initialize co */
-//NOTE: C is has zero based indexing. Code is imported from fortran and to comply with original indexes we actually generate one index more. Also second dimension is 2*j+2 instead of 2*j+2. elements starting with 0 are useles and should be ignored!
+    //NOTE: C is has zero based indexing. Code is imported from fortran and to comply with original indexes we actually generate one index more. Also second dimension is 2*j+2 instead of 2*j+2. elements starting with 0 are useles and should be ignored!
     sph->co=(ts_double **)calloc(l+1,sizeof(ts_double *));
     for(j=0;j<=l;j++){
         sph->co[j]=(ts_double *)calloc(2*j+2,sizeof(ts_double));
@@ -58,7 +58,7 @@ ts_spharm *complex_sph_init(ts_vertex_list *vlist, ts_uint l){
     sph->vtx_solAngle=(ts_double *)calloc(sph->n_vtx,sizeof(ts_double));
 
     /* Calculate coefficients that will remain constant during all the simulation */ 
-   precomputeShCoeff(sph);
+    precomputeShCoeff(sph);
     
     return sph;
 }
@@ -72,22 +72,22 @@ ts_bool complex_sph_free(ts_spharm *sph){
         if(sph->sumUlm2[i]!=NULL) free(sph->sumUlm2[i]);
         if(sph->co[i]!=NULL) free(sph->co[i]);
     }
-        if(sph->co[sph->l]!=NULL) free(sph->co[sph->l]);
+    if(sph->co[sph->l]!=NULL) free(sph->co[sph->l]);
     if(sph->co != NULL) free(sph->co);
     if(sph->ulm !=NULL) free(sph->ulm);
     if(sph->ulmComplex !=NULL) free(sph->ulmComplex);
     if(sph->sumUlm2 !=NULL) free(sph->sumUlm2);
-        if(sph->Ylmi!=NULL) {
-            for(i=0;i<sph->l;i++){
-                if(sph->Ylmi[i]!=NULL){
-                    for(j=0;j<i*2+1;j++){
-                        if(sph->Ylmi[i][j]!=NULL) free (sph->Ylmi[i][j]);
-                    }
-                    free(sph->Ylmi[i]);
+    if(sph->Ylmi!=NULL) {
+        for(i=0;i<sph->l;i++){
+            if(sph->Ylmi[i]!=NULL){
+                for(j=0;j<i*2+1;j++){
+                    if(sph->Ylmi[i][j]!=NULL) free (sph->Ylmi[i][j]);
                 }
+                free(sph->Ylmi[i]);
             }
-            free(sph->Ylmi);
         }
+        free(sph->Ylmi);
+    }
     free(sph->vtx_solAngle);
     free(sph->vtx_relR);
     free(sph);
@@ -96,30 +96,31 @@ ts_bool complex_sph_free(ts_spharm *sph){
 
 
 ts_bool calculateUlmComplex(ts_vesicle *vesicle){
-    ts_int i,j,k,m,l;
+    ts_int i,j,m,l;
+    ts_idx k;
     ts_vertex *cvtx;
     ts_coord coord;
     ts_double solAngle_x_relR;
-/* set all values to zero */
+    /* set all values to zero */
     for(i=0;i<vesicle->sphHarmonics->l;i++){
         for(j=0;j<2*i+1;j++) GSL_SET_COMPLEX(&(vesicle->sphHarmonics->ulmComplex[i][j]),0.0,0.0);
     }
 
     for(k=0;k<vesicle->vlist->n; k++){
         cvtx=vesicle->vlist->vtx[k];
-	    cart2sph(&coord,cvtx->x,cvtx->y,cvtx->z);
+        cart2sph(&coord,cvtx->x,cvtx->y,cvtx->z);
         solAngle_x_relR = vesicle->sphHarmonics->vtx_solAngle[k]*vesicle->sphHarmonics->vtx_relR[k];
         for(i=0;i<vesicle->sphHarmonics->l;i++){
             for(j=0;j<2*i+1;j++){
-		        m=j-i;
-		        l=i;
-		        if(m>=0){	
-	            //	fprintf(stderr, "Racunam za l=%d, m=%d\n", l,m);
+                m=j-i;
+                l=i;
+                if(m>=0){	
+                    // fprintf(stderr, "Racunam za l=%d, m=%d\n", l,m);
                     vesicle->sphHarmonics->ulmComplex[i][j]=gsl_complex_add(vesicle->sphHarmonics->ulmComplex[i][j], gsl_complex_conjugate(gsl_complex_mul_real(gsl_complex_polar(1.0,(ts_double)m*coord.e2),solAngle_x_relR*gsl_sf_legendre_sphPlm(l,m,cos(coord.e3)))) );
-		        } else {
-	            //	fprintf(stderr, "Racunam za l=%d, abs(m=%d)\n", l,m);
+                } else {
+                    // fprintf(stderr, "Racunam za l=%d, abs(m=%d)\n", l,m);
                     vesicle->sphHarmonics->ulmComplex[i][j]=gsl_complex_add(vesicle->sphHarmonics->ulmComplex[i][j], gsl_complex_conjugate(gsl_complex_mul_real(gsl_complex_polar(1.0,(ts_double)m*coord.e2),solAngle_x_relR*pow(-1,m)*gsl_sf_legendre_sphPlm(l,-m,cos(coord.e3)))) );
-		        }
+                }
             }
         }
     }
@@ -127,37 +128,37 @@ ts_bool calculateUlmComplex(ts_vesicle *vesicle){
 }
 
 char *Ulm2Complex2String(ts_vesicle *vesicle){
-	ts_int i,j;
-	char *strng=(char *)calloc(5000, sizeof(char));
-	char tmpstrng[255];
-	for(i=0;i<vesicle->sphHarmonics->l;i++){
-    		for(j=i;j<2*i+1;j++){
-			sprintf(tmpstrng,"%e ", gsl_complex_abs2(vesicle->sphHarmonics->ulmComplex[i][j]));
-			strcat(strng,tmpstrng);
-    		}
-	}
-	//strcat(strng,"\n");
+    ts_int i,j;
+    char *strng=(char *)calloc(5000, sizeof(char));
+    char tmpstrng[255];
+    for(i=0;i<vesicle->sphHarmonics->l;i++){
+            for(j=i;j<2*i+1;j++){
+            sprintf(tmpstrng,"%e ", gsl_complex_abs2(vesicle->sphHarmonics->ulmComplex[i][j]));
+            strcat(strng,tmpstrng);
+            }
+    }
+    //strcat(strng,"\n");
 
-	return strng;
+    return strng;
 }
 
 ts_bool freeUlm2String(char *strng){
-	free(strng);
-	return TS_SUCCESS;
+    free(strng);
+    return TS_SUCCESS;
 }
 
 
 ts_bool storeUlmComplex2(ts_vesicle *vesicle){
 
-	ts_spharm *sph=vesicle->sphHarmonics;
-	ts_int i,j;
-	for(i=0;i<sph->l;i++){
-    		for(j=0;j<2*i+1;j++){
-        		sph->sumUlm2[i][j]+=gsl_complex_abs2(sph->ulmComplex[i][j]);
-    		}
-	}
-	sph->N++;
-	return TS_SUCCESS;
+    ts_spharm *sph=vesicle->sphHarmonics;
+    ts_int i,j;
+    for(i=0;i<sph->l;i++){
+            for(j=0;j<2*i+1;j++){
+                sph->sumUlm2[i][j]+=gsl_complex_abs2(sph->ulmComplex[i][j]);
+            }
+    }
+    sph->N++;
+    return TS_SUCCESS;
 }
 
 
@@ -177,21 +178,21 @@ ts_double calculateKc(ts_vesicle *vesicle, ts_int lmin, ts_int lmax){
     for(i=min;i<max;i++){
             gsl_matrix_set(A, i-min,0,(ts_double)((i-1)*(i+2)));
             gsl_matrix_set(A, i-min,1,(ts_double)((i-1)*(i+2)*(i+1)*i));
-//            fprintf(stderr,"%e %e\n", gsl_matrix_get(A,i-min,0), gsl_matrix_get(A,i-min,1));
+            // fprintf(stderr,"%e %e\n", gsl_matrix_get(A,i-min,0), gsl_matrix_get(A,i-min,1));
             bval=0.0;
             //average for m from 0..l (only positive m's)
             for(j=0;j<=i;j++){
                 bval+=vesicle->sphHarmonics->sumUlm2[i][(j+i)];
             }
-                bval=bval/(ts_double)vesicle->sphHarmonics->N/(ts_double)(i+1);
+            bval=bval/(ts_double)vesicle->sphHarmonics->N/(ts_double)(i+1);
 
             gsl_vector_set(b,i-min,1.0/bval);
-//            fprintf(stderr,"%e\n", 1.0/gsl_vector_get(b,i-min));
+            // fprintf(stderr,"%e\n", 1.0/gsl_vector_get(b,i-min));
     }
-//    fprintf(stderr,"b[2]=%e\n",gsl_vector_get(b,1));
+    // fprintf(stderr,"b[2]=%e\n",gsl_vector_get(b,1));
     gsl_linalg_QR_decomp(A,tau);
     gsl_linalg_QR_lssolve(A,tau,b,x,res);
-//    fprintf(stderr,"kc=%e\n",gsl_vector_get(x,1));
+    // fprintf(stderr,"kc=%e\n",gsl_vector_get(x,1));
     retval=gsl_vector_get(x,1);
     gsl_matrix_free(A);
     gsl_vector_free(tau);
