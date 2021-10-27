@@ -20,6 +20,7 @@ ts_vertex_list *init_vertex_list(ts_idx N);
 ts_seen_vertex *init_seen_vertex(ts_uint max_size);
 ts_bool vtx_add_neighbour(ts_vertex *vtx, ts_vertex *nvtx);
 ts_bool vtx_add_cneighbour(ts_bond_list *blist,ts_vertex *vtx1,ts_vertex *vtx2);
+ts_bool vtx_add_cneighbour2(ts_bond_list *blist,ts_vertex *vtx1,ts_vertex *vtx2);
 ts_bool vtx_add_bond(ts_bond_list *blist,ts_vertex *vtx1,ts_vertex *vtx2);
 ts_bool vtx_remove_neighbour(ts_vertex *vtx, ts_vertex *nvtx);
 
@@ -46,9 +47,15 @@ ts_bool advance_seen_vertex_to_next_layer(ts_seen_vertex *seen_vertex);
 ts_bool swap_triangles(ts_vertex* vtx, ts_small_idx i1, ts_small_idx i2);
 ts_bool order_vertex_triangles(ts_vertex* vtx);
 ts_bool print_tri_order(ts_vertex* vtx);
+ts_bool print_vertex_ordered(ts_vertex* vtx);
+ts_bool assert_vtx_ordered(ts_vertex* vtx);
 
 ts_bool vtx_insert_tristar_at(ts_vertex *vtx, ts_triangle *tristarmem, ts_small_idx i);
 ts_bool vtx_remove_tristar_at(ts_vertex *vtx, ts_small_idx i);
 ts_bool vtx_insert_neigh_at(ts_vertex *vtx, ts_vertex *vtxmem, ts_small_idx i);
 ts_bool vtx_remove_neigh_at(ts_vertex *vtx, ts_small_idx i);
+ts_bool vtx_insert_bond_at(ts_vertex *vtx, ts_bond *bondmem, ts_small_idx i);
+ts_bool vtx_remove_bond_at(ts_vertex *vtx, ts_small_idx i);
+ts_bool vtx_insert_at(ts_vertex *vtx, ts_vertex *vtx_add, ts_bond* bond_add, ts_triangle* tri_add, ts_small_idx i);
+ts_bool vtx_remove_at(ts_vertex *vtx, ts_small_idx i);
 #endif

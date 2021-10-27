@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <gsl/gsl_complex.h>
+#include <math.h> // added #ifndef M_PI to stop vscode from complaning about undefined M_PI, but this should load it anyway and avert the ifndef
 
 /** @brief This is a header file, defining general constants and structures.
   * @file header.h
@@ -489,7 +490,12 @@ int createPidFile(const char *progName, const char *pidFile, int flags);
 
 int lockRegion(int fd, int type, int whence, int start, int len);
 char *libVersion();
+
+// ifdefs to stop vscode from complaning
 #ifndef TS_VERSION
 #define TS_VERSION "whatever"
+#endif
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
 #endif
 #endif

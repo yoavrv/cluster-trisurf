@@ -141,19 +141,37 @@ ts_bool vtx_remove_neighbour(ts_vertex *vtx, ts_vertex *nvtx){
 
 // create and add bond between two vertices
 ts_bool vtx_add_bond(ts_bond_list *blist,ts_vertex *vtx1,ts_vertex *vtx2){
+    ts_small_idx i;
     ts_bond *bond;
-    bond=bond_add(blist,vtx1,vtx2);
+    ts_bool bond_in_vtx1=0, bond_in_vtx2=0;
+    bond=bond_add(blist,vtx1,vtx2); // registered bond, mallocate and register bond if none exists
     if(bond==NULL) return TS_FAIL;
-    vtx1->bond_no++;
-    vtx2->bond_no++;
-   // vtx2->data->bond_no++;
 
-    vtx1->bond=(ts_bond **)realloc(vtx1->bond, vtx1->bond_no*sizeof(ts_bond *)); 
-    vtx2->bond=(ts_bond **)realloc(vtx2->bond, vtx2->bond_no*sizeof(ts_bond *)); 
-   // vtx2->data->bond=(ts_bond **)realloc(vtx2->data->bond, vtx2->data->bond_no*sizeof(ts_bond *)); 
-    vtx1->bond[vtx1->bond_no-1]=bond;
-    vtx2->bond[vtx2->bond_no-1]=bond;
-   // vtx2->data->bond[vtx2->data->bond_no-1]=bond;
+    // check if bond is already in vtx1
+    for(i=0; i<vtx1->bond_no; i++){
+        if (bond==vtx1->bond[i]){
+            bond_in_vtx1=1;
+            break;
+        };
+    }
+    if (!bond_in_vtx1){
+        vtx1->bond_no++;
+        vtx1->bond=(ts_bond **)realloc(vtx1->bond, vtx1->bond_no*sizeof(ts_bond *)); 
+        vtx1->bond[vtx1->bond_no-1]=bond;
+    }
+
+    // check if bond is already in vtx2
+    for(i=0; i<vtx2->bond_no; i++){
+        if (bond==vtx2->bond[i]){
+            bond_in_vtx2=1;
+            break;
+        }
+    }
+    if (!bond_in_vtx2){
+        vtx2->bond_no++;
+        vtx2->bond=(ts_bond **)realloc(vtx2->bond, vtx2->bond_no*sizeof(ts_bond *)); 
+        vtx2->bond[vtx2->bond_no-1]=bond;
+    }
     return TS_SUCCESS;
 }
 
@@ -166,6 +184,102 @@ ts_bool vtx_add_cneighbour(ts_bond_list *blist, ts_vertex *vtx1, ts_vertex *vtx2
         retval=vtx_add_bond(blist,vtx1,vtx2);
     }
     return retval;
+}
+
+
+// add neighbors and connect with bond? doesn't work for some reason
+ts_bool vtx_add_cneighbour2(ts_bond_list *blist, ts_vertex *vtx1, ts_vertex *vtx2){
+    ts_bool nei_in_v=0, bond_in_v=0, is_registered=0;
+    ts_idx i,b=blist->n;
+    ts_small_idx j;
+    ts_bond *add_bond=NULL;
+    if (vtx1==NULL || vtx2==NULL) return TS_FAIL;
+    if (vtx1==vtx2) return TS_FAIL;
+    for (i=0; i<blist->n; i++){
+        if (blist->bond[i]!=NULL){
+            if (in_bond(blist->bond[i], vtx1) && in_bond(blist->bond[i],vtx2)){
+                is_registered += 1;
+                b=i;
+            }
+        }
+    }
+    if (is_registered == 0){
+        blist->n++;
+        blist->bond = (ts_bond **) realloc(blist->bond,blist->n*sizeof(ts_bond *));
+        add_bond = blist->bond[b];
+        add_bond = (ts_bond*) malloc(sizeof(ts_bond));
+        if(add_bond==NULL){
+             fatal("Cannot allocate memory for additional ts_bond.",100);
+        } else{
+            add_bond->idx = b;
+            add_bond->vtx1 = vtx1;
+            add_bond->vtx2 = vtx2;
+        }
+    } else if (is_registered == 1){
+        add_bond = blist->bond[b];
+    } else {
+        ts_fprintf(stdout,"bond is registered %d times", is_registered);
+        fatal("bond registration failure",3);
+    }
+    
+    for (j=0; j<vtx1->bond_no; j++){
+        if (vtx1->bond[j]==add_bond){
+            bond_in_v=1;
+            break;
+        }
+    }
+    if (!bond_in_v){
+        if (vtx1->bond_no==0) {
+            vtx_insert_bond_at(vtx1, add_bond, 0);
+        } else {
+            vtx_insert_bond_at(vtx1, add_bond, vtx1->bond_no-1);
+        }
+    }
+    for (j=0; j<vtx1->neigh_no; j++){
+        if (vtx1->neigh[j]==vtx2){
+            nei_in_v=1;
+            break;
+        }
+    }
+    if (!nei_in_v){
+        if (vtx1->neigh_no==0) {
+            vtx1->neigh = (ts_vertex**) malloc(sizeof(ts_vertex *));
+            vtx1->neigh[0] = vtx2;
+        } else {
+            vtx_insert_neigh_at(vtx1, vtx2, vtx1->neigh_no-1);
+        }
+    }
+    nei_in_v=0;
+    bond_in_v=0;
+    for (j=0; j<vtx2->bond_no; j++){
+        if (vtx2->bond[j]==add_bond){
+            bond_in_v=1;
+            break;
+        }
+    }
+    if (!bond_in_v){
+        if (vtx2->bond_no==0) {
+            vtx_insert_bond_at(vtx2, add_bond, 0);
+        } else {
+            vtx_insert_bond_at(vtx2, add_bond, vtx2->bond_no-1);
+        }
+    }
+    for (j=0; j<vtx2->neigh_no; j++){
+        if (vtx2->neigh[j]==vtx1){
+            nei_in_v=1;
+            break;
+        }
+    }
+    if (!nei_in_v){
+        if (vtx2->neigh_no==0) {
+            vtx2->neigh = (ts_vertex**) malloc(sizeof(ts_vertex*));
+            vtx2->neigh[0] = vtx1;
+        } else {
+            vtx_insert_neigh_at(vtx2, vtx1, vtx2->neigh_no-1);
+        }
+    }
+    ts_fprintf(stdout,"at %u, %u, creating bond %u\n", vtx1->idx, vtx2->idx, add_bond->idx);
+    return TS_SUCCESS;
 }
 
 /*TODO: write and optimize this urgently before use! */
@@ -477,6 +591,22 @@ ts_bool swap_triangles(ts_vertex* vtx, ts_small_idx i, ts_small_idx j){
     return TS_SUCCESS;
 }
 
+// swap bond location at index i and j
+ts_bool swap_bonds(ts_vertex* vtx, ts_small_idx i, ts_small_idx j){
+    ts_bond* tempbond;
+    if (i==j) return TS_SUCCESS;
+    if (i >= vtx->bond_no || j >= vtx->bond_no){
+        fatal("attempt to swap bonds outside of range bond_no",3);
+    }
+    if (vtx->bond[i] == NULL || vtx->bond[j] == NULL){
+        fatal("Attempt to swap bonds where one does not exist",3);
+    }
+    tempbond = vtx->bond[i];
+    vtx->bond[i] = vtx->bond[j];
+    vtx->bond[j] = tempbond;
+    return TS_SUCCESS;
+}
+
 // check if triangle is ordered wrt to v1,v2 ordered
 ts_bool tri_ordered(ts_triangle* t, ts_vertex* v1, ts_vertex* v2){
     return (    (t->vertex[0]==v1 && t->vertex[1]==v2) 
@@ -499,6 +629,26 @@ ts_bool print_tri_order(ts_vertex* vtx){
     return TS_SUCCESS;
 }
 
+ts_bool print_vertex_ordered(ts_vertex* vtx){
+    ts_small_idx j;
+    fprintf(stdout, "|%u|: (", vtx->idx);
+    for (j=0; j<vtx->neigh_no; j++){
+        fprintf(stdout, "%u,", vtx->neigh[j]->idx);
+    }
+    fprintf(stdout,")\n");
+    for (j=0; j<vtx->tristar_no; j++){
+        fprintf(stdout,"%u:{%u, %u, %u}, ", vtx->tristar[j]->idx, vtx->tristar[j]->vertex[0]->idx,
+                                 vtx->tristar[j]->vertex[1]->idx, vtx->tristar[j]->vertex[2]->idx);
+    }
+    fprintf(stdout,"\n");
+    for (j=0; j<vtx->bond_no; j++){
+        fprintf(stdout,"%u:(%u, %u), ", vtx->bond[j]->idx, vtx->bond[j]->vtx1->idx,
+                                 vtx->bond[j]->vtx2->idx);
+    }
+    fprintf(stdout,"\n");
+    return TS_SUCCESS;
+}
+
 // order the triangles of the vertex according to the neighbors
 // vtx->tristar[i] = {vtx, vtx->neigh[i], vtx->neigh[i+1]} (up to modulus)
 ts_bool order_vertex_triangles(ts_vertex* vtx){
@@ -506,6 +656,12 @@ ts_bool order_vertex_triangles(ts_vertex* vtx){
     ts_vertex* vl, *vr;
     ts_small_idx t, jj=0, li, ri, rri=0, lli=1;
     ts_triangle* jt;
+    ts_bond* bi;
+    if (vtx->tristar_no != vtx->neigh_no || vtx->bond_no != vtx->neigh_no){
+        print_vertex_ordered(vtx);
+        ts_fprintf(stdout, "vertex %u with neigh_no=%u, tristar_no=%u, bond_no=%u\n",vtx->idx,vtx->tristar_no, vtx->neigh_no, vtx->bond_no);
+        fatal("Unable to order a vertex",3);
+    }
     /* reorder the triangles: 
     - find first triangle with neighbors 0,1 , swap it to 0
     - keep a leftmost vertex 0 and rightmost vertex 1,
@@ -563,9 +719,45 @@ ts_bool order_vertex_triangles(ts_vertex* vtx){
             }
         }
     }
+
+    // and for bonds
+    for (li=0; li<vtx->neigh_no; li++){
+        vl = vtx->neigh[li];
+        for (ri=li; ri<vtx->neigh_no; ri++){
+            bi = vtx->bond[ri];
+            if (in_bond(bi,vl)){
+                swap_bonds(vtx, li, ri);
+                break;
+            }
+        }
+    }
+
+    //for (i=0; i<vtx->neigh_no; i++){
+    //    if (!in_tri(vtx->tristar[i], vtx->neigh[i]) && !in_tri(vtx->tristar[i], vtx->neigh[next_small(i,vtx->neigh_no)])){
+    //        fatal("not ordered in triangles",3);
+    //    }
+    //    if (!in_bond(vtx->bond[i], vtx->neigh[i])){
+    //        fatal("not ordered in bonds",3);
+    //    }
+    //}
     return TS_SUCCESS;
 }
 
+
+ts_bool assert_vtx_ordered(ts_vertex* vtx){
+    ts_small_idx i;
+    for (i=0; i<vtx->neigh_no; i++){
+        if (!in_tri(vtx->tristar[i], vtx->neigh[i]) && !in_tri(vtx->tristar[i], vtx->neigh[next_small(i,vtx->neigh_no)])){
+            print_vertex_ordered(vtx);
+            fatal("not ordered in triangles",3);
+        }
+        if (!in_bond(vtx->bond[i], vtx->neigh[i])){
+            print_vertex_ordered(vtx);
+            fatal("not ordered in bonds",3);
+        }
+    }
+    return TS_SUCCESS;
+}
 
 // add tristar to vertex at index- shift other vertex. use to maintain tristar order
 ts_bool vtx_insert_tristar_at(ts_vertex *vtx, ts_triangle *tristarmem, ts_small_idx i){
@@ -633,5 +825,59 @@ ts_bool vtx_remove_neigh_at(ts_vertex *vtx, ts_small_idx i){
     if(vtx->neigh == NULL){
             fatal("Reallocation of memory failed during removal of neighbor",3);
         }
+    return TS_SUCCESS;
+}
+
+
+// It is the caller's responsibility to 1. add the bond to the neighbor's list, 2. maintain order
+ts_bool vtx_insert_bond_at(ts_vertex *vtx, ts_bond *bondmem, ts_small_idx i){
+
+    if ( i>vtx->bond_no){
+        fatal("attempt to add bond above bond_no",3);
+    }
+	vtx->bond_no++;
+	vtx->bond=(ts_bond **)realloc(vtx->bond,vtx->bond_no*sizeof(ts_bond *));
+	if(vtx->bond==NULL){
+			fatal("Reallocation of memory while adding bond failed.",3);
+	}
+    if (i+1 != vtx->bond_no) { //no need to shift, don't want to tempt memmove(outside, edge, 0)
+        memmove(vtx->bond+i+1, vtx->bond+i, (vtx->bond_no-i-1)*sizeof(ts_bond*));
+    }
+	vtx->bond[i]=bondmem;
+	return TS_SUCCESS;
+}
+
+// It is the caller's responsibility to remove the bond from the neighbor's list
+ts_bool vtx_remove_bond_at(ts_vertex *vtx, ts_small_idx i){
+
+    if ( i>=vtx->bond_no){
+        fatal("attempt to remove bond above bond_no",3);
+    }
+    if (i+1 != vtx->bond_no) { //no need to shift, don't want to tempt memmove(edge, outside, 0)
+        memmove(vtx->bond+i, vtx->bond+i+1,(vtx->bond_no-i-1)*sizeof(ts_bond*));
+    }
+    vtx->bond_no--;
+    vtx->bond=(ts_bond **)realloc(vtx->bond,vtx->bond_no*sizeof(ts_bond *));
+    if(vtx->bond == NULL){
+            fatal("Reallocation of memory failed during removal of bond",3);
+        }
+    return TS_SUCCESS;
+}
+
+// It is the caller's responsibility to 1. add to the neighbor's list, 2. maintain order
+ts_bool vtx_insert_at(ts_vertex *vtx, ts_vertex *vtx_add, ts_bond* bond_add, ts_triangle* tri_add, ts_small_idx i){
+
+    vtx_insert_neigh_at(vtx, vtx_add, i);
+    vtx_insert_tristar_at(vtx, tri_add, i);
+    vtx_insert_bond_at(vtx, bond_add, i);
+	return TS_SUCCESS;
+}
+
+// It is the caller's responsibility to remove the vertex from the neighbor's list
+ts_bool vtx_remove_at(ts_vertex *vtx, ts_small_idx i){
+
+    vtx_remove_neigh_at(vtx, i);
+    vtx_remove_tristar_at(vtx, i);
+    vtx_remove_bond_at(vtx, i);
     return TS_SUCCESS;
 }

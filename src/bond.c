@@ -55,3 +55,7 @@ ts_bool bond_list_free(ts_bond_list *blist){
     free(blist);
     return TS_SUCCESS;
 }
+
+ts_bool in_bond(ts_bond* b, ts_vertex* v){
+    return (b->vtx1==v || b->vtx2==v);
+}

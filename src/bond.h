@@ -24,6 +24,7 @@ ts_bond *bond_add(ts_bond_list *blist, ts_vertex *vtx1, ts_vertex *vtx2);
 ts_bool bond_vector(ts_bond *bond);
 ts_bool bond_list_free(ts_bond_list *blist);
 
+ts_bool in_bond(ts_bond *b, ts_vertex *v);
 
 
 #endif

@@ -501,7 +501,7 @@ ts_small_idx find_neigh_idx(ts_vertex* vtx, ts_vertex* nei){
             break;
         }
     }
-    return vtx->neigh_no; // return neigh_no, which is a faulty index that should give error
+    return vtx->neigh_no; // return neigh_no, a faulty index that should give error (rather than valid but wrong neigh_no-1)
 }
 
 // swap a triangle's vertex without reallocating
@@ -597,6 +597,7 @@ c
     if(km==NULL || kp==NULL){
         fatal("In bondflip, cannot determine km and kp!",999);
     }
+    if (km->type==is_ghost_vtx && kp->type==is_ghost_vtx) return TS_FAIL;
 
     if(it->type & is_edge_vtx || km->type & is_edge_vtx || k->type & is_edge_vtx || kp->type & is_edge_vtx){
         // not even bothering for the mixed case
@@ -652,7 +653,7 @@ c
     nei_kp_at_k  = find_neigh_idx(k, kp); //y
     nei_it_at_kp = find_neigh_idx(kp, it);//z
     //lm2 = km->tristar[next_small(nei_k_at_km, km->tristar_no)]; // already done
-    lp1 = kp->tristar[next_small(nei_it_at_kp, kp->tristar_no)];
+    lp1 = k->tristar[prev_small(nei_kp_at_k, k->tristar_no)];
     
     // ####### Passed all base tests #######
 
@@ -726,7 +727,7 @@ c
     delta_energy+=km->energy;
     delta_energy+=it->energy;
     delta_energy+=bond->energy; /* attraction with neighboring vertices, that have spontaneous curvature */
-  //Neigbours of k, it, km, kp don't change its energy.
+    //Neigbours of k, it, km, kp don't change its energy.
 	if(vesicle->tape->stretchswitch==1){
 		oldenergy+=lm->energy+lp->energy;
 		stretchenergy(vesicle,lm);
@@ -848,14 +849,14 @@ c
 #endif
         {
             //not accepted, reverting changes
-	    //restore all backups
-//		fprintf(stderr,"Restoring!!!\n");
-        if(vesicle->tape->constvolswitch == 1){
-            constvolumerestore(vesicle, constvol_vtx_moved,constvol_vtx_backup);
-        }
+	        //restore all backups
+            // fprintf(stderr,"Restoring!!!\n");
+            if(vesicle->tape->constvolswitch == 1){
+                constvolumerestore(vesicle, constvol_vtx_moved,constvol_vtx_backup);
+            }
 
-		for(i=0;i<4;i++){
-//			fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
+		    for(i=0;i<4;i++){
+            //	fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
 			free(orig_vtx[i]->neigh);
 			free(orig_vtx[i]->tristar);
 			free(orig_vtx[i]->bond);
@@ -915,7 +916,7 @@ c
     return TS_SUCCESS;
 }
 
-// flip bond while preserving all orders. TO-DO: change indexs to use less next/prev?
+// flip bond while preserving all orders.
 ts_bool ts_flip_bond_ordered(ts_vesicle *vesicle, ts_bond *bond,
                              ts_vertex *it, ts_small_idx neim,
                              ts_vertex *km, ts_small_idx nei_k_at_km,
@@ -939,12 +940,12 @@ ts_bool ts_flip_bond_ordered(ts_vesicle *vesicle, ts_bond *bond,
     c     Flipping:
     c
     c           +----- k ------+        it = {...neim:km, nei:kp} -> remove nei
-    c           |lm1 /   \ lp1 |    {neim-1:lm2, neim:lp, nei:lp2} -> remove neim
+    c           |lm1 /   \ lp1 |    {neim-1:lm2, neim:lp, nei:lp2} -> remove neim, shift back
     c           |  /       \   |       
     c  FLIP     |/    lm     \ |        km = {...x:k, x+1:kp, x+2:it} -> insert kp at x+1
     c --->     km ----------  kp      {x-1:lm1, x:lm, x+1:lp, x+2:lm2} -> insert lp at x+1
     c           |\    lp     / |        k = {...y:kp, y+1::km} -> remove y+1
-    c           |  \       /   |      {y-1:lm1, y:lm, y+1:lm1} -> remove y
+    c           |  \       /   |      {y-1:lm1, y:lm, y+1:lm1} -> remove , shift back
     c           |lm2 \   / lp2 |        kp = {...z:it, z+1:km. z+2:k} -> insert km at z+1
     c           +----- it -----+      {z-1:lp2, z:lp, z+1:lm1} -> insert lm at z+1
     c
@@ -958,44 +959,49 @@ ts_bool ts_flip_bond_ordered(ts_vesicle *vesicle, ts_bond *bond,
     c  lm2={?1,?2,lm}->{?1,?2,lp}, lp1={?1,?2,lp}->{?1,?2,lm}
     c
     c  switching lm(lm2->lp1), lp(lp1->lm2) reverses the order!
-    c  switching lm2(lm->lp), lp(lp->lm) maintainsthe order
+    c  switching lm2(lm->lp), lp(lp->lm) maintains the order
     */
    
-    ts_small_idx i; //lmidx, lpidx;
+    ts_small_idx it_rem, km_add, k_rem, kp_add;
     if(k==NULL || it==NULL || km==NULL || kp==NULL){
         fatal("ts_flip_bond: You called me with invalid pointers to vertices",999);
     }
     
     // 1. step. Correct bond_list (Samo doesn't know why he still has it)
     bond->vtx1=km;
-    bond->vtx2=kp;  
+    bond->vtx2=kp;
 
     // 2. step. We change the triangle vertices... (actual bond flip)
-    for(i=0;i<3;i++) {
-        if(lm->vertex[i]== it){
-            lm->vertex[i]= kp;
-            break;
-        }
-    }
-    for(i=0;i<3;i++) {
-        if(lp->vertex[i]== k) {
-            lp->vertex[i]= km;
-            break;
-        }
-    }
+    swap_tri_vertex(lm,it,kp);
+    swap_tri_vertex(lp,k,km);
 
-    // 3. step. remove and insert neighbors of vertices
 
-    vtx_remove_neigh_at(it, next_small(neim, it->neigh_no));
-    vtx_insert_neigh_at(km, kp, next_small(nei_k_at_km, km->neigh_no));
-    vtx_remove_neigh_at(k, next_small(nei_kp_at_k, k->neigh_no));
-    vtx_insert_neigh_at(kp, km, next_small(nei_it_at_kp, kp->neigh_no));
+    // 3. step. remove and insert neighbors of vertices and the bond
+    it_rem=next_small(neim, it->neigh_no); // next(idx,no) will change after inserting/removing neighbors
+    km_add=next_small(nei_k_at_km, km->neigh_no);
+    k_rem =next_small(nei_kp_at_k, k->neigh_no);
+    kp_add=next_small(nei_it_at_kp, kp->neigh_no);
+
+    vtx_remove_neigh_at(it, it_rem);
+    vtx_remove_bond_at(it, it_rem);
+
+    vtx_insert_neigh_at(km, kp, km_add);
+    vtx_insert_bond_at(km, bond, km_add);
+
+    vtx_remove_neigh_at(k, k_rem);
+    vtx_remove_bond_at(k, k_rem);
+    
+    vtx_insert_neigh_at(kp, km, kp_add);
+    vtx_insert_bond_at(kp, bond, kp_add);
 
     // 4. step. Correct tristar for vertices km, kp, k and it
-    vtx_remove_tristar_at(it, neim);
-    vtx_insert_tristar_at(km, lp, next_small(nei_k_at_km, km->neigh_no));
-    vtx_remove_tristar_at(k, nei_kp_at_k);
-    vtx_insert_tristar_at(kp, lm, next_small(nei_it_at_kp, kp->neigh_no));
+    // we need to shift back the ones to remove:
+    it->tristar[neim]=lp; // copy the remaining one on top of the removed
+    vtx_remove_tristar_at(it, it_rem); // remove the original one, shifting the rest correctly
+    vtx_insert_tristar_at(km, lp, km_add);
+    k->tristar[nei_kp_at_k]=lm;
+    vtx_remove_tristar_at(k, k_rem);
+    vtx_insert_tristar_at(kp, lm, kp_add);
 
 
     // 5. step. Correct neighbouring triangles 

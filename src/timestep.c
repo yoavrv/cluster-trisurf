@@ -257,9 +257,9 @@ ts_bool single_timestep(ts_vesicle *vesicle,ts_double *vmsr, ts_double *bfsr, cl
         b=rand() % vesicle->blist->n;
         //find a bond and return a pointer to a bond...
         //call single_bondflip_timestep...
-        retval=single_bondflip_timestep(vesicle,vesicle->blist->bond[b],rnvec);
+        retval=single_bondflip_timestep_ordered(vesicle,vesicle->blist->bond[b],rnvec);
         // b++; retval=TS_FAIL;
-        if(retval==TS_SUCCESS) bfsrcnt++;        
+        if(retval==TS_SUCCESS) bfsrcnt++;   
     }
     *time_3+=clock()-stopwatch; //time bondflip
 

@@ -132,8 +132,7 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     Pv12=Pv21; Pv13=Pv31; Pv23=Pv32; //alia for clarity of the symmetric matrix calculation
 
 
-    order_vertex_triangles(vtx); // make sure triangles are ordered!
-
+    // vertex are ordered by initial_dist and at bondflips
     for(jj=0;jj<vtx->neigh_no;jj++){
     // !!! We start a VERY long loop over jj !!!
 
@@ -480,16 +479,15 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     }
     */
 
-    // to do: use the fact that triangles should be ordered
-    for(jj=1; jj<=vtx->neigh_no;jj++){
-        jjp=jj+1;
-        if(jjp>vtx->neigh_no) jjp=1;
-        jjm=jj-1;
-        if(jjm<1) jjm=vtx->neigh_no;
-        j=vtx->neigh[jj-1];
-        jp=vtx->neigh[jjp-1];
-        jm=vtx->neigh[jjm-1];
-        jt=vtx->tristar[jj-1];
+    for(jj=0; jj<vtx->neigh_no;jj++){
+        jjp=next_small(jj, vtx->neigh_no);
+        jjm=prev_small(jj, vtx->neigh_no);
+        j=vtx->neigh[jj];
+        jp=vtx->neigh[jjp];
+        jm=vtx->neigh[jjm];
+
+        jt=vtx->tristar[jj]; // not related to the j,jp,jm, just a separate sum for txn
+
         x1=vtx_distance_sq(vtx,jp); //shouldn't be zero!
         x2=vtx_distance_sq(j,jp); // shouldn't be zero!
         //x1=pow(vtx->x-jp->x,2)+pow(vtx->y-jp->y,2)+pow(vtx->z-jp->z,2);
