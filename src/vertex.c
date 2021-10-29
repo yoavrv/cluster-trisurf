@@ -621,9 +621,9 @@ ts_bool print_tri_order(ts_vertex* vtx){
         if (vtx->tristar[jj]->vertex[0]==vtx) jjm=0;
         if (vtx->tristar[jj]->vertex[1]==vtx) jjm=1;
         // if (vtx->tristar[jj]->vertex[2]==vtx) jjm=2;
-        fprintf(stdout,"(%ld, %ld), ", //(long int) vtx->tristar[jj]->vertex[jjm] - (long int) vtx, 
-                                            p_diff(vtx->tristar[jj]->vertex[(jjm+1)%3], vtx),
-                                            p_diff(vtx->tristar[jj]->vertex[(jjm+2)%3], vtx));
+        fprintf(stdout,"(%u, %u), ", //(long int) vtx->tristar[jj]->vertex[jjm] - (long int) vtx, 
+                                            vtx->tristar[jj]->vertex[(jjm+1)%3]->idx,
+                                            vtx->tristar[jj]->vertex[(jjm+2)%3]->idx );
     }
     fprintf(stdout,"\n");
     return TS_SUCCESS;

@@ -18,6 +18,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
+#include "energy.h"
 
 
 ts_bool run_simulation(ts_vesicle *vesicle, ts_massive_idx mcsweeps, ts_idx inititer, ts_idx iterations, ts_idx start_iteration){
@@ -206,7 +207,7 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_massive_idx mcsweeps, ts_idx init
             */
 
             fprintf(fd, "%lu,%u,%e,%e,%1.16e,%1.16e,%1.16e,%1.16e,%1.16e,%1.16e,%1.16e,%1.16e,%1.16e,\n",epochtime,i,vmsr,bfsr,vesicle->volume, vesicle->area,l1,l2,l3,kc1, kc2, kc3,kc4);
-
+            debug_energy_vertex(vesicle, vesicle->vlist->vtx[670]);
             fflush(fd);	
             //	sprintf(filename,"timestep-%05d.pov",i-inititer);
             //	write_pov_file(vesicle,filename);

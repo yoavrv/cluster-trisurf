@@ -8,6 +8,7 @@
 #include "general.h"
 #include "energy.h"
 #include "vertex.h"
+#include "triangle.h"
 
 
 int cmpfunc(const void *x, const void *y)
@@ -365,119 +366,6 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     ts_double a_dot_b, a_cross_b_x, a_cross_b_y, a_cross_b_z, mag_a_cross_b;
     ts_bool model=vesicle->tape->type_of_curvature_model;
 
-    /*  debugging tristar order in vertex 
-    ts_small_idx li, ri;
-    ts_small_idx t;
-    ts_vertex *vl, *vr;
-    if (vtx == vesicle->vlist->vtx[183] && vtx->ad_w == 7){
-    fprintf(stdout,"%ld",p_diff(vtx,vesicle->vlist->vtx[0]));
-    fprintf(stdout,"I'm on %p, I read nodes ", vtx);
-    for (jj=0; jj<vtx->neigh_no; jj++){
-        fprintf(stdout,"%ld, ", p_diff(vtx->neigh[jj],vtx));
-    }
-    fprintf(stdout,"\nI'm still on %p, I read triangles ", vtx);
-    for (jj=0; jj<vtx->tristar_no; jj++){
-        fprintf(stdout,"(%ld, %ld, %ld), ", p_diff(vtx->tristar[jj]->vertex[0], vtx), 
-                                            p_diff(vtx->tristar[jj]->vertex[1], vtx),
-                                            p_diff(vtx->tristar[jj]->vertex[2], vtx));
-    }
-    fprintf(stdout,"\nthat is: ", vtx);
-    print_tri_order(vtx);
-    fprintf(stdout,"\ndiscombobulating:");
-    // still in construction phase
-    t=get_epoch();	
-    if (vesicle->tape->random_seed!=0){
-        srand48(vesicle->tape->random_seed);
-        ts_fprintf(stdout,"simulation seed = %lu\n",vesicle->tape->random_seed);
-    }
-    else{
-        srand48(t);
-        ts_fprintf(stdout,"simulation seed %lu\n",t);
-        vesicle->tape->random_seed = t;
-    }
-    for (t=0; t<vtx->tristar_no; t++){
-        jj = lrand48()%vtx->tristar_no;
-        swap_triangles(vtx, t, jj);
-        fprintf(stdout,"swapped %d, %d, ", jj, t);
-    }
-
-    fprintf(stdout,"\nI'm still on %p, I read triangles \n", vtx);
-    print_tri_order(vtx);
-    fprintf(stdout,"\nreordering:\n");
-    // find first triangle
-    vl = vtx->neigh[0];
-    vr = vtx->neigh[1];
-    for (t=0; t<vtx->tristar_no; t++){
-        fprintf(stdout,"%d,",t);
-        jt = vtx->tristar[t];
-        if (in_tri(jt,vl)){
-            if (in_tri(jt,vr)){
-                jj = t;
-            }
-            else{
-                jjp = t;
-            }
-          
-        }
-        else if (in_tri(jt,vr)){
-            jjm = t;
-        }  
-    }
-    swap_triangles(vtx, jj, 0);
-    fprintf(stdout,"swapped primary %d, %d\n",jj,0);
-    print_tri_order(vtx);
-    if (jjp==0) jjp=jj;
-    swap_triangles(vtx, jjp, vtx->tristar_no-1);
-    fprintf(stdout,"swapped first left %d, %d\n",jjp,vtx->tristar_no-1);
-    print_tri_order(vtx);
-    if (jjm==0) jjm=jj;
-    if (jjm==vtx->tristar_no-1) jjm=jjp;
-    swap_triangles(vtx, jjm, 1);
-    fprintf(stdout,"swapped first right %d, %d\n",jjm,1);
-    print_tri_order(vtx);
-
-    ri = 2;
-    li = vtx->neigh_no-1;
-    // now triangles can only be left of left or right of right
-    while (ri+1<li){ 
-        for (t=ri; t<li; t++){
-            fprintf(stdout,"%d,",t);
-            vl = vtx->neigh[li];
-            vr = vtx->neigh[ri];
-            jt = vtx->tristar[t];
-            if (in_tri(jt, vl)){
-                li-=1;
-                swap_triangles(vtx, t, li);
-                fprintf(stdout,"swapped left %d, %d\n",t,li);
-                print_tri_order(vtx);
-                if (ri+1==li) break;
-            }
-            if (in_tri(jt, vr)){
-                swap_triangles(vtx, t, ri);
-                fprintf(stdout,"swapped right %d, %d\n",t,ri);
-                print_tri_order(vtx);
-                ri+=1;
-                if (ri+1==li) break;
-            }
-        }
-    }
-    fprintf(stdout,"Done reordering: I read nodes ", vtx);
-    for (jj=0; jj<vtx->neigh_no; jj++){
-        fprintf(stdout,"%ld, ", p_diff(vtx->neigh[jj],vtx));
-    }
-    fprintf(stdout,"\nI read triangles ");
-    for (jj=0; jj<vtx->tristar_no; jj++){
-        if (vtx->tristar[jj]->vertex[0]==vtx) jjm=0;
-        if (vtx->tristar[jj]->vertex[1]==vtx) jjm=1;
-        if (vtx->tristar[jj]->vertex[2]==vtx) jjm=2;
-        fprintf(stdout,"(%ld, %ld, %ld), ",  p_diff(vtx->tristar[jj]->vertex[jjm], vtx),
-                                             p_diff(vtx->tristar[jj]->vertex[(jjm+1)%3], vtx),
-                                             p_diff(vtx->tristar[jj]->vertex[(jjm+2)%3], vtx));
-    }
-    fprintf(stdout,"\n");
-    fatal("goodbye!",100);
-    }
-    */
 
     for(jj=0; jj<vtx->neigh_no;jj++){
         jjp=next_small(jj, vtx->neigh_no);
@@ -600,6 +488,11 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     vtx->mean_energy=vtx->xk* 0.5*s*(vtx->mean_curvature-vtx->c)*(vtx->mean_curvature-vtx->c);
     
     vtx->gaussian_curvature = (2*M_PI- angle_sum)/s;
+
+    x1 = sqrt(pow(vtx->mean_curvature,2)-vtx->gaussian_curvature); // deltaC/2 in temp variable
+    vtx->new_c1 = vtx->mean_curvature + x1;
+    vtx->new_c2 = vtx->mean_curvature - x1;
+
 
     vtx->gaussian_energy = vtx->xk2 * s * vtx->gaussian_curvature;
 
@@ -990,4 +883,579 @@ ts_double adhesion_energy_diff(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *v
 
 void stretchenergy(ts_vesicle *vesicle, ts_triangle *triangle){
     triangle->energy=vesicle->tape->xkA0/2.0*pow((triangle->area/vesicle->tlist->a0-1.0),2);
+}
+
+/** @brief anisotropic subfunction of vertex_energy.
+ *
+ *  This function is experimental, branch from vertex_energy for anisotropic proteins 
+ *  to calculate the tensor-based curvature values c1,c2 and principle directions,
+ *  calculate the energy, and save it all on the vertex
+ *
+ *  @returns TS_SUCCESS on successful calculation
+*/
+inline ts_bool debug_curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
+    // direct copy from Samo git repository
+    // ...almost
+    ts_small_idx jj, i;
+    ts_double edge_vector_x[7]={0,0,0,0,0,0,0};
+    ts_double edge_vector_y[7]={0,0,0,0,0,0,0};
+    ts_double edge_vector_z[7]={0,0,0,0,0,0,0};
+    ts_double edge_normal_x[7]={0,0,0,0,0,0,0};
+    ts_double edge_normal_y[7]={0,0,0,0,0,0,0};
+    ts_double edge_normal_z[7]={0,0,0,0,0,0,0};
+    ts_double edge_binormal_x[7]={0,0,0,0,0,0,0};
+    ts_double edge_binormal_y[7]={0,0,0,0,0,0,0};
+    ts_double edge_binormal_z[7]={0,0,0,0,0,0,0};
+    ts_double vertex_normal_x=0.0;
+    ts_double vertex_normal_y=0.0;
+    ts_double vertex_normal_z=0.0;
+
+    ts_triangle *lm=NULL, *lp=NULL;
+    ts_double sumnorm,a,b,c;
+    ts_double temp_length;
+    ts_double cross_x, cross_y, cross_z;
+
+    ts_double Se11=0, Se21=0, Se22=0, Se31=0, Se32=0, Se33=0;
+    ts_double Pv11, Pv21, Pv22, Pv31, Pv32, Pv33;
+    ts_double Se12, Se13, Se23, Pv12, Pv13, Pv23; 
+    //alias for clarity of symmetric matrices: hopefully the compiler removes them
+
+    ts_double We;
+    ts_double Av, We_Av;
+
+    ts_double eigenval[3];
+
+    gsl_matrix *gsl_Sv=gsl_matrix_alloc(3,3);
+    gsl_matrix *Sv_eigenV=gsl_matrix_alloc(3,3);
+    gsl_vector *Sv_eigen=gsl_vector_alloc(3);
+    gsl_eigen_symmv_workspace *workspace=gsl_eigen_symmv_alloc(3);
+
+    // ts_double mprod[7], phi[7];
+    ts_double he[7];
+    ts_double Sv[3][3]={{0,0,0},{0,0,0},{0,0,0}};
+
+    ts_fprintf(stdout,"|%u|: ",vtx->idx);
+    print_tri_order(vtx);
+
+    Av=0;
+    for(i=0; i<vtx->tristar_no; i++){
+        vertex_normal_x=(vertex_normal_x - vtx->tristar[i]->xnorm*vtx->tristar[i]->area);
+        vertex_normal_y=(vertex_normal_y - vtx->tristar[i]->ynorm*vtx->tristar[i]->area);
+        vertex_normal_z=(vertex_normal_z - vtx->tristar[i]->znorm*vtx->tristar[i]->area);
+        Av+=vtx->tristar[i]->area/3;
+    }
+    temp_length=sqrt(pow(vertex_normal_x,2)+pow(vertex_normal_y,2)+pow(vertex_normal_z,2));
+    vertex_normal_x=vertex_normal_x/temp_length;
+    vertex_normal_y=vertex_normal_y/temp_length;
+    vertex_normal_z=vertex_normal_z/temp_length;
+    vtx->nx2 = vertex_normal_x;
+    vtx->ny2 = vertex_normal_y;
+    vtx->nz2 = vertex_normal_z;
+
+    Pv11=(pow(vertex_normal_x,2)+pow(vertex_normal_y,2)+pow(vertex_normal_z,2))-vertex_normal_x*vertex_normal_x;
+    Pv22=(pow(vertex_normal_x,2)+pow(vertex_normal_y,2)+pow(vertex_normal_z,2))-vertex_normal_y*vertex_normal_y;
+    Pv33=(pow(vertex_normal_x,2)+pow(vertex_normal_y,2)+pow(vertex_normal_z,2))-vertex_normal_z*vertex_normal_z;
+    Pv21=-vertex_normal_x*vertex_normal_y;
+    Pv31=-vertex_normal_x*vertex_normal_z;
+    Pv32=-vertex_normal_y*vertex_normal_z;
+    Pv12=Pv21; Pv13=Pv31; Pv23=Pv32; //alia for clarity of the symmetric matrix calculation
+
+
+    // vertex are ordered by initial_dist and at bondflips
+    for(jj=0;jj<vtx->neigh_no;jj++){
+    // !!! We start a VERY long loop over jj !!!
+
+
+    edge_vector_x[jj]=vtx->neigh[jj]->x-vtx->x;
+    edge_vector_y[jj]=vtx->neigh[jj]->y-vtx->y;
+    edge_vector_z[jj]=vtx->neigh[jj]->z-vtx->z;
+
+    //Here we calculate normalized edge vector
+
+    temp_length=sqrt(edge_vector_x[jj]*edge_vector_x[jj]+edge_vector_y[jj]*edge_vector_y[jj]+edge_vector_z[jj]*edge_vector_z[jj]);
+    edge_vector_x[jj]=edge_vector_x[jj]/temp_length;
+    edge_vector_y[jj]=edge_vector_y[jj]/temp_length;
+    edge_vector_z[jj]=edge_vector_z[jj]/temp_length;
+
+
+    // vtx are ordered: for edge v->i, lm={v,i-1,i} lp={v,i,i+1}, so we can get the two triangles
+    lp = vtx->tristar[jj];
+    if (jj==0){
+        lm = vtx->tristar[vtx->tristar_no-1];
+    }
+    else{
+        lm = vtx->tristar[jj-1];
+    } 
+
+    //Triangle normals are NORMALIZED!
+
+    // we want to get the edge normal ne = nf+nf
+
+    sumnorm=sqrt( pow((lm->xnorm + lp->xnorm),2) + pow((lm->ynorm + lp->ynorm), 2) + pow((lm->znorm + lp->znorm), 2));
+
+    edge_normal_x[jj]=-(lm->xnorm + lp->xnorm)/sumnorm;
+    edge_normal_y[jj]=-(lm->ynorm + lp->ynorm)/sumnorm;
+    edge_normal_z[jj]=-(lm->znorm + lp->znorm)/sumnorm;
+
+
+    edge_binormal_x[jj]= (edge_normal_y[jj]*edge_vector_z[jj])-(edge_normal_z[jj]*edge_vector_y[jj]);
+    edge_binormal_y[jj]=-(edge_normal_x[jj]*edge_vector_z[jj])+(edge_normal_z[jj]*edge_vector_x[jj]);
+    edge_binormal_z[jj]= (edge_normal_x[jj]*edge_vector_y[jj])-(edge_normal_y[jj]*edge_vector_x[jj]);
+
+    cross_x = lm->ynorm*edge_normal_z[jj] - lm->znorm*edge_normal_y[jj];
+    cross_y = lm->znorm*edge_normal_x[jj] - lm->xnorm*edge_normal_z[jj];
+    cross_z = lm->xnorm*edge_normal_y[jj] - lm->ynorm*edge_normal_x[jj];
+
+    he[jj]=temp_length*(cross_x*edge_vector_x[jj] + cross_y*edge_vector_y[jj] + cross_z*edge_vector_z[jj] );
+    
+    // old style: uncomment here and their variables above
+    /*
+    mprod[jj]=lm->xnorm*(lp->ynorm*edge_vector_z[jj]-lp->znorm*edge_vector_y[jj]) - lm->ynorm*(lp->xnorm*edge_vector_z[jj]-lp->znorm*edge_vector_x[jj])+ lm->znorm*(lp->xnorm*edge_vector_y[jj]-lp->ynorm*edge_vector_x[jj]);
+
+    cross_x = lm->ynorm*lp->znorm - lp->ynorm*lm->znorm;
+    cross_y = lm->znorm*lp->xnorm - lp->znorm*lm->xnorm;
+    cross_z = lm->xnorm*lp->ynorm - lp->xnorm*lm->ynorm;
+    phi[jj]=copysign(atan2(sqrt(cross_x*cross_x+cross_y*cross_y+cross_z*cross_z),lm->xnorm*lp->xnorm+lm->ynorm*lp->ynorm+lm->znorm*lp->znorm-1e-10),-mprod[jj])+M_PI;
+    We = temp_length*cos(phi[jj]/2.0); //temporarily for testing: We is set later
+    
+    if (fabs(We - he[jj])>1e-7){
+        fprintf(stdout,"%.17e by products is not the same as %.17e by cosine\n", he[jj], We);
+        fatal("not equal\n",100);
+    }
+    */
+    
+    /*
+    if(vtx->idx==0){
+        printf("H operator of edge vertex %d (edge %d): %f\n",vtx->idx,jj,he[jj]);
+    }
+    */
+    Se11=-edge_binormal_x[jj]*edge_binormal_x[jj]*he[jj];
+    Se21=-edge_binormal_x[jj]*edge_binormal_y[jj]*he[jj];
+    Se22=-edge_binormal_y[jj]*edge_binormal_y[jj]*he[jj];
+    Se31=-edge_binormal_x[jj]*edge_binormal_z[jj]*he[jj];
+    Se32=-edge_binormal_y[jj]*edge_binormal_z[jj]*he[jj];
+    Se33=-edge_binormal_z[jj]*edge_binormal_z[jj]*he[jj];
+    Se12=Se21; Se13=Se31; Se23=Se32; //for clarity: hopefully compiler gets rid of these
+    ts_fprintf(stdout,"Ses[%d]={%+.17f, %+.17f, %+.17f}\n",jj,Se11,Se12,Se13);
+    ts_fprintf(stdout,"        {%+.17f, %+.17f, %+.17f}\n",   Se21,Se22,Se23);
+    ts_fprintf(stdout,"        {%+.17f, %+.17f, %+.17f}\n",   Se31,Se32,Se33);
+    We=vertex_normal_x*edge_normal_x[jj]+vertex_normal_y*edge_normal_y[jj]+vertex_normal_z*edge_normal_z[jj];
+    ts_fprintf(stdout,"We=%f\n", We);
+    We_Av=We/Av;
+
+
+    Sv[0][0]+=We_Av* Se11;
+    Sv[0][1]+=We_Av* Se12;
+    Sv[0][2]+=We_Av* Se13;
+    
+    Sv[1][0]+=We_Av* Se21;
+    Sv[1][1]+=We_Av* Se22;
+    Sv[1][2]+=We_Av* Se23;
+
+    Sv[2][0]+=We_Av* Se31;
+    Sv[2][1]+=We_Av* Se32;
+    Sv[2][2]+=We_Av* Se33;
+
+    } // END FOR JJ
+
+
+
+    // householder transformation: get rid of n^ components
+    // matrix multiplication Sv[i,j] = Pv[i,a]*Sv[a,b]*Pv^T[b,j]
+    Sv[0][0]=(   Pv11*(Sv[0][0]*Pv11+Sv[0][1]*Pv21+Sv[0][2]*Pv31)
+                +Pv12*(Sv[1][0]*Pv11+Sv[1][1]*Pv21+Sv[1][2]*Pv31)
+                +Pv13*(Sv[2][0]*Pv11+Sv[2][1]*Pv21+Sv[2][2]*Pv31));
+    Sv[0][1]=(   Pv11*(Sv[0][0]*Pv12+Sv[0][1]*Pv22+Sv[0][2]*Pv32)
+                +Pv12*(Sv[1][0]*Pv12+Sv[1][1]*Pv22+Sv[1][2]*Pv32)
+                +Pv13*(Sv[2][0]*Pv12+Sv[2][1]*Pv22+Sv[2][2]*Pv32));
+    Sv[0][2]=(   Pv11*(Sv[0][0]*Pv13+Sv[0][1]*Pv23+Sv[0][2]*Pv33)
+                +Pv12*(Sv[1][0]*Pv13+Sv[1][1]*Pv23+Sv[1][2]*Pv33)
+                +Pv13*(Sv[2][0]*Pv13+Sv[2][1]*Pv23+Sv[2][2]*Pv33));
+    
+    Sv[1][0]=(   Pv21*(Sv[0][0]*Pv11+Sv[0][1]*Pv21+Sv[0][2]*Pv31)
+                +Pv22*(Sv[1][0]*Pv11+Sv[1][1]*Pv21+Sv[1][2]*Pv31)
+                +Pv23*(Sv[2][0]*Pv11+Sv[2][1]*Pv21+Sv[2][2]*Pv31));
+    Sv[1][1]=(   Pv21*(Sv[0][0]*Pv12+Sv[0][1]*Pv22+Sv[0][2]*Pv32)
+                +Pv22*(Sv[1][0]*Pv12+Sv[1][1]*Pv22+Sv[1][2]*Pv32)
+                +Pv23*(Sv[2][0]*Pv12+Sv[2][1]*Pv22+Sv[2][2]*Pv32));
+    Sv[1][2]=(   Pv21*(Sv[0][0]*Pv13+Sv[0][1]*Pv23+Sv[0][2]*Pv33)
+                +Pv22*(Sv[1][0]*Pv13+Sv[1][1]*Pv23+Sv[1][2]*Pv33)
+                +Pv23*(Sv[2][0]*Pv13+Sv[2][1]*Pv23+Sv[2][2]*Pv33));
+    
+    Sv[2][0]=(   Pv31*(Sv[0][0]*Pv11+Sv[0][1]*Pv21+Sv[0][2]*Pv31)
+                +Pv32*(Sv[1][0]*Pv11+Sv[1][1]*Pv21+Sv[1][2]*Pv31)
+                +Pv33*(Sv[2][0]*Pv11+Sv[2][1]*Pv21+Sv[2][2]*Pv31));
+    Sv[2][1]=(   Pv31*(Sv[0][0]*Pv12+Sv[0][1]*Pv22+Sv[0][2]*Pv32)
+                +Pv32*(Sv[1][0]*Pv12+Sv[1][1]*Pv22+Sv[1][2]*Pv32)
+                +Pv33*(Sv[2][0]*Pv12+Sv[2][1]*Pv22+Sv[2][2]*Pv32));
+    Sv[2][2]=(   Pv31*(Sv[0][0]*Pv13+Sv[0][1]*Pv23+Sv[0][2]*Pv33)
+                +Pv32*(Sv[1][0]*Pv13+Sv[1][1]*Pv23+Sv[1][2]*Pv33)
+                +Pv33*(Sv[2][0]*Pv13+Sv[2][1]*Pv23+Sv[2][2]*Pv33));
+    for (jj=0; jj<vtx->neigh_no; jj++){
+        ts_fprintf(stdout,"%d: position={%+f,%+f,%+f}\n",jj,vtx->neigh[jj]->x, vtx->neigh[jj]->y,vtx->neigh[jj]->z);
+    }
+    for (jj=0; jj<vtx->neigh_no; jj++){
+        a=vtx->neigh[jj]->x-vtx->x;
+        b=vtx->neigh[jj]->y-vtx->y;
+        c=vtx->neigh[jj]->z-vtx->z;
+         ts_fprintf(stdout,"edge %d={%+f,%+f,%+f}\n",vtx->neigh[jj]->idx,a, b,c);
+    }
+    for (jj=0; jj<vtx->neigh_no; jj++){
+        ts_fprintf(stdout,"edge (normalized) %d={%+f,%+f,%+f}\n",jj,edge_vector_x[jj], edge_vector_y[jj],edge_vector_z[jj]);
+    }
+    ts_fprintf(stdout,"at %d:area=%f, position={%+f,%+f,%+f} normal={%+f,%+f,%+f}\n",vtx->idx,Av,
+    vtx->x,vtx->y,vtx->z,vtx->nx2, vtx->ny2,vtx->nz2);
+    
+    for (jj=0; jj<vtx->neigh_no; jj++){
+        ts_fprintf(stdout,"edge normal[%d]={%+f,%+f,%+f}\n",jj,edge_normal_x[jj], edge_normal_y[jj],edge_normal_z[jj]);
+    }
+    for (jj=0; jj<vtx->neigh_no; jj++){
+        ts_fprintf(stdout,"edge binormal[%d]={%+f,%+f,%+f}\n",jj,edge_binormal_x[jj], edge_binormal_y[jj],edge_binormal_z[jj]);
+    }
+    ts_fprintf(stdout,"he[%d]={",jj);
+    for (jj=0; jj<vtx->neigh_no; jj++){
+        fprintf(stdout,"%f,",he[jj]);
+    }
+    fprintf(stdout,"}\n");
+    ts_fprintf(stdout,"Sv={%+.17f, %+.17f, %+.17f}\n",Sv[0][0],Sv[0][1],Sv[0][2]);
+    ts_fprintf(stdout,"   {%+.17f, %+.17f, %+.17f}\n",Sv[1][0],Sv[1][1],Sv[1][2]);
+    ts_fprintf(stdout,"   {%+.17f, %+.17f, %+.17f}\n",Sv[2][0],Sv[2][1],Sv[2][2]);
+    ts_fprintf(stdout,"Pv={%+.17f, %+.17f, %+.17f}\n",Pv11, Pv12, Pv13);
+    ts_fprintf(stdout,"   {%+.17f, %+.17f, %+.17f}\n",Pv21, Pv22, Pv23);
+    ts_fprintf(stdout,"   {%+.17f, %+.17f, %+.17f}\n",Pv31, Pv32, Pv33);
+
+
+    // into gsl
+    gsl_matrix_set(gsl_Sv, 0,0, Sv[0][0]);
+    gsl_matrix_set(gsl_Sv, 0,1, Sv[0][1]);
+    gsl_matrix_set(gsl_Sv, 0,2, Sv[0][2]);
+    gsl_matrix_set(gsl_Sv, 1,0, Sv[1][0]);
+    gsl_matrix_set(gsl_Sv, 1,1, Sv[1][1]);
+    gsl_matrix_set(gsl_Sv, 1,2, Sv[1][2]);
+    gsl_matrix_set(gsl_Sv, 2,0, Sv[2][0]);
+    gsl_matrix_set(gsl_Sv, 2,1, Sv[2][1]);
+    gsl_matrix_set(gsl_Sv, 2,2, Sv[2][2]);
+
+    // calculate eigenvalues and eigenvectors
+    gsl_eigen_symmv(gsl_Sv, Sv_eigen, Sv_eigenV, workspace);
+    gsl_eigen_symmv_sort(Sv_eigen, Sv_eigenV, GSL_EIGEN_SORT_ABS_DESC);
+
+    // get eigenvalues and eigenvectors out
+    eigenval[0]= gsl_vector_get(Sv_eigen, 0);
+    eigenval[1]= gsl_vector_get(Sv_eigen, 1);
+    eigenval[2]= gsl_vector_get(Sv_eigen, 2);
+    vtx->eig0[0] = gsl_matrix_get(Sv_eigenV,0,0);
+    vtx->eig0[1] = gsl_matrix_get(Sv_eigenV,1,0);
+    vtx->eig0[2] = gsl_matrix_get(Sv_eigenV,2,0);
+    vtx->eig_v0 = eigenval[0];
+    vtx->eig1[0] = gsl_matrix_get(Sv_eigenV,0,1);
+    vtx->eig1[1] = gsl_matrix_get(Sv_eigenV,1,1);
+    vtx->eig1[2] = gsl_matrix_get(Sv_eigenV,2,1);
+    vtx->eig_v1 = eigenval[1];
+    vtx->eig2[0] = gsl_matrix_get(Sv_eigenV,0,2);
+    vtx->eig2[1] = gsl_matrix_get(Sv_eigenV,1,2);
+    vtx->eig2[2] = gsl_matrix_get(Sv_eigenV,2,2);
+    vtx->eig_v2 = eigenval[2];
+
+    //And the stuff I'm tracking
+    //vtx->nx = vertex_normal_x;
+    //vtx->ny = vertex_normal_y;
+    //vtx->nz = vertex_normal_z;
+    //vtx->curvature = (eigenval[0] + eigenval[1])/2;
+    //vtx->curvature2 = eigenval[0]*eigenval[1];
+    vtx->mean_curvature2 = (eigenval[0]+ eigenval[1]);
+    vtx->gaussian_curvature2 = eigenval[0]*eigenval[1];
+    vtx->mean_energy2 = 4*vtx->xk*(pow(eigenval[0]+eigenval[1]-2*vtx->c,2))*Av;
+    vtx->gaussian_energy2 = vtx->xk2 * Av * eigenval[0]*eigenval[1];
+    
+
+    gsl_matrix_free(gsl_Sv);
+    gsl_vector_free(Sv_eigen);
+    gsl_matrix_free(Sv_eigenV);
+    gsl_eigen_symmv_free(workspace);
+    return TS_SUCCESS;
+}
+
+
+/** @brief Calculation of the bending energy of the vertex.
+ *  
+ *  Main function that calculates energy of the vertex \f$i\f$. Function returns \f$\frac{1}{2}(c_1+c_2-c)^2 s\f$, where \f$(c_1+c_2)/2\f$ is mean curvature,
+ * \f$c/2\f$ is spontaneous curvature and \f$s\f$ is area per vertex \f$i\f$.
+ *
+ * Nearest neighbors (NN) must be ordered in counterclockwise direction for this function to work.
+ *  Firstly NNs that form two neighboring triangles are found (\f$j_m\f$, \f$j_p\f$ and common \f$j\f$). Later, the scalar product of vectors \f$x_1=(\mathbf{i}-\mathbf{j_p})\cdot (\mathbf{i}-\mathbf{j_p})(\mathbf{i}-\mathbf{j_p})\f$, \f$x_2=(\mathbf{j}-\mathbf{j_p})\cdot  (\mathbf{j}-\mathbf{j_p})\f$  and \f$x_3=(\mathbf{j}-\mathbf{j_p})\cdot (\mathbf{i}-\mathbf{j_p})\f$  are calculated. From these three vectors the \f$c_{tp}=\frac{1}{\tan(\varphi_p)}\f$ is calculated, where \f$\varphi_p\f$ is the inner angle at vertex \f$j_p\f$. The procedure is repeated for \f$j_m\f$ instead of \f$j_p\f$ resulting in \f$c_{tn}\f$.
+ *  
+\begin{tikzpicture}{
+\coordinate[label=below:$i$] (i) at (2,0);
+\coordinate[label=left:$j_m$] (jm) at (0,3.7);
+\coordinate[label=above:$j$] (j) at (2.5,6.4);
+\coordinate[label=right:$j_p$] (jp) at (4,2.7);
+
+\draw (i) -- (jm) -- (j) -- (jp) -- (i) -- (j);
+
+\begin{scope}
+\path[clip] (jm)--(i)--(j);
+\draw (jm) circle (0.8);
+\node[right] at (jm) {$\varphi_m$};
+\end{scope}
+
+\begin{scope}
+\path[clip] (jp)--(i)--(j);
+\draw (jp) circle (0.8);
+\node[left] at (jp) {$\varphi_p$};
+\end{scope}
+
+%%vertices
+\draw [fill=gray] (i) circle (0.1);
+\draw [fill=white] (j) circle (0.1);
+\draw [fill=white] (jp) circle (0.1);
+\draw [fill=white] (jm) circle (0.1);
+%\node[draw,circle,fill=white] at (i) {};
+\end{tikzpicture}
+
+ * The curvature is then calculated as \f$\mathbf{h}=\frac{1}{2}\Sigma_{k=0}^{\mathrm{neigh\_no}} c_{tp}^{(k)}+c_{tm}^{(k)} (\mathbf{j_k}-\mathbf{i})\f$, where \f$c_{tp}^{(k)}+c_{tm}^k=2\sigma^{(k)}\f$ (length in dual lattice?) and the previous equation can be written as \f$\mathbf{h}=\Sigma_{k=0}^{\mathrm{neigh\_no}}\sigma^{(k)}\cdot(\mathbf{j}-\mathbf{i})\f$ (See Kroll, p. 384, eq 70).
+ *
+ * From the curvature the enery is calculated by equation \f$E=\frac{1}{2}\mathbf{h}\cdot\mathbf{h}\f$.
+ * @param *vtx is a pointer to vertex at which we want to calculate the energy
+ * @returns TS_SUCCESS on successful calculation.
+*/
+inline ts_bool debug_energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
+        
+    
+    ts_small_idx jj;
+    ts_small_idx jjp,jjm;
+    ts_vertex *j,*jp, *jm;
+    ts_triangle *jt;
+    ts_double s=0.0,xh=0.0,yh=0.0,zh=0.0,txn=0.0,tyn=0.0,tzn=0.0;
+    ts_double x1,x2,x3,ctp,ctm,tot,xlen;
+    ts_double h,ht,norml;
+    ts_double angle_sum=0;
+    ts_double a_dot_b, a_cross_b_x, a_cross_b_y, a_cross_b_z, mag_a_cross_b;
+    ts_bool model=vesicle->tape->type_of_curvature_model;
+
+    //debugging tristar order in vertex 
+    ts_small_idx li, ri;
+    ts_small_idx t;
+    ts_vertex *vl, *vr;
+    if (1){
+    //print_vertex_ordered(vtx);
+    //fprintf(stdout,"\ndiscombobulating:");
+    for (t=0; t<vtx->tristar_no; t++){
+        jj = lrand48()%vtx->tristar_no;
+        swap_triangles(vtx, t, jj);
+        //fprintf(stdout,"swapped %d, %d, ", jj, t);
+    }
+
+    //fprintf(stdout,"\nI'm still on %u, I read triangles \n", vtx->idx);
+    //print_tri_order(vtx);
+    //fprintf(stdout,"\nreordering:\n");
+    // find first triangle
+    vl = vtx->neigh[0];
+    vr = vtx->neigh[1];
+    for (t=0; t<vtx->tristar_no; t++){
+        //fprintf(stdout,"%d,",t);
+        jt = vtx->tristar[t];
+        if (in_tri(jt,vl)){
+            if (in_tri(jt,vr)){
+                jj = t;
+            }
+            else{
+                jjp = t;
+            }
+          
+        }
+        else if (in_tri(jt,vr)){
+            jjm = t;
+        }  
+    }
+    swap_triangles(vtx, jj, 0);
+    //fprintf(stdout,"swapped primary %d, %d\n",jj,0);
+    //print_tri_order(vtx);
+    if (jjp==0) jjp=jj;
+    swap_triangles(vtx, jjp, vtx->tristar_no-1);
+    //fprintf(stdout,"swapped first left %d, %d\n",jjp,vtx->tristar_no-1);
+    //print_tri_order(vtx);
+    if (jjm==0) jjm=jj;
+    if (jjm==vtx->tristar_no-1) jjm=jjp;
+    swap_triangles(vtx, jjm, 1);
+    //fprintf(stdout,"swapped first right %d, %d\n",jjm,1);
+    //print_tri_order(vtx);
+
+    ri = 2;
+    li = vtx->neigh_no-1;
+    // now triangles can only be left of left or right of right
+    while (ri+1<li){ 
+        for (t=ri; t<li; t++){
+            //fprintf(stdout,"%d,",t);
+            vl = vtx->neigh[li];
+            vr = vtx->neigh[ri];
+            jt = vtx->tristar[t];
+            if (in_tri(jt, vl)){
+                li-=1;
+                swap_triangles(vtx, t, li);
+                //fprintf(stdout,"swapped left %d, %d\n",t,li);
+                //print_tri_order(vtx);
+                if (ri+1==li) break;
+            }
+            if (in_tri(jt, vr)){
+                swap_triangles(vtx, t, ri);
+                //fprintf(stdout,"swapped right %d, %d\n",t,ri);
+                //print_tri_order(vtx);
+                ri+=1;
+                if (ri+1==li) break;
+            }
+        }
+    }
+    //fprintf(stdout,"Done reordering: I read nodes ");
+    for (jj=0; jj<vtx->neigh_no; jj++){
+        //fprintf(stdout,"%u, ", vtx->neigh[jj]->idx);
+    }
+    //fprintf(stdout,"\n");
+    //print_vertex_ordered(vtx);
+    //fprintf(stdout,"\n");
+    assert_vtx_ordered(vtx);
+    }
+    
+
+    for(jj=0; jj<vtx->neigh_no;jj++){
+        jjp=next_small(jj, vtx->neigh_no);
+        jjm=prev_small(jj, vtx->neigh_no);
+        j=vtx->neigh[jj];
+        jp=vtx->neigh[jjp];
+        jm=vtx->neigh[jjm];
+
+        jt=vtx->tristar[jj]; // not related to the j,jp,jm, just a separate sum for txn
+
+        x1=vtx_distance_sq(vtx,jp); //shouldn't be zero!
+        x2=vtx_distance_sq(j,jp); // shouldn't be zero!
+        //x1=pow(vtx->x-jp->x,2)+pow(vtx->y-jp->y,2)+pow(vtx->z-jp->z,2);
+        //x2=pow(j->x-jp->x,2)+pow(j->y-jp->y,2)+pow(j->z-jp->z,2);
+        x3=(j->x-jp->x)*(vtx->x-jp->x)+
+           (j->y-jp->y)*(vtx->y-jp->y)+
+           (j->z-jp->z)*(vtx->z-jp->z);
+        
+#ifdef TS_DOUBLE_DOUBLE
+        ctp=x3/sqrt(x1*x2-x3*x3);
+#endif
+#ifdef TS_DOUBLE_FLOAT
+        ctp=x3/sqrtf(x1*x2-x3*x3);
+#endif
+#ifdef TS_DOUBLE_LONGDOUBLE
+        ctp=x3/sqrtl(x1*x2-x3*x3);
+#endif
+        x1=vtx_distance_sq(vtx,jm);
+        x2=vtx_distance_sq(j,jm);
+        //x1=pow(vtx->x-jm->x,2)+pow(vtx->y-jm->y,2)+pow(vtx->z-jm->z,2);
+        //x2=pow(j->x-jm->x,2)+pow(j->y-jm->y,2)+pow(j->z-jm->z,2);
+        x3=(j->x-jm->x)*(vtx->x-jm->x)+
+           (j->y-jm->y)*(vtx->y-jm->y)+
+           (j->z-jm->z)*(vtx->z-jm->z);
+#ifdef TS_DOUBLE_DOUBLE
+        ctm=x3/sqrt(x1*x2-x3*x3);
+#endif
+#ifdef TS_DOUBLE_FLOAT
+        ctm=x3/sqrtf(x1*x2-x3*x3);
+#endif
+#ifdef TS_DOUBLE_LONGDOUBLE
+        ctm=x3/sqrtl(x1*x2-x3*x3);
+#endif
+        tot=ctp+ctm;
+        tot=0.5*tot;
+
+        //testing
+        xlen=vtx_distance_sq(j,vtx);
+        //xlen=pow(vtx->x-j->x,2)+pow(vtx->y-j->y,2)+pow(vtx->z-j->z,2);
+/*
+#ifdef  TS_DOUBLE_DOUBLE 
+        vtx->bond[jj-1]->bond_length=sqrt(xlen); 
+#endif
+#ifdef  TS_DOUBLE_FLOAT
+        vtx->bond[jj-1]->bond_length=sqrtf(xlen); 
+#endif
+#ifdef  TS_DOUBLE_LONGDOUBLE 
+        vtx->bond[jj-1]->bond_length=sqrtl(xlen); 
+#endif
+
+        vtx->bond[jj-1]->bond_length_dual=tot*vtx->bond[jj-1]->bond_length;
+*/
+        s+=tot*xlen;
+        xh+=tot*(j->x - vtx->x);
+        yh+=tot*(j->y - vtx->y);
+        zh+=tot*(j->z - vtx->z);
+        txn+=jt->xnorm;
+        tyn+=jt->ynorm;
+        tzn+=jt->znorm;
+
+
+
+        // angle stuff for gaussian curvature
+        // angle_sum += atan(ctp) + atan(ctm); // simple but slow!
+        // get the angle m-vtx-j
+        // atan2(|axb|,a*b) was recommended at mathwork forum (cosin has small angle problems, and still need a sqrt)
+        a_dot_b = (jm->x-vtx->x)*(j->x-vtx->x)+
+                  (jm->y-vtx->y)*(j->y-vtx->y)+
+                  (jm->z-vtx->z)*(j->z-vtx->z);
+        a_cross_b_x = (jm->y-vtx->y)*(j->z-vtx->z)-(jm->z-vtx->z)*(j->y-vtx->y);
+        a_cross_b_y = (jm->z-vtx->z)*(j->x-vtx->x)-(jm->x-vtx->x)*(j->z-vtx->z);
+        a_cross_b_z = (jm->x-vtx->x)*(j->y-vtx->y)-(jm->y-vtx->y)*(j->x-vtx->x);
+        mag_a_cross_b = sqrt(pow(a_cross_b_x,2)+pow(a_cross_b_y,2)+pow(a_cross_b_z,2));
+        angle_sum += atan2(mag_a_cross_b, a_dot_b);
+
+    }
+    
+    h=xh*xh+yh*yh+zh*zh;
+    ht=txn*xh+tyn*yh + tzn*zh;
+    s=s/4.0; 
+#ifdef TS_DOUBLE_DOUBLE
+    if(ht>=0.0) {
+        vtx->mean_curvature=sqrt(h)/s;
+    } else {
+        vtx->mean_curvature=-sqrt(h)/s;
+    }
+#endif
+#ifdef TS_DOUBLE_FLOAT
+    if(ht>=0.0) {
+        vtx->curvature=sqrtf(h);
+    } else {
+        vtx->curvature=-sqrtf(h);
+    }
+#endif
+#ifdef TS_DOUBLE_LONGDOUBLE
+    if(ht>=0.0) {
+        vtx->curvature=sqrtl(h);
+    } else {
+        vtx->curvature=-sqrtl(h);
+    }
+#endif
+    //also great point to update normal: note that the triangle normal is inwards
+    norml=sqrt(txn*txn+tyn*tyn+tzn*tzn);
+    vtx->nx=-txn/norml;
+    vtx->ny=-tyn/norml;
+    vtx->nz=-tzn/norml;
+    // c is spontaneous curvature energy for each vertex. Should be set to zero for
+    // normal circumstances.
+    /* the following statement is an expression for $\frac{1}{2}\int(c_1+c_2-c_0^\prime)^2\mathrm{d}A$, where $c_0^\prime=2c_0$ (twice the spontaneous curvature)  */
+    vtx->mean_energy=vtx->xk* 0.5*s*(vtx->mean_curvature-vtx->c)*(vtx->mean_curvature-vtx->c);
+    
+    vtx->gaussian_curvature = (2*M_PI- angle_sum)/s;
+
+    x1 = sqrt(pow(vtx->mean_curvature,2)-vtx->gaussian_curvature); // deltaC/2 in temp variable
+    vtx->new_c1 = vtx->mean_curvature + x1;
+    vtx->new_c2 = vtx->mean_curvature - x1;
+
+    vtx->gaussian_energy = vtx->xk2 * s * vtx->gaussian_curvature;
+
+    
+    if (model==10 || model==11) {
+        debug_curvature_tensor_energy_vertex(vesicle, vtx);
+    }
+    
+    if (model==10){
+        vtx->energy = vtx->mean_energy2 + vtx->gaussian_energy2;
+    }
+    else {
+        vtx->energy = vtx->mean_energy + vtx->gaussian_energy;
+    }
+
+    return TS_SUCCESS;
 }
