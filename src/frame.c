@@ -135,3 +135,77 @@ ts_bool cell_occupation(ts_vesicle *vesicle){
 
     return TS_SUCCESS;
 }
+
+// same as cell_occupation but with special check to prevent
+// overfilling a single cell with >256 {x=0,y=0,z=0} vertices
+ts_bool initialization_cell_occupation(ts_vesicle *vesicle){
+	ts_bool uninitialized=1;
+	ts_idx rolling = 0;
+	ts_idx i, j, n=vesicle->vlist->n;
+    ts_uint cellidx;
+	ts_cell_list *clist=vesicle->clist; //aliases for less wide code
+	ts_vertex_list *vlist;
+	ts_poly_list *poly_list=vesicle->poly_list;
+	ts_poly_list *filament_list=vesicle->filament_list;
+
+    cell_list_cell_occupation_clear(clist);
+
+	vlist = vesicle->vlist;
+	for (i=0; i<n; i++){
+		if (vlist->vtx[i]->x!=0 ||vlist->vtx[i]->y!=0 || vlist->vtx[i]->z!=0)
+			uninitialized=0;
+	}
+    for(i=0;i<n;i++){
+    	cellidx=vertex_self_avoidance(vesicle, vlist->vtx[i]);
+		//	already done in cell_add_vertex
+		// vesicle->vlist->vtx[i]->cell=vesicle->clist->cell[cellidx];
+		if (!uninitialized){
+    		cell_add_vertex(clist->cell[cellidx], vlist->vtx[i]);
+		}
+		else{
+			cell_add_vertex(clist->cell[rolling++%clist->cellno], vlist->vtx[i]);
+		}
+    }
+
+	//Add all polymers to cells
+	if(poly_list!=NULL){
+    	for(i=0;i<poly_list->n;i++){
+			vlist = poly_list->poly[i]->vlist;
+			for (j=0; j<vlist->n; j++){
+				if (vlist->vtx[j]->x!=0 || vlist->vtx[j]->y!=0 || vlist->vtx[j]->z!=0)
+					uninitialized=0;
+			}
+			for(j=0;j<vlist->n;j++){
+    			cellidx=vertex_self_avoidance(vesicle, vlist->vtx[j]);
+				if (!uninitialized){
+    				cell_add_vertex(clist->cell[cellidx], vlist->vtx[i]);
+				}
+				else{
+					cell_add_vertex(clist->cell[rolling++%clist->cellno], vlist->vtx[i]);
+				}
+			}
+    	}
+	}
+
+	//Add all filaments to cells
+	if(filament_list!=NULL){
+    	for(i=0;i<filament_list->n;i++){
+			vlist = filament_list->poly[i]->vlist;
+			for (j=0; j<vlist->n; j++){
+				if (vlist->vtx[j]->x!=0 || vlist->vtx[j]->y!=0 || vlist->vtx[j]->z!=0)
+					uninitialized=0;
+			}
+			for(j=0;j<vlist->n;j++){
+    			cellidx=vertex_self_avoidance(vesicle, vlist->vtx[j]);
+				if (!uninitialized){
+    				cell_add_vertex(clist->cell[cellidx], vlist->vtx[i]);
+				}
+				else{
+					cell_add_vertex(clist->cell[rolling++%clist->cellno], vlist->vtx[i]);
+				}
+			}
+    	}
+	}   
+
+    return TS_SUCCESS;
+}

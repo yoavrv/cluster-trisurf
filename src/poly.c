@@ -160,7 +160,7 @@ ts_poly_list *init_poly_list(ts_idx n_poly, ts_idx n_mono, ts_vertex_list *vlist
     ts_bool retval;
     ts_double dphi,dh;
 
-    cell_occupation(vesicle); //needed for evading the membrane
+    initialization_cell_occupation(vesicle); //needed for evading the membrane
     // Grafting polymers:
     int tries=0;
     if (vlist!=NULL){

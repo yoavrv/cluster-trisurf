@@ -139,7 +139,7 @@ ts_bool vtx_remove_neighbour(ts_vertex *vtx, ts_vertex *nvtx){
 }
 
 
-// create and add bond between two vertices
+// register bond between two vertices and update them
 ts_bool vtx_add_bond(ts_bond_list *blist,ts_vertex *vtx1,ts_vertex *vtx2){
     ts_small_idx i;
     ts_bond *bond;
@@ -759,6 +759,21 @@ ts_bool assert_vtx_ordered(ts_vertex* vtx){
     return TS_SUCCESS;
 }
 
+// check if vertex is ordered (0-ordered, 1-bad triangles, 2-bad bonds, 3-bad both)
+ts_int is_vtx_ordered(ts_vertex* vtx){
+    ts_small_idx i;
+    ts_int out=0;
+    for (i=0; i<vtx->neigh_no; i++){
+        if (!in_tri(vtx->tristar[i], vtx->neigh[i]) && !in_tri(vtx->tristar[i], vtx->neigh[next_small(i,vtx->neigh_no)])){
+            out |= 1;
+        }
+        if (!in_bond(vtx->bond[i], vtx->neigh[i])){
+            out |= 2;
+        }
+    }
+    return out;
+}
+
 // add tristar to vertex at index- shift other vertex. use to maintain tristar order
 ts_bool vtx_insert_tristar_at(ts_vertex *vtx, ts_triangle *tristarmem, ts_small_idx i){
     if (i > vtx->tristar_no){
@@ -827,7 +842,6 @@ ts_bool vtx_remove_neigh_at(ts_vertex *vtx, ts_small_idx i){
         }
     return TS_SUCCESS;
 }
-
 
 // It is the caller's responsibility to 1. add the bond to the neighbor's list, 2. maintain order
 ts_bool vtx_insert_bond_at(ts_vertex *vtx, ts_bond *bondmem, ts_small_idx i){

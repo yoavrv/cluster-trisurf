@@ -70,15 +70,15 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     // direct copy from Samo git repository
     // ...almost
     ts_small_idx jj, i;
-    ts_double edge_vector_x[7]={0,0,0,0,0,0,0};
-    ts_double edge_vector_y[7]={0,0,0,0,0,0,0};
-    ts_double edge_vector_z[7]={0,0,0,0,0,0,0};
-    ts_double edge_normal_x[7]={0,0,0,0,0,0,0};
-    ts_double edge_normal_y[7]={0,0,0,0,0,0,0};
-    ts_double edge_normal_z[7]={0,0,0,0,0,0,0};
-    ts_double edge_binormal_x[7]={0,0,0,0,0,0,0};
-    ts_double edge_binormal_y[7]={0,0,0,0,0,0,0};
-    ts_double edge_binormal_z[7]={0,0,0,0,0,0,0};
+    ts_double edge_vector_x[10]={0,0,0,0,0,0,0,0,0,0};
+    ts_double edge_vector_y[10]={0,0,0,0,0,0,0,0,0,0};
+    ts_double edge_vector_z[10]={0,0,0,0,0,0,0,0,0,0};
+    ts_double edge_normal_x[10]={0,0,0,0,0,0,0,0,0,0};
+    ts_double edge_normal_y[10]={0,0,0,0,0,0,0,0,0,0};
+    ts_double edge_normal_z[10]={0,0,0,0,0,0,0,0,0,0};
+    ts_double edge_binormal_x[10]={0,0,0,0,0,0,0,0,0,0};
+    ts_double edge_binormal_y[10]={0,0,0,0,0,0,0,0,0,0};
+    ts_double edge_binormal_z[10]={0,0,0,0,0,0,0,0,0,0};
     ts_double vertex_normal_x=0.0;
     ts_double vertex_normal_y=0.0;
     ts_double vertex_normal_z=0.0;
@@ -104,7 +104,7 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     gsl_eigen_symmv_workspace *workspace=gsl_eigen_symmv_alloc(3);
 
     // ts_double mprod[7], phi[7];
-    ts_double he[7];
+    ts_double he[10];
     ts_double Sv[3][3]={{0,0,0},{0,0,0},{0,0,0}};
 
 
@@ -897,15 +897,15 @@ inline ts_bool debug_curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vert
     // direct copy from Samo git repository
     // ...almost
     ts_small_idx jj, i;
-    ts_double edge_vector_x[7]={0,0,0,0,0,0,0};
-    ts_double edge_vector_y[7]={0,0,0,0,0,0,0};
-    ts_double edge_vector_z[7]={0,0,0,0,0,0,0};
-    ts_double edge_normal_x[7]={0,0,0,0,0,0,0};
-    ts_double edge_normal_y[7]={0,0,0,0,0,0,0};
-    ts_double edge_normal_z[7]={0,0,0,0,0,0,0};
-    ts_double edge_binormal_x[7]={0,0,0,0,0,0,0};
-    ts_double edge_binormal_y[7]={0,0,0,0,0,0,0};
-    ts_double edge_binormal_z[7]={0,0,0,0,0,0,0};
+    ts_double edge_vector_x[10]={0,0,0,0,0,0,0,0,0,0};
+    ts_double edge_vector_y[10]={0,0,0,0,0,0,0,0,0,0};
+    ts_double edge_vector_z[10]={0,0,0,0,0,0,0,0,0,0};
+    ts_double edge_normal_x[10]={0,0,0,0,0,0,0,0,0,0};
+    ts_double edge_normal_y[10]={0,0,0,0,0,0,0,0,0,0};
+    ts_double edge_normal_z[10]={0,0,0,0,0,0,0,0,0,0};
+    ts_double edge_binormal_x[10]={0,0,0,0,0,0,0,0,0,0};
+    ts_double edge_binormal_y[10]={0,0,0,0,0,0,0,0,0,0};
+    ts_double edge_binormal_z[10]={0,0,0,0,0,0,0,0,0,0};
     ts_double vertex_normal_x=0.0;
     ts_double vertex_normal_y=0.0;
     ts_double vertex_normal_z=0.0;
@@ -931,7 +931,7 @@ inline ts_bool debug_curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vert
     gsl_eigen_symmv_workspace *workspace=gsl_eigen_symmv_alloc(3);
 
     // ts_double mprod[7], phi[7];
-    ts_double he[7];
+    ts_double he[10];
     ts_double Sv[3][3]={{0,0,0},{0,0,0},{0,0,0}};
 
     ts_fprintf(stdout,"|%u|: ",vtx->idx);
@@ -958,7 +958,7 @@ inline ts_bool debug_curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vert
     Pv21=-vertex_normal_x*vertex_normal_y;
     Pv31=-vertex_normal_x*vertex_normal_z;
     Pv32=-vertex_normal_y*vertex_normal_z;
-    Pv12=Pv21; Pv13=Pv31; Pv23=Pv32; //alia for clarity of the symmetric matrix calculation
+    Pv12=Pv21; Pv13=Pv31; Pv23=Pv32; //alias for clarity of the symmetric matrix calculation
 
 
     // vertex are ordered by initial_dist and at bondflips
@@ -1029,12 +1029,12 @@ inline ts_bool debug_curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vert
         printf("H operator of edge vertex %d (edge %d): %f\n",vtx->idx,jj,he[jj]);
     }
     */
-    Se11=-edge_binormal_x[jj]*edge_binormal_x[jj]*he[jj];
-    Se21=-edge_binormal_x[jj]*edge_binormal_y[jj]*he[jj];
-    Se22=-edge_binormal_y[jj]*edge_binormal_y[jj]*he[jj];
-    Se31=-edge_binormal_x[jj]*edge_binormal_z[jj]*he[jj];
-    Se32=-edge_binormal_y[jj]*edge_binormal_z[jj]*he[jj];
-    Se33=-edge_binormal_z[jj]*edge_binormal_z[jj]*he[jj];
+    Se11=edge_binormal_x[jj]*edge_binormal_x[jj]*he[jj];
+    Se21=edge_binormal_x[jj]*edge_binormal_y[jj]*he[jj];
+    Se22=edge_binormal_y[jj]*edge_binormal_y[jj]*he[jj];
+    Se31=edge_binormal_x[jj]*edge_binormal_z[jj]*he[jj];
+    Se32=edge_binormal_y[jj]*edge_binormal_z[jj]*he[jj];
+    Se33=edge_binormal_z[jj]*edge_binormal_z[jj]*he[jj];
     Se12=Se21; Se13=Se31; Se23=Se32; //for clarity: hopefully compiler gets rid of these
     ts_fprintf(stdout,"Ses[%d]={%+.17f, %+.17f, %+.17f}\n",jj,Se11,Se12,Se13);
     ts_fprintf(stdout,"        {%+.17f, %+.17f, %+.17f}\n",   Se21,Se22,Se23);
@@ -1059,38 +1059,50 @@ inline ts_bool debug_curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vert
     } // END FOR JJ
 
 
-
+    if(Sv[1][0]!=Sv[0][1])fatal("01 badness\n",3);
+    if(Sv[2][0]!=Sv[0][2])fatal("02 badness\n",3);
+    if(Sv[1][2]!=Sv[2][1])fatal("12 badness\n",3);
+    Se11=Sv[0][0];
+    Se12=Sv[0][1];
+    Se13=Sv[0][2];
+    Se21=Sv[1][0];
+    Se22=Sv[1][1];
+    Se23=Sv[1][2];
+    Se31=Sv[2][0];
+    Se32=Sv[2][1];
+    Se33=Sv[2][2];
     // householder transformation: get rid of n^ components
     // matrix multiplication Sv[i,j] = Pv[i,a]*Sv[a,b]*Pv^T[b,j]
-    Sv[0][0]=(   Pv11*(Sv[0][0]*Pv11+Sv[0][1]*Pv21+Sv[0][2]*Pv31)
-                +Pv12*(Sv[1][0]*Pv11+Sv[1][1]*Pv21+Sv[1][2]*Pv31)
-                +Pv13*(Sv[2][0]*Pv11+Sv[2][1]*Pv21+Sv[2][2]*Pv31));
-    Sv[0][1]=(   Pv11*(Sv[0][0]*Pv12+Sv[0][1]*Pv22+Sv[0][2]*Pv32)
-                +Pv12*(Sv[1][0]*Pv12+Sv[1][1]*Pv22+Sv[1][2]*Pv32)
-                +Pv13*(Sv[2][0]*Pv12+Sv[2][1]*Pv22+Sv[2][2]*Pv32));
-    Sv[0][2]=(   Pv11*(Sv[0][0]*Pv13+Sv[0][1]*Pv23+Sv[0][2]*Pv33)
-                +Pv12*(Sv[1][0]*Pv13+Sv[1][1]*Pv23+Sv[1][2]*Pv33)
-                +Pv13*(Sv[2][0]*Pv13+Sv[2][1]*Pv23+Sv[2][2]*Pv33));
+    Sv[0][0]=(   Pv11*(  Se11*Pv11 + Se12*Pv21 + Se13*Pv31 )
+                +Pv12*(  Se21*Pv11 + Se22*Pv21 + Se23*Pv31 )
+                +Pv13*(  Se31*Pv11 + Se32*Pv21 + Se33*Pv31 ));
+    Sv[0][1]=(   Pv11*(  Se11*Pv12 + Se12*Pv22 + Se13*Pv32 )
+                +Pv12*(  Se21*Pv12 + Se22*Pv22 + Se23*Pv32 )
+                +Pv13*(  Se31*Pv12 + Se32*Pv22 + Se33*Pv32 ));
+    Sv[0][2]=(   Pv11*(  Se11*Pv13 + Se12*Pv23 + Se13*Pv33 )
+                +Pv12*(  Se21*Pv13 + Se22*Pv23 + Se23*Pv33 )
+                +Pv13*(  Se31*Pv13 + Se32*Pv23 + Se33*Pv33 ));
+         
+    Sv[1][0]=(   Pv21*(  Se11*Pv11 + Se12*Pv21 + Se13*Pv31 )
+                +Pv22*(  Se21*Pv11 + Se22*Pv21 + Se23*Pv31 )
+                +Pv23*(  Se31*Pv11 + Se32*Pv21 + Se33*Pv31 ));
+    Sv[1][1]=(   Pv21*(  Se11*Pv12 + Se12*Pv22 + Se13*Pv32 )
+                +Pv22*(  Se21*Pv12 + Se22*Pv22 + Se23*Pv32 )
+                +Pv23*(  Se31*Pv12 + Se32*Pv22 + Se33*Pv32 ));
+    Sv[1][2]=(   Pv21*(  Se11*Pv13 + Se12*Pv23 + Se13*Pv33 )
+                +Pv22*(  Se21*Pv13 + Se22*Pv23 + Se23*Pv33 )
+                +Pv23*(  Se31*Pv13 + Se32*Pv23 + Se33*Pv33 ));
+         
+    Sv[2][0]=(   Pv31*(  Se11*Pv11 + Se12*Pv21 + Se13*Pv31 )
+                +Pv32*(  Se21*Pv11 + Se22*Pv21 + Se23*Pv31 )
+                +Pv33*(  Se31*Pv11 + Se32*Pv21 + Se33*Pv31 ));
+    Sv[2][1]=(   Pv31*(  Se11*Pv12 + Se12*Pv22 + Se13*Pv32 )
+                +Pv32*(  Se21*Pv12 + Se22*Pv22 + Se23*Pv32 )
+                +Pv33*(  Se31*Pv12 + Se32*Pv22 + Se33*Pv32 ));
+    Sv[2][2]=(   Pv31*(  Se11*Pv13 + Se12*Pv23 + Se13*Pv33 )
+                +Pv32*(  Se21*Pv13 + Se22*Pv23 + Se23*Pv33 )
+                +Pv33*(  Se31*Pv13 + Se32*Pv23 + Se33*Pv33 ));
     
-    Sv[1][0]=(   Pv21*(Sv[0][0]*Pv11+Sv[0][1]*Pv21+Sv[0][2]*Pv31)
-                +Pv22*(Sv[1][0]*Pv11+Sv[1][1]*Pv21+Sv[1][2]*Pv31)
-                +Pv23*(Sv[2][0]*Pv11+Sv[2][1]*Pv21+Sv[2][2]*Pv31));
-    Sv[1][1]=(   Pv21*(Sv[0][0]*Pv12+Sv[0][1]*Pv22+Sv[0][2]*Pv32)
-                +Pv22*(Sv[1][0]*Pv12+Sv[1][1]*Pv22+Sv[1][2]*Pv32)
-                +Pv23*(Sv[2][0]*Pv12+Sv[2][1]*Pv22+Sv[2][2]*Pv32));
-    Sv[1][2]=(   Pv21*(Sv[0][0]*Pv13+Sv[0][1]*Pv23+Sv[0][2]*Pv33)
-                +Pv22*(Sv[1][0]*Pv13+Sv[1][1]*Pv23+Sv[1][2]*Pv33)
-                +Pv23*(Sv[2][0]*Pv13+Sv[2][1]*Pv23+Sv[2][2]*Pv33));
-    
-    Sv[2][0]=(   Pv31*(Sv[0][0]*Pv11+Sv[0][1]*Pv21+Sv[0][2]*Pv31)
-                +Pv32*(Sv[1][0]*Pv11+Sv[1][1]*Pv21+Sv[1][2]*Pv31)
-                +Pv33*(Sv[2][0]*Pv11+Sv[2][1]*Pv21+Sv[2][2]*Pv31));
-    Sv[2][1]=(   Pv31*(Sv[0][0]*Pv12+Sv[0][1]*Pv22+Sv[0][2]*Pv32)
-                +Pv32*(Sv[1][0]*Pv12+Sv[1][1]*Pv22+Sv[1][2]*Pv32)
-                +Pv33*(Sv[2][0]*Pv12+Sv[2][1]*Pv22+Sv[2][2]*Pv32));
-    Sv[2][2]=(   Pv31*(Sv[0][0]*Pv13+Sv[0][1]*Pv23+Sv[0][2]*Pv33)
-                +Pv32*(Sv[1][0]*Pv13+Sv[1][1]*Pv23+Sv[1][2]*Pv33)
-                +Pv33*(Sv[2][0]*Pv13+Sv[2][1]*Pv23+Sv[2][2]*Pv33));
     for (jj=0; jj<vtx->neigh_no; jj++){
         ts_fprintf(stdout,"%d: position={%+f,%+f,%+f}\n",jj,vtx->neigh[jj]->x, vtx->neigh[jj]->y,vtx->neigh[jj]->z);
     }
@@ -1156,7 +1168,10 @@ inline ts_bool debug_curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vert
     vtx->eig2[1] = gsl_matrix_get(Sv_eigenV,1,2);
     vtx->eig2[2] = gsl_matrix_get(Sv_eigenV,2,2);
     vtx->eig_v2 = eigenval[2];
-
+    ts_fprintf(stdout,"eigenvals: %f,%f,%f\n",eigenval[0],eigenval[1],eigenval[2]);
+    ts_fprintf(stdout,"eigenvec1: %f,%f,%f\n",vtx->eig0[0],vtx->eig0[1],vtx->eig0[2]);
+    ts_fprintf(stdout,"eigenvec2: %f,%f,%f\n",vtx->eig1[0],vtx->eig1[1],vtx->eig1[2]);
+    ts_fprintf(stdout,"eigenvec3: %f,%f,%f\n",vtx->eig2[0],vtx->eig2[1],vtx->eig2[2]);
     //And the stuff I'm tracking
     //vtx->nx = vertex_normal_x;
     //vtx->ny = vertex_normal_y;
@@ -1165,8 +1180,12 @@ inline ts_bool debug_curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vert
     //vtx->curvature2 = eigenval[0]*eigenval[1];
     vtx->mean_curvature2 = (eigenval[0]+ eigenval[1]);
     vtx->gaussian_curvature2 = eigenval[0]*eigenval[1];
-    vtx->mean_energy2 = 4*vtx->xk*(pow(eigenval[0]+eigenval[1]-2*vtx->c,2))*Av;
+    vtx->mean_energy2 = 0.25*vtx->xk*(pow(eigenval[0]+eigenval[1]-2*vtx->c,2))*Av;
     vtx->gaussian_energy2 = vtx->xk2 * Av * eigenval[0]*eigenval[1];
+    ts_fprintf(stdout,"mean curavture: %f\n", vtx->mean_curvature2);
+    ts_fprintf(stdout,"gaussian curvature %f\n",vtx->gaussian_curvature2);
+    ts_fprintf(stdout,"mean curvature energy %f\n",vtx->mean_energy2);
+    ts_fprintf(stdout,"gaussian curavtuure energy %f\n", vtx->gaussian_energy2);
     
 
     gsl_matrix_free(gsl_Sv);
@@ -1237,7 +1256,7 @@ inline ts_bool debug_energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     ts_small_idx li, ri;
     ts_small_idx t;
     ts_vertex *vl, *vr;
-    if (1){
+    if (0){
     //print_vertex_ordered(vtx);
     //fprintf(stdout,"\ndiscombobulating:");
     for (t=0; t<vtx->tristar_no; t++){

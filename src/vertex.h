@@ -49,6 +49,7 @@ ts_bool order_vertex_triangles(ts_vertex* vtx);
 ts_bool print_tri_order(ts_vertex* vtx);
 ts_bool print_vertex_ordered(ts_vertex* vtx);
 ts_bool assert_vtx_ordered(ts_vertex* vtx);
+ts_int is_vtx_ordered(ts_vertex* vtx);
 
 ts_bool vtx_insert_tristar_at(ts_vertex *vtx, ts_triangle *tristarmem, ts_small_idx i);
 ts_bool vtx_remove_tristar_at(ts_vertex *vtx, ts_small_idx i);

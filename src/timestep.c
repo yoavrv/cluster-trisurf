@@ -19,6 +19,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include "energy.h"
+#include "vertex.h"
 
 
 ts_bool run_simulation(ts_vesicle *vesicle, ts_massive_idx mcsweeps, ts_idx inititer, ts_idx iterations, ts_idx start_iteration){
@@ -250,20 +251,25 @@ ts_bool single_timestep(ts_vesicle *vesicle,ts_double *vmsr, ts_double *bfsr, cl
         if(retval==TS_SUCCESS) vmsrcnt++;
     }
     *time_0+=clock()-stopwatch;
-
+    ts_fprintf(stdout,"done vertex displacement\n");
     ts_int bfsrcnt=0;
     //for benchmarking
     stopwatch=clock();
     for(i=0;i<3*vesicle->vlist->n;i++){
         b=rand() % vesicle->blist->n;
+        if (0 && b==2230){
+            print_vertex_ordered(vesicle->blist->bond[b]->vtx1);
+            print_vertex_ordered(vesicle->blist->bond[b]->vtx2);
+        }
         //find a bond and return a pointer to a bond...
         //call single_bondflip_timestep...
         retval=single_bondflip_timestep_ordered(vesicle,vesicle->blist->bond[b],rnvec);
         // b++; retval=TS_FAIL;
         if(retval==TS_SUCCESS) bfsrcnt++;   
     }
+    fprintf(stdout,"\n");
     *time_3+=clock()-stopwatch; //time bondflip
-
+    ts_fprintf(stdout,"done bond flips\n");
     for(i=0;i<vesicle->poly_list->n;i++){
         for(j=0;j<vesicle->poly_list->poly[i]->vlist->n;j++){
             if (vesicle->poly_list->poly[i]->vlist->vtx[j]->type == is_ghost_vtx) {
@@ -278,7 +284,7 @@ ts_bool single_timestep(ts_vesicle *vesicle,ts_double *vmsr, ts_double *bfsr, cl
             }
         }
     }
-
+    ts_fprintf(stdout,"done poly\n");
 
     for(i=0;i<vesicle->filament_list->n;i++){
         for(j=0;j<vesicle->filament_list->poly[i]->vlist->n;j++){
@@ -293,6 +299,7 @@ ts_bool single_timestep(ts_vesicle *vesicle,ts_double *vmsr, ts_double *bfsr, cl
             }	
         }
     }
+    ts_fprintf(stdout,"done filament\n");
  
 
 

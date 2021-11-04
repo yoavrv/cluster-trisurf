@@ -10,6 +10,7 @@ ts_bond_list *init_bond_list(){
 	return blist;
 }
 
+// register bond to blist. Does not update the vertices!
 ts_bond  *bond_add(ts_bond_list *blist, ts_vertex *vtx1, ts_vertex *vtx2){
     ts_idx i;
     /* no vertices must be null! */

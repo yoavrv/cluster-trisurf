@@ -96,6 +96,11 @@ ts_vesicle *parseDump(char *dumpfname) {
 
 //	vesicle->poly_list=init_poly_list(0, 0, vesicle->vlist, vesicle);
 	//set_vesicle_values_from_tape(vesicle); //moved to vesicle initialization
+	for (i=0; i<vesicle->vlist->n; i++){
+		if (is_vtx_ordered(vesicle->vlist->vtx[i])){
+			print_vertex_ordered(vesicle->vlist->vtx[i]);
+		}
+	}
 	init_normal_vectors(vesicle->tlist);
 	mean_curvature_and_energy(vesicle);
 	sweep_attraction_bond_energy(vesicle);
@@ -787,7 +792,7 @@ ts_bool parseXMLBonds(ts_vesicle *vesicle,xmlDocPtr doc, xmlNodePtr cur){
 			idx=0;
 			while(token[0]!=NULL){
 				if(idx<3*(vesicle->vlist->n-2)){
-					bond_add(vesicle->blist, vesicle->vlist->vtx[atoi(token[0])], vesicle->vlist->vtx[atoi(token[1])]);
+					vtx_add_bond(vesicle->blist, vesicle->vlist->vtx[atoi(token[0])], vesicle->vlist->vtx[atoi(token[1])]);
 					//fprintf(stderr,"Bonds in vesicle count idx=%d\n",idx);
 				}
 				else {
