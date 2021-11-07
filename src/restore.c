@@ -97,6 +97,9 @@ ts_vesicle *parseDump(char *dumpfname) {
 //	vesicle->poly_list=init_poly_list(0, 0, vesicle->vlist, vesicle);
 	//set_vesicle_values_from_tape(vesicle); //moved to vesicle initialization
 	init_normal_vectors(vesicle->tlist);
+	for (i=0; i<vesicle->vlist->n; i++){
+		order_vertex_triangles(vesicle->vlist->vtx[i]);
+	}
 	mean_curvature_and_energy(vesicle);
 	sweep_attraction_bond_energy(vesicle);
 	if(vesicle->tape->stretchswitch==1){
