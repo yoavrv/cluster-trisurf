@@ -136,6 +136,15 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_massive_idx mcsweeps, ts_idx init
 
         // MAIN INNER LOOP
         // MONTE CARLO SWEEP
+        //debug 
+        ts_fprintf(stdout,"____________________________new timestep________________________________________________\n");
+        debug_energy_vertex(vesicle,vesicle->vlist->vtx[677]);
+        ts_fprintf(stdout,"__________________________________________________________________\n");
+        debug_energy_vertex(vesicle,vesicle->vlist->vtx[761]);
+        ts_fprintf(stdout,"__________________________________________________________________\n");
+        debug_energy_vertex(vesicle,vesicle->vlist->vtx[769]);
+        ts_fprintf(stdout,"__________________________________________________________________\n");
+        debug_energy_vertex(vesicle,vesicle->vlist->vtx[762]);
         for(j=0;j<mcsweeps;j++){
             single_timestep(vesicle, &vmsrt, &bfsrt, &time_0, &time_1, &time_2, &time_3);
             vmsr+=vmsrt;
@@ -264,6 +273,12 @@ ts_bool single_timestep(ts_vesicle *vesicle,ts_double *vmsr, ts_double *bfsr, cl
         //find a bond and return a pointer to a bond...
         //call single_bondflip_timestep...
         retval=single_bondflip_timestep_ordered(vesicle,vesicle->blist->bond[b],rnvec);
+        if (retval==TS_SUCCESS){
+            if ((vesicle->blist->bond[b]->vtx1->idx==677 && vesicle->blist->bond[b]->vtx2->idx==769)
+             || (vesicle->blist->bond[b]->vtx2->idx==677 && vesicle->blist->bond[b]->vtx1->idx==769)){
+                ts_fprintf(stdout,"FLIPPED\n");
+            }
+        }
         // b++; retval=TS_FAIL;
         if(retval==TS_SUCCESS) bfsrcnt++;   
     }
