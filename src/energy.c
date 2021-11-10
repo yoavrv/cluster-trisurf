@@ -708,9 +708,9 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
         viznorm/=norml;
 
         /*calculate ddp, Viscek force directed displacement*/
-        vtx->fx=vixnorm;
-        vtx->fy=viynorm;
-        vtx->fz=viznorm;
+        vtx->fx=vtx->f*vixnorm;
+        vtx->fy=vtx->f*viynorm;
+        vtx->fz=vtx->f*viznorm;
 
         //don't forget to free! 
         seen_vertex_free(seen_vtx);
@@ -718,9 +718,9 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
     } //end if (!Vicsek)
     else {
         //regular "force in normal direction"
-        vtx->fx = vtx->nx;
-        vtx->fy = vtx->ny;
-        vtx->fz = vtx->nz;
+        vtx->fx = vtx->f*vtx->nx;
+        vtx->fy = vtx->f*vtx->ny;
+        vtx->fz = vtx->f*vtx->nz;
     }
 
     // now we calculate the final force and work
@@ -779,8 +779,8 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
     ddp=vtx->fx*(vtx->x-vtx_old->x)+vtx->fy*(vtx->y-vtx_old->y)+vtx->fz*(vtx->z-vtx_old->z);
 
     
-    /*calculate dE*/
-    return -vtx->f*ddp;
+    /*dW=-Fdx*/
+    return -ddp;
 }
 
 
