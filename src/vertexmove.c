@@ -24,9 +24,11 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
     ts_uint cellidx; 
     ts_double delta_energy, delta_energy_cv,oenergy,dvol=0.0, darea=0.0, dstretchenergy=0.0;
     ts_double costheta,sintheta,phi,cosphi,r;
+    ts_double tri_angle_first_last_old, tri_angle_old, tri_angle_new, tx_old, ty_old, tz_old;
     clock_t stopwatch;
     //This will hold all the information of vtx and its neighbours
     ts_vertex backupvtx[20], *constvol_vtx_moved=NULL, *constvol_vtx_backup=NULL;
+    ts_triangle *t1, *t2;
     memcpy((void *)&backupvtx[0],(void *)vtx,sizeof(ts_vertex));
 
     //Some stupid tests for debugging cell occupation!
@@ -79,6 +81,8 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
             return TS_FAIL;
         }
     }
+
+    // angle between triangles check must be done after update in energy!
 
     // Distance with grafted poly-vertex check:	
     if(vtx->grafted_poly!=NULL){
@@ -192,8 +196,70 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
     // fprintf(stderr,"Volume in the beginning=%1.16e\n", vesicle->volume);
 
     //update the normals of triangles that share bead i.
-    for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]);
+    // combined with angle check!!!
+    //for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]);
     // update the normals of the vertices is in the energy
+    // angle between triangles must be large to prevent spikiness, 
+    // which is small angle in the normals (provided they are oriented correctly)
+    // but only if the angle was not already too small
+    //
+    // structure:
+    // end, 0: save end,0 angle; saving 0's normal in txyz and updating 0
+    // loop i,j=(0:end-1,1:end) check (i*j>min,i*j>old angle); , saving j's old normal in txyz and updating j
+    // compare end:0 with old angle;
+    //
+    if( !(vtx->type & is_edge_vtx) && vtx->tristar_no>0){
+        // for nonedge vertices with triangles, save first and last old angle, update first
+        // at the end of the loop, the end will be updated too
+        t1 = vtx->tristar[vtx->tristar_no-1];
+        t2 = vtx->tristar[0];
+
+        tri_angle_first_last_old = t1->xnorm * t2->xnorm + t1->ynorm * t2->ynorm + t1->znorm * t2->znorm;
+        tx_old = t2->xnorm; ty_old = t2->ynorm; tz_old = t2->znorm; // remember old t2 (t1 next step)
+        triangle_normal_vector(t2);
+        // tri_angle_new = ... t1 is no updated
+    }
+    for(i=1;i<vtx->tristar_no;i++){
+        t1 = vtx->tristar[i];                              // updated prev step
+        t2 = vtx->tristar[prev_small(i, vtx->tristar_no)]; //unupdated
+
+        tri_angle_old = tx_old*t2->xnorm + ty_old*t2->ynorm + tz_old*t2->znorm;          // old t1 * unupdated t2
+        tx_old = t2->xnorm; ty_old = t2->ynorm; tz_old = t2->znorm;  // remember old t2 (t1 next step)
+        triangle_normal_vector(t2);
+        tri_angle_new = t1->xnorm*t2->xnorm + t1->ynorm*t2->ynorm + t1->znorm*t2->znorm; // t1 * updated t2
+
+        if( (tri_angle_new) < MIN_INTERTRIANGLE_ANGLE_COSINE && (tri_angle_new < tri_angle_old)) {
+            // failure! too spiky (and step is not de-spiking)
+            vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
+            for(i=0;i<vtx->neigh_no;i++){
+                vtx->neigh[i]=memcpy((void *)vtx->neigh[i],(void *)&backupvtx[i+1],sizeof(ts_vertex));
+            }
+            for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]); 
+
+            *time_2 += clock()-stopwatch;
+            return TS_FAIL;
+
+        }
+    }
+    if( !(vtx->type & is_edge_vtx) && vtx->tristar_no>0 ){
+        t1 = vtx->tristar[vtx->tristar_no-1];
+        t2 = vtx->tristar[0];
+
+        // t1 already updated
+        tri_angle_new = t1->xnorm*t2->xnorm + t1->ynorm*t2->ynorm + t1->znorm*t2->znorm; // t1 * updated t2
+    
+        if( (tri_angle_new) < MIN_INTERTRIANGLE_ANGLE_COSINE && tri_angle_new < tri_angle_first_last_old) {
+            // failure! too spiky (and step is not de-spiking)
+            vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
+            for(i=0;i<vtx->neigh_no;i++){
+                vtx->neigh[i]=memcpy((void *)vtx->neigh[i],(void *)&backupvtx[i+1],sizeof(ts_vertex));
+            }
+            for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]); 
+
+            *time_2 += clock()-stopwatch;
+            return TS_FAIL;
+        }
+    }
 
     // bending energy of the vertex
     oenergy=vtx->energy;

@@ -141,6 +141,12 @@ ts_idx prev_idx(ts_idx i, ts_idx max);
 #define TS_COORD_CYLINDRICAL 2
 // ^ coordinates in the vtu file?
 
+/** @brief Prevent spikiness of triangles by imposing a minimum angle between them
+ * We measure the normal between neighboring two triangles n1*n2=cos(theta)
+ * And impose this is greater than 
+ * */
+#define MIN_INTERTRIANGLE_ANGLE_COSINE 0.7
+
 typedef struct {
     ts_double e1;
     ts_double e2;

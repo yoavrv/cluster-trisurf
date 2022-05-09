@@ -137,7 +137,9 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_massive_idx mcsweeps, ts_idx init
         // MAIN INNER LOOP
         // MONTE CARLO SWEEP
         //debug 
+        ts_fprintf(stdout,"________________________________________________________________________________________\n");
         ts_fprintf(stdout,"____________________________new timestep________________________________________________\n");
+        ts_fprintf(stdout,"________________________________________________________________________________________\n");
         debug_energy_vertex(vesicle,vesicle->vlist->vtx[677]);
         ts_fprintf(stdout,"__________________________________________________________________\n");
         debug_energy_vertex(vesicle,vesicle->vlist->vtx[761]);
