@@ -220,8 +220,8 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
         // tri_angle_new = ... t1 is no updated
     }
     for(i=1;i<vtx->tristar_no;i++){
-        t1 = vtx->tristar[i];                              // updated prev step
-        t2 = vtx->tristar[prev_small(i, vtx->tristar_no)]; //unupdated
+        t2 = vtx->tristar[i];   // unupdated
+        t1 = vtx->tristar[i-1]; // updated prev step
 
         tri_angle_old = tx_old*t2->xnorm + ty_old*t2->ynorm + tz_old*t2->znorm;          // old t1 * unupdated t2
         tx_old = t2->xnorm; ty_old = t2->ynorm; tz_old = t2->znorm;  // remember old t2 (t1 next step)
