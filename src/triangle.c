@@ -289,3 +289,10 @@ ts_bool triangle_list_free(ts_triangle_list *tlist){
 ts_bool in_tri(ts_triangle* t, ts_vertex* v){
     return (t->vertex[0]==v || t->vertex[1]==v || t->vertex[2]==v);
 }
+
+/** @brief dot product between the normals of t1 and t2 (t1->norm . t2->norm)
+ * 
+ */
+ts_double triangle_dot_normals(ts_triangle *t1, ts_triangle *t2){
+    return (t1->xnorm*t2->xnorm + t1->ynorm*t2->ynorm + t1->znorm*t2->znorm);
+}

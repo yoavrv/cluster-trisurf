@@ -572,6 +572,8 @@ c
     ts_small_idx i;
     ts_double oldenergy, delta_energy, dvol=0.0, darea=0.0;
     ts_triangle *lm=NULL,*lp=NULL, *lp1=NULL, *lm2=NULL;
+    ts_double tri_normals_angle_cosine;
+    ts_triangle *lm1=NULL,*lp2=NULL;
 
     ts_vertex *kp,*km;
 
@@ -640,7 +642,7 @@ c
     c      |/     |     \ |              km = {...x:k, x+1:it}
     c     km  lm  | lp   kp            {x-1:lm1, x:lm, x+1:lm2}
     c      |\     |     / |              k = {...y:kp, y+1:it, y+2:km}
-    c      |  \   |   /   |            {y-1:lm1, y:lp, y+1:lm, y+2:lm1}
+    c      |  \   |   /   |            {y-1:lp1, y:lp, y+1:lm, y+2:lm1}
     c      |lm2 \ | / lp2 |              kp = {...z:it, z+1:k}
     c      +------it------+            {z-1:lp2, z:lp, z+1:lm1}
     c
@@ -654,6 +656,10 @@ c
     nei_it_at_kp = find_neigh_idx(kp, it);//z
     //lm2 = km->tristar[next_small(nei_k_at_km, km->tristar_no)]; // already done
     lp1 = k->tristar[prev_small(nei_kp_at_k, k->tristar_no)];
+
+    // for tri-tri angles: also need lm1 and lp2
+    lp2 = it->tristar[next_small(nei, it->tristar_no)];
+    lm1 = k->tristar[next_small(next_small(nei_kp_at_k, k->tristar_no),k->tristar_no)];
     
     // ####### Passed all base tests #######
 
@@ -712,12 +718,41 @@ c
     /*    vesicle_volume(vesicle);
     fprintf(stderr,"Volume in the beginning=%1.16e\n", vesicle->volume);
     */
+   
     
     // ####################################//
     /* fix data structure for flipped bond */
     // ####################################//
     ts_flip_bond_ordered(vesicle, bond, it, neim, km, nei_k_at_km, 
                          k, nei_kp_at_k, kp, nei_it_at_kp, lm, lp, lm2, lp1);
+
+
+    // make sure the angle between triangle is ok!
+    tri_normals_angle_cosine=triangle_dot_normals(lm,lp);
+    tri_normals_angle_cosine=fmin(tri_normals_angle_cosine,triangle_dot_normals(lm,lp1));
+    tri_normals_angle_cosine=fmin(tri_normals_angle_cosine,triangle_dot_normals(lm,lm1));
+    tri_normals_angle_cosine=fmin(tri_normals_angle_cosine,triangle_dot_normals(lp,lm2));
+    tri_normals_angle_cosine=fmin(tri_normals_angle_cosine,triangle_dot_normals(lp,lp2));
+    if(tri_normals_angle_cosine<MIN_INTERTRIANGLE_ANGLE_COSINE){
+        //restore old state.
+        for(i=0;i<4;i++){
+            free(orig_vtx[i]->neigh);
+            free(orig_vtx[i]->tristar);
+            free(orig_vtx[i]->bond);
+            free(orig_tria[i]->neigh);
+            memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
+            memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
+            /* level 2 pointers are redirected*/
+            }
+            memcpy(bond,bck_bond,sizeof(ts_bond));
+            for(i=0;i<4;i++){
+                free(bck_vtx[i]);
+                free(bck_tria[i]);
+            }
+            free(bck_bond);
+        return TS_FAIL;
+
+	}
 
 
     /* Calculating the new energy */

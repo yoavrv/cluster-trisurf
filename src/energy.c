@@ -1129,7 +1129,7 @@ inline ts_bool debug_curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vert
                 +Pv33*(  Se31*Pv13 + Se32*Pv23 + Se33*Pv33 ));
     ts_fprintf(stdout, "%d: {%+f,%+f,%+f}:",vtx->idx,vtx->x,vtx->y,vtx->z);
     for (jj=0; jj<vtx->neigh_no; jj++){
-        fprintf(stdout,"{%+f,%+f,%+f},\n",vtx->neigh[jj]->x, vtx->neigh[jj]->y,vtx->neigh[jj]->z);
+        ts_fprintf(stdout,"{%+f,%+f,%+f},\n",vtx->neigh[jj]->x, vtx->neigh[jj]->y,vtx->neigh[jj]->z);
     }
     for (jj=0; jj<vtx->neigh_no; jj++){
         a=vtx->neigh[jj]->x-vtx->x;
@@ -1194,9 +1194,9 @@ inline ts_bool debug_curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vert
     vtx->eig2[2] = gsl_matrix_get(Sv_eigenV,2,2);
     vtx->eig_v2 = eigenval[2];
     ts_fprintf(stdout,"eigenvals: %f,%f,%f\n",eigenval[0],eigenval[1],eigenval[2]);
-    ts_fprintf(stdout,"eigenvec1: %f,%f,%f\n",vtx->eig0[0],vtx->eig0[1],vtx->eig0[2]);
-    ts_fprintf(stdout,"eigenvec2: %f,%f,%f\n",vtx->eig1[0],vtx->eig1[1],vtx->eig1[2]);
-    ts_fprintf(stdout,"eigenvec3: %f,%f,%f\n",vtx->eig2[0],vtx->eig2[1],vtx->eig2[2]);
+    ts_fprintf(stdout,"eigenvec1: {%f,%f,%f}\n",vtx->eig0[0],vtx->eig0[1],vtx->eig0[2]);
+    ts_fprintf(stdout,"eigenvec2: {%f,%f,%f}\n",vtx->eig1[0],vtx->eig1[1],vtx->eig1[2]);
+    ts_fprintf(stdout,"eigenvec3: {%f,%f,%f}\n",vtx->eig2[0],vtx->eig2[1],vtx->eig2[2]);
     //And the stuff I'm tracking
     //vtx->nx = vertex_normal_x;
     //vtx->ny = vertex_normal_y;
@@ -1207,12 +1207,9 @@ inline ts_bool debug_curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vert
     vtx->gaussian_curvature2 = eigenval[0]*eigenval[1];
     vtx->mean_energy2 = 0.25*vtx->xk*(pow(eigenval[0]+eigenval[1]-2*vtx->c,2))*Av;
     vtx->gaussian_energy2 = vtx->xk2 * Av * eigenval[0]*eigenval[1];
-    ts_fprintf(stdout,"mean curavture: %f;\t", vtx->mean_curvature2);
-    ts_fprintf(stdout,"gaussian curvature %f;\t",vtx->gaussian_curvature2);
-    ts_fprintf(stdout,"mean curvature energy %f;\t",vtx->mean_energy2);
-    ts_fprintf(stdout,"gaussian curavtuure energy %f\n", vtx->gaussian_energy2);
+    ts_fprintf(stdout, "mean curavture: %f;\tgaussian curvature %f;\tmean curvature energy %f;\tgaussian curavtuure energy %f\n",
+                        vtx->mean_curvature2, vtx->gaussian_curvature2, vtx->mean_energy2, vtx->gaussian_energy2);
     
-
     gsl_matrix_free(gsl_Sv);
     gsl_vector_free(Sv_eigen);
     gsl_matrix_free(Sv_eigenV);
