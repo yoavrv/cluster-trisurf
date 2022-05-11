@@ -1207,7 +1207,7 @@ inline ts_bool debug_curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vert
     vtx->gaussian_curvature2 = eigenval[0]*eigenval[1];
     vtx->mean_energy2 = 0.25*vtx->xk*(pow(eigenval[0]+eigenval[1]-2*vtx->c,2))*Av;
     vtx->gaussian_energy2 = vtx->xk2 * Av * eigenval[0]*eigenval[1];
-    ts_fprintf(stdout, "mean curavture: %f;\tgaussian curvature %f;\tmean curvature energy %f;\tgaussian curavtuure energy %f\n",
+    ts_fprintf(stdout, "mean curvature: %f;\tgaussian curvature %f;\tmean curvature energy %f;\tgaussian curvature energy %f\n",
                         vtx->mean_curvature2, vtx->gaussian_curvature2, vtx->mean_energy2, vtx->gaussian_energy2);
     
     gsl_matrix_free(gsl_Sv);

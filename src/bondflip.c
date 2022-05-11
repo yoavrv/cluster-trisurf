@@ -572,7 +572,7 @@ c
     ts_small_idx i;
     ts_double oldenergy, delta_energy, dvol=0.0, darea=0.0;
     ts_triangle *lm=NULL,*lp=NULL, *lp1=NULL, *lm2=NULL;
-    ts_double tri_normals_angle_cosine;
+    ts_double tri_normals_angle_cosine_old_min, tri_normals_angle_cosine_new_min;
     ts_triangle *lm1=NULL,*lp2=NULL;
 
     ts_vertex *kp,*km;
@@ -719,7 +719,13 @@ c
     fprintf(stderr,"Volume in the beginning=%1.16e\n", vesicle->volume);
     */
    
-    
+    tri_normals_angle_cosine_old_min=triangle_dot_normals(lm,lp);
+    tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lm,lp1));
+    tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lm,lm1));
+    tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lp,lm2));
+    tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lp,lp2));
+
+
     // ####################################//
     /* fix data structure for flipped bond */
     // ####################################//
@@ -728,12 +734,12 @@ c
 
 
     // make sure the angle between triangle is ok!
-    tri_normals_angle_cosine=triangle_dot_normals(lm,lp);
-    tri_normals_angle_cosine=fmin(tri_normals_angle_cosine,triangle_dot_normals(lm,lp1));
-    tri_normals_angle_cosine=fmin(tri_normals_angle_cosine,triangle_dot_normals(lm,lm1));
-    tri_normals_angle_cosine=fmin(tri_normals_angle_cosine,triangle_dot_normals(lp,lm2));
-    tri_normals_angle_cosine=fmin(tri_normals_angle_cosine,triangle_dot_normals(lp,lp2));
-    if(tri_normals_angle_cosine<MIN_INTERTRIANGLE_ANGLE_COSINE){
+    tri_normals_angle_cosine_new_min=triangle_dot_normals(lm,lp);
+    tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lm,lp1));
+    tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lm,lm1));
+    tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lp,lm2));
+    tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lp,lp2));
+    if( tri_normals_angle_cosine_new_min<MIN_INTERTRIANGLE_ANGLE_COSINE && tri_normals_angle_cosine_new_min < tri_normals_angle_cosine_old_min){
         //restore old state.
         for(i=0;i<4;i++){
             free(orig_vtx[i]->neigh);

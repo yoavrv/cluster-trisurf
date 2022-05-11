@@ -145,7 +145,7 @@ ts_idx prev_idx(ts_idx i, ts_idx max);
  * We measure the normal between neighboring two triangles n1*n2=cos(theta)
  * And impose this is greater than 
  * */
-#define MIN_INTERTRIANGLE_ANGLE_COSINE 0.7
+#define MIN_INTERTRIANGLE_ANGLE_COSINE 0
 
 typedef struct {
     ts_double e1;
