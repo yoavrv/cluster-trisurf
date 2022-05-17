@@ -1391,6 +1391,8 @@ ts_tape *parsetapebuffer(char *buffer){
         CFG_FLOAT("vicsek_radius", 1.0, CFGF_NONE),
         CFG_INT("bond_model", 0, CFGF_NONE),
         CFG_INT("curvature_model", 0, CFGF_NONE),
+/* Dihedral angle cosine constraint*/
+        CFG_FLOAT("min_dihedral_angle_cosine",-1,CFGF_NONE),
 /* random seed */
         CFG_INT("random_seed",0,CFGF_NONE),
         CFG_END()
@@ -1452,6 +1454,7 @@ ts_tape *parsetapebuffer(char *buffer){
     tape->random_seed = cfg_getint(cfg, "random_seed");
     tape->type_of_bond_model = cfg_getint(cfg, "bond_model");
     tape->type_of_curvature_model = cfg_getint(cfg, "curvature_model");
+    tape->min_dihedral_angle_cosine = cfg_getfloat(cfg,"min_dihedral_angle_cosine");
 
     if (retval==CFG_FILE_ERROR){
         fatal("No tape file.", 100);

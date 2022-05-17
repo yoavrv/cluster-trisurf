@@ -145,7 +145,7 @@ ts_idx prev_idx(ts_idx i, ts_idx max);
  * We measure the normal between neighboring two triangles n1*n2=cos(theta)
  * And impose this is greater than 
  * */
-#define MIN_INTERTRIANGLE_ANGLE_COSINE 0
+// #define MIN_INTERTRIANGLE_ANGLE_COSINE 0
 
 typedef struct {
     ts_double e1;
@@ -363,6 +363,7 @@ typedef struct {
     ts_double adhesion_strength;
     ts_double z_adhesion;
     ts_double adhesion_radius;
+    ts_double min_dihedral_angle_cosine; // Prevent spikiness of triangles by imposing a minimum dihedral angle
     //  long int brezveze0;
     //	long int brezveze1;
     //	long int brezveze2;

@@ -192,6 +192,7 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
     delta_energy=0;
 
 
+    if(vesicle->tape->min_dihedral_angle_cosine>-1){
     // vesicle_volume(vesicle);
     // fprintf(stderr,"Volume in the beginning=%1.16e\n", vesicle->volume);
 
@@ -231,7 +232,7 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
         tri_angle_new = t1->xnorm*t2->xnorm + t1->ynorm*t2->ynorm + t1->znorm*t2->znorm; // t1 * updated t2
         tri_angle_old_min = fmin(tri_angle_old_min, tri_angle_old);
         tri_angle_new_min = fmin(tri_angle_new_min, tri_angle_new);
-        if( 0 && (tri_angle_new) < MIN_INTERTRIANGLE_ANGLE_COSINE && (tri_angle_new < tri_angle_old)) {
+        if( 0 && (tri_angle_new) < vesicle->tape->min_dihedral_angle_cosine && (tri_angle_new < tri_angle_old)) {
             // failure! too spiky (and step is not de-spiking)
             vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
             for(i=0;i<vtx->neigh_no;i++){
@@ -252,7 +253,7 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
         tri_angle_new = t1->xnorm*t2->xnorm + t1->ynorm*t2->ynorm + t1->znorm*t2->znorm; // t1 * updated t2
         tri_angle_old_min = fmin(tri_angle_old_min, tri_angle_old);
         tri_angle_new_min = fmin(tri_angle_new_min, tri_angle_new);
-        if( 0 && (tri_angle_new) < MIN_INTERTRIANGLE_ANGLE_COSINE && tri_angle_new < tri_angle_old) {
+        if( 0 && (tri_angle_new) < vesicle->tape->min_dihedral_angle_cosine && tri_angle_new < tri_angle_old) {
             // failure! too spiky (and step is not de-spiking)
             vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
             for(i=0;i<vtx->neigh_no;i++){
@@ -264,7 +265,7 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
             return TS_FAIL;
         }
     }
-    if(  (tri_angle_new_min) < MIN_INTERTRIANGLE_ANGLE_COSINE && tri_angle_new_min < tri_angle_old_min) {
+    if(  (tri_angle_new_min) < vesicle->tape->min_dihedral_angle_cosine && tri_angle_new_min < tri_angle_old_min) {
             // failure! too spiky (and step is not de-spiking)
             vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
             for(i=0;i<vtx->neigh_no;i++){
@@ -275,6 +276,11 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
             *time_2 += clock()-stopwatch;
             return TS_FAIL;
         }
+    }
+    else {
+        // update normals
+        for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]); 
+    }
 
     // bending energy of the vertex
     oenergy=vtx->energy;
