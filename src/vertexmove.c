@@ -54,10 +54,24 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
     //rnvec[0]=drand48();
     //rnvec[1]=drand48();
     //rnvec[2]=drand48();
+
+    // We work in spherical coordinates: a probabity integral on a sphere of radius 1 is
+    //
+    //  3/(4pi) integral [0,1),[0,2pi),[0,pi) f(r,phi,theta) r^2 sin(theta) dr dphi dtheta
+    //
+    // We do a change of coordinates to variables in [0,1)
+    //   q = r^3   |   v = phi/2pi   |    u = 0.5-cos(theta)/2
+    // dq = 3r^2dr | dv = 1/2pi dphi | du = sin(theta)/2 dtheta
+    // leading to jacobian transformation
+    // 3/(4pi) r^2 sin(theta) dr dphi dtheta = (3r^2dr) (dphi/(2pi)) (sin(theta)dtheta/2) = dq dv du
+    //    => integral [0,1),[0,1),[0, 1) f(q,v,u)   dq dv du 
+    //
+    // the coordinate in terms of equal variables in [0,1) i.e. rand48()
+    //  r = q^(1/3)  |  phi = 2pi v   |    cos(theta) = 1 - 2u
     r=vesicle->stepsize*drand48(); // should be cubed root for equal volume probability, but maybe we prefer smaller moves
     phi=drand48()*2*M_PI;
     costheta=2*drand48()-1;
-    sintheta=sqrt(1-pow(costheta,2)); // gcc doesn't seems to not know geometry
+    sintheta=sqrt(1-pow(costheta,2)); // gcc doesn't seems to not know trigonometry
     cosphi=cos(phi);
     vtx->x=vtx->x+r*sintheta*cosphi;
     if (phi<M_PI){
@@ -198,7 +212,7 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
 
     //update the normals of triangles that share bead i.
     // combined with angle check!!!
-    //for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]);
+    // for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]);
     // update the normals of the vertices is in the energy
     // angle between triangles must be large to prevent spikiness, 
     // which is small angle in the normals (provided they are oriented correctly)

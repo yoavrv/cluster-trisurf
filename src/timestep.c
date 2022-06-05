@@ -137,17 +137,19 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_massive_idx mcsweeps, ts_idx init
         // MAIN INNER LOOP
         // MONTE CARLO SWEEP
         //debug 
-        ts_fprintf(stdout,"_______________________________________________________________________________\n");
-        ts_fprintf(stdout,"____________________________timestep %d________________________________________\n",i);
-        ts_fprintf(stdout,"_______________________________________________________________________________\n");
-        debug_energy_vertex(vesicle,vesicle->vlist->vtx[677]);
-        ts_fprintf(stdout,"__________________________________________________________________\n");
-        debug_energy_vertex(vesicle,vesicle->vlist->vtx[761]);
-        ts_fprintf(stdout,"__________________________________________________________________\n");
-        debug_energy_vertex(vesicle,vesicle->vlist->vtx[769]);
-        ts_fprintf(stdout,"__________________________________________________________________\n");
-        debug_energy_vertex(vesicle,vesicle->vlist->vtx[762]);
-        ts_fprintf(stdout,"____________________________timestep %d_______________________________________\n",i);
+        if (vesicle->vlist->n>800){
+            ts_fprintf(stdout,"_______________________________________________________________________________\n");
+            ts_fprintf(stdout,"____________________________timestep %d________________________________________\n",i);
+            ts_fprintf(stdout,"_______________________________________________________________________________\n");
+            debug_energy_vertex(vesicle,vesicle->vlist->vtx[677]); //677
+            ts_fprintf(stdout,"__________________________________________________________________\n");
+            debug_energy_vertex(vesicle,vesicle->vlist->vtx[761]); //761
+            ts_fprintf(stdout,"__________________________________________________________________\n");
+            debug_energy_vertex(vesicle,vesicle->vlist->vtx[769]); // 769
+            ts_fprintf(stdout,"__________________________________________________________________\n");
+            debug_energy_vertex(vesicle,vesicle->vlist->vtx[762]); // 762
+            ts_fprintf(stdout,"____________________________timestep %d_______________________________________\n",i);
+        }
         for(j=0;j<mcsweeps;j++){
             single_timestep(vesicle, &vmsrt, &bfsrt, &time_0, &time_1, &time_2, &time_3);
             vmsr+=vmsrt;

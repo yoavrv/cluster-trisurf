@@ -314,7 +314,7 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     vtx->eig2[1] = gsl_matrix_get(Sv_eigenV,1,2);
     vtx->eig2[2] = gsl_matrix_get(Sv_eigenV,2,2);
     vtx->eig_v2 = eigenval[2];
- 
+
     //And the stuff I'm tracking
     //vtx->nx = vertex_normal_x;
     //vtx->ny = vertex_normal_y;
