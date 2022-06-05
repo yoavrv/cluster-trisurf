@@ -23,7 +23,7 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
     ts_bool retval; 
     ts_uint cellidx; 
     ts_double delta_energy, delta_energy_cv,oenergy,dvol=0.0, darea=0.0, dstretchenergy=0.0;
-    ts_double costheta,sintheta,phi,cosphi,r;
+    ts_double costheta,sintheta,phi,cosphi,sinphi,r;
     ts_double tri_angle_first_last_old, tri_angle_old, tri_angle_new, tx_old, ty_old, tz_old, tri_angle_old_min, tri_angle_new_min;
     clock_t stopwatch;
     //This will hold all the information of vtx and its neighbours
@@ -73,13 +73,9 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
     costheta=2*drand48()-1;
     sintheta=sqrt(1-pow(costheta,2)); // gcc doesn't seems to not know trigonometry
     cosphi=cos(phi);
+    sinphi= (phi<M_PI)? sqrt(1-pow(cosphi,2)) : -sqrt(1-pow(cosphi,2)) ; // 0<phi<pi: sin(phi)>0, pi<phi<2pi: sin(phi)<0,
     vtx->x=vtx->x+r*sintheta*cosphi;
-    if (phi<M_PI){
-        vtx->y=vtx->y+r*sintheta*sqrt(1-pow(cosphi,2));
-    }
-    else {
-        vtx->y=vtx->y-r*sintheta*sqrt(1-pow(cosphi,2));
-    }
+    vtx->y=vtx->y+r*sintheta*sinphi;
     vtx->z=vtx->z+r*costheta;
 
     // finish timing when the movement is approved or thrown out
