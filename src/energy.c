@@ -478,7 +478,7 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
 
     }
     
-    h=xh*xh+yh*yh+zh*zh;
+    h=xh*xh+yh *yh+zh*zh;
     ht=txn*xh+tyn*yh + tzn*zh;
     s=s/4.0; 
 #ifdef TS_DOUBLE_DOUBLE
@@ -507,6 +507,22 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     vtx->nx=-txn/norml;
     vtx->ny=-tyn/norml;
     vtx->nz=-tzn/norml;
+    
+    // with normal: project the director on the tangent plane
+    if ( model==11 || (model==10 && (vtx->type & is_anisotropic_vtx))){
+        // t = t - (t.n)n   (or -nx(nxt)
+        a_dot_b = (vtx->tx*vtx->nx)+(vtx->ty*vtx->ny)+(vtx->tz*vtx->nz); // temporarily used as the dot product
+        vtx->tx = vtx->tx - a_dot_b*vtx->nx;
+        vtx->ty = vtx->ty - a_dot_b*vtx->ny;
+        vtx->tz = vtx->tz - a_dot_b*vtx->nz;
+        // this operation exclusively lowers |t|: if we do manage to avoid using the size (always taking t*A*(nxt)/t^2) we can avoid the normalization
+        // and just periodically make sure the size is large enough if (t^2<0.5) t=2t
+        norml=sqrt((vtx->tx*vtx->tx)+(vtx->ty*vtx->ty)+(vtx->tz*vtx->tz)); // should be the same as sqrt(1-*(n.t)^2)
+        vtx->tx=vtx->tx/norml;
+        vtx->ty=vtx->ty/norml;
+        vtx->tz=vtx->tz/norml;
+    }
+
     // c is spontaneous curvature energy for each vertex. Should be set to zero for
     // normal circumstances.
     /* the following statement is an expression for $\frac{1}{2}\int(c_1+c_2-c_0^\prime)^2\mathrm{d}A$, where $c_0^\prime=2c_0$ (twice the spontaneous curvature)  */

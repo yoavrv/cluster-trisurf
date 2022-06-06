@@ -23,7 +23,7 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
     ts_bool retval; 
     ts_uint cellidx; 
     ts_double delta_energy, delta_energy_cv,oenergy,dvol=0.0, darea=0.0, dstretchenergy=0.0;
-    ts_double costheta,sintheta,phi,cosphi,sinphi,r;
+    ts_double costheta,sintheta,phi,cosphi,sinphi,r, omega, cosomega, sinomega;
     ts_double tri_angle_first_last_old, tri_angle_old, tri_angle_new, tx_old, ty_old, tz_old, tri_angle_old_min, tri_angle_new_min;
     clock_t stopwatch;
     //This will hold all the information of vtx and its neighbours
@@ -260,7 +260,7 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
             for(i=0;i<vtx->neigh_no;i++){
                 vtx->neigh[i]=memcpy((void *)vtx->neigh[i],(void *)&backupvtx[i+1],sizeof(ts_vertex));
             }
-            for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]); 
+            for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]); // we need to un-do normal updates on the triangles, since they aren't saved
 
             *time_2 += clock()-stopwatch;
             return TS_FAIL;
@@ -271,6 +271,21 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
        // for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]); 
     }
 
+    // rotate director
+    if (vtx->type & is_anisotropic_vtx){
+        // we do this before the parallel transport, because the new normal calculation is fused in the energy calculation
+        // we may want to bias to the original direction
+        omega=(2*drand48()-1)*M_PI;
+        cosomega=cos(omega);
+        // omega=2*drand48()-1
+        // cosomega=1-2(omega*omega)
+        // cosomega=1-4(omega*omega)+2(omega*omega*omega*omega) // even closer to a cosine, fudge 1-(2+a)x^2+ax^4 as long as a<=2 to keep cosoega>=-1
+        sinomega= (omega<0)? sqrt(1-pow(cosomega,2)) : -sqrt(1-pow(cosomega,2)) ; // 0<phi<pi: sin(phi)>0, -pi<phi<0: sin(phi)<0,
+        // rotation: d = cos()d + sin()dxn
+        vtx->tx = cosomega*vtx->tx + sinomega*(vtx->ty*vtx->nz - vtx->tz*vtx->ny);
+        vtx->ty = cosomega*vtx->ty + sinomega*(vtx->tz*vtx->nx - vtx->tx*vtx->nz);
+        vtx->tz = cosomega*vtx->tz + sinomega*(vtx->tx*vtx->ny - vtx->ty*vtx->nx);
+    }
     // bending energy of the vertex
     oenergy=vtx->energy;
     energy_vertex(vesicle, vtx);
@@ -296,7 +311,7 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
                 for(i=0;i<vtx->neigh_no;i++){
                     vtx->neigh[i]=memcpy((void *)vtx->neigh[i],(void *)&backupvtx[i+1],sizeof(ts_vertex));
                 }
-                for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]); 
+                for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]);
 
                 *time_2 += clock()-stopwatch;
                 return TS_FAIL;
