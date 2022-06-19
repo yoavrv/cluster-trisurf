@@ -139,6 +139,7 @@ ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
     ts_idx *indices;
     ts_idx j; // first idx of the next type of vertices to add
     ts_vertex* vtx;
+    ts_double norml;
     n = vesicle->vlist->n;
     indices = (ts_uint*) malloc(n * sizeof(ts_uint));
     // create an array fo indices; copied a bunch from wikipedia "Fisher-Yates shuffle"
@@ -171,9 +172,13 @@ ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
         vtx->fx=0; //force
         vtx->fy=0;
         vtx->fz=0;
-        vtx->tx=0; //director
-        vtx->ty=0;
-        vtx->tz=0;
+        vtx->tx=((1+i)%7-3.5); //director (quasirandom)
+        vtx->ty=((10-i)%13-6.5);
+        vtx->tz=((4+2*i)%11-5.5);
+        norml=sqrt((vtx->tx*vtx->tx)+(vtx->ty*vtx->ty)+(vtx->tz*vtx->tz)); // should be the same as sqrt(1-*(n.t)^2)
+        vtx->tx=vtx->tx/norml;
+        vtx->ty=vtx->ty/norml;
+        vtx->tz=vtx->tz/norml;
     }
     j=i;
     // add however many types with for(i=j, i<j+n_next_type; i++) {vtx->prop=type_prop} j=i;
@@ -195,9 +200,13 @@ ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
         vtx->fx=0; //force
         vtx->fy=0;
         vtx->fz=0;
-        vtx->tx=0; //director
-        vtx->ty=0;
-        vtx->tz=0;
+        vtx->tx=((1+i)%8-3.5); //director (quasirandom)
+        vtx->ty=((10-i)%14-6.5);
+        vtx->tz=((4+3*i)%12-5.5);
+        norml=sqrt((vtx->tx*vtx->tx)+(vtx->ty*vtx->ty)+(vtx->tz*vtx->tz)); // should be the same as sqrt(1-*(n.t)^2)
+        vtx->tx=vtx->tx/norml;
+        vtx->ty=vtx->ty/norml;
+        vtx->tz=vtx->tz/norml;
     }
     free(indices);
 

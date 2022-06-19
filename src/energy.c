@@ -90,26 +90,22 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     ts_double vertex_normal_x=0.0;
     ts_double vertex_normal_y=0.0;
     ts_double vertex_normal_z=0.0;
+    ts_double tx=0.0, ty=0.0, tz=0.0, px=0.0, py=0.0, pz=0.0; //director t and nxt
 
     ts_triangle *lm=NULL, *lp=NULL;
-    ts_double sumnorm,a,b,c;
-    ts_double temp_length;
+    ts_double sumnorm;
+    ts_double temp_length, t_dot_n;
     ts_double cross_x, cross_y, cross_z;
 
     ts_double Se11=0, Se21=0, Se22=0, Se31=0, Se32=0, Se33=0;
-    ts_double Pv11, Pv21, Pv22, Pv31, Pv32, Pv33;
-    ts_double Se12, Se13, Se23, Pv12, Pv13, Pv23; 
+    ts_double Se12, Se13, Se23; 
+    ts_double tSt,tSp,pSp,pSt;
+    ts_double tr, det;
+    ts_double lam1, lam2, v1t, v1p, v2t, v2p, lenv1, lenv2;
     //alias for clarity of symmetric matrices: hopefully the compiler removes them
 
     ts_double We;
     ts_double Av, We_Av;
-
-    ts_double eigenval[3];
-
-    gsl_matrix *gsl_Sv=gsl_matrix_alloc(3,3);
-    gsl_matrix *Sv_eigenV=gsl_matrix_alloc(3,3);
-    gsl_vector *Sv_eigen=gsl_vector_alloc(3);
-    gsl_eigen_symmv_workspace *workspace=gsl_eigen_symmv_alloc(3);
 
     // ts_double mprod[7], phi[7];
     ts_double he[10];
@@ -127,18 +123,32 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     vertex_normal_x=vertex_normal_x/temp_length;
     vertex_normal_y=vertex_normal_y/temp_length;
     vertex_normal_z=vertex_normal_z/temp_length;
+
+    // update normal and director
     vtx->nx2 = vertex_normal_x;
     vtx->ny2 = vertex_normal_y;
     vtx->nz2 = vertex_normal_z;
 
-    Pv11=(pow(vertex_normal_x,2)+pow(vertex_normal_y,2)+pow(vertex_normal_z,2))-vertex_normal_x*vertex_normal_x;
-    Pv22=(pow(vertex_normal_x,2)+pow(vertex_normal_y,2)+pow(vertex_normal_z,2))-vertex_normal_y*vertex_normal_y;
-    Pv33=(pow(vertex_normal_x,2)+pow(vertex_normal_y,2)+pow(vertex_normal_z,2))-vertex_normal_z*vertex_normal_z;
-    Pv21=-vertex_normal_x*vertex_normal_y;
-    Pv31=-vertex_normal_x*vertex_normal_z;
-    Pv32=-vertex_normal_y*vertex_normal_z;
-    Pv12=Pv21; Pv13=Pv31; Pv23=Pv32; //alias for clarity of the symmetric matrix calculation
+    // t = t - (t.n)n   (or -nx(nxt)
+    t_dot_n = (vtx->tx*vertex_normal_x)+(vtx->ty*vertex_normal_y)+(vtx->tz*vertex_normal_z); // temporarily used as the dot product
+    tx = vtx->tx - t_dot_n*vertex_normal_x;
+    ty = vtx->ty - t_dot_n*vertex_normal_y;
+    tz = vtx->tz - t_dot_n*vertex_normal_z;
+    // this operation exclusively lowers |t|: if we do manage to avoid using the size (always taking t*A*(nxt)/t^2) we can avoid the normalization
+    // and just periodically make sure the size is large enough if (t^2<0.5) t=2t
+    temp_length=sqrt((tx*tx)+(ty*ty)+(tz*tz)); // should be the same as sqrt(1-*(n.t)^2)
+    tx = tx / temp_length;
+    ty = ty / temp_length;
+    tz = tz / temp_length;
+    vtx->tx = tx;
+    vtx->ty = ty;
+    vtx->tz = tz;
+    // and the third axii p=nxt
+    px = vertex_normal_y*tz - vertex_normal_z*ty;
+    py = vertex_normal_z*tx - vertex_normal_x*tz;
+    pz = vertex_normal_x*ty - vertex_normal_y*tx;
 
+    
 
     // vertex are ordered by initial_dist and at bondflips
     for(jj=0;jj<vtx->neigh_no;jj++){
@@ -250,88 +260,68 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     Se31=Sv[2][0];
     Se32=Sv[2][1];
     Se33=Sv[2][2];
-    // householder transformation: get rid of n^ components
-    // matrix multiplication Sv[i,j] = Pv[i,a]*Sv[a,b]*Pv^T[b,j]
-    Sv[0][0]=(   Pv11*(  Se11*Pv11 + Se12*Pv21 + Se13*Pv31 )
-                +Pv12*(  Se21*Pv11 + Se22*Pv21 + Se23*Pv31 )
-                +Pv13*(  Se31*Pv11 + Se32*Pv21 + Se33*Pv31 ));
-    Sv[0][1]=(   Pv11*(  Se11*Pv12 + Se12*Pv22 + Se13*Pv32 )
-                +Pv12*(  Se21*Pv12 + Se22*Pv22 + Se23*Pv32 )
-                +Pv13*(  Se31*Pv12 + Se32*Pv22 + Se33*Pv32 ));
-    Sv[0][2]=(   Pv11*(  Se11*Pv13 + Se12*Pv23 + Se13*Pv33 )
-                +Pv12*(  Se21*Pv13 + Se22*Pv23 + Se23*Pv33 )
-                +Pv13*(  Se31*Pv13 + Se32*Pv23 + Se33*Pv33 ));
-         
-    Sv[1][0]=(   Pv21*(  Se11*Pv11 + Se12*Pv21 + Se13*Pv31 )
-                +Pv22*(  Se21*Pv11 + Se22*Pv21 + Se23*Pv31 )
-                +Pv23*(  Se31*Pv11 + Se32*Pv21 + Se33*Pv31 ));
-    Sv[1][1]=(   Pv21*(  Se11*Pv12 + Se12*Pv22 + Se13*Pv32 )
-                +Pv22*(  Se21*Pv12 + Se22*Pv22 + Se23*Pv32 )
-                +Pv23*(  Se31*Pv12 + Se32*Pv22 + Se33*Pv32 ));
-    Sv[1][2]=(   Pv21*(  Se11*Pv13 + Se12*Pv23 + Se13*Pv33 )
-                +Pv22*(  Se21*Pv13 + Se22*Pv23 + Se23*Pv33 )
-                +Pv23*(  Se31*Pv13 + Se32*Pv23 + Se33*Pv33 ));
-         
-    Sv[2][0]=(   Pv31*(  Se11*Pv11 + Se12*Pv21 + Se13*Pv31 )
-                +Pv32*(  Se21*Pv11 + Se22*Pv21 + Se23*Pv31 )
-                +Pv33*(  Se31*Pv11 + Se32*Pv21 + Se33*Pv31 ));
-    Sv[2][1]=(   Pv31*(  Se11*Pv12 + Se12*Pv22 + Se13*Pv32 )
-                +Pv32*(  Se21*Pv12 + Se22*Pv22 + Se23*Pv32 )
-                +Pv33*(  Se31*Pv12 + Se32*Pv22 + Se33*Pv32 ));
-    Sv[2][2]=(   Pv31*(  Se11*Pv13 + Se12*Pv23 + Se13*Pv33 )
-                +Pv32*(  Se21*Pv13 + Se22*Pv23 + Se23*Pv33 )
-                +Pv33*(  Se31*Pv13 + Se32*Pv23 + Se33*Pv33 ));
-    
-
-    // into gsl
-    gsl_matrix_set(gsl_Sv, 0,0, Sv[0][0]);
-    gsl_matrix_set(gsl_Sv, 0,1, Sv[0][1]);
-    gsl_matrix_set(gsl_Sv, 0,2, Sv[0][2]);
-    gsl_matrix_set(gsl_Sv, 1,0, Sv[1][0]);
-    gsl_matrix_set(gsl_Sv, 1,1, Sv[1][1]);
-    gsl_matrix_set(gsl_Sv, 1,2, Sv[1][2]);
-    gsl_matrix_set(gsl_Sv, 2,0, Sv[2][0]);
-    gsl_matrix_set(gsl_Sv, 2,1, Sv[2][1]);
-    gsl_matrix_set(gsl_Sv, 2,2, Sv[2][2]);
-
-    // calculate eigenvalues and eigenvectors
-    gsl_eigen_symmv(gsl_Sv, Sv_eigen, Sv_eigenV, workspace);
-    gsl_eigen_symmv_sort(Sv_eigen, Sv_eigenV, GSL_EIGEN_SORT_ABS_DESC);
+    // project to the t,p plane
+    tSt =  tx*Se11*tx+tx*Se12*ty+tx*Se13*tz
+           +ty*Se21*tx+ty*Se22*ty+ty*Se23*tz
+           +tz*Se31*tx+tz*Se32*ty+tz*Se33*tz; 
+    tSp =  tx*Se11*px+tx*Se12*py+tx*Se13*pz
+           +ty*Se21*px+ty*Se22*py+ty*Se23*pz
+           +tz*Se31*px+tz*Se32*py+tz*Se33*pz; 
+    pSp =  px*Se11*px+px*Se12*py+px*Se13*pz
+           +py*Se21*px+py*Se22*py+py*Se23*pz
+           +pz*Se31*px+pz*Se32*py+pz*Se33*pz; 
+    pSt = tSp;
 
     // get eigenvalues and eigenvectors out
-    eigenval[0]= gsl_vector_get(Sv_eigen, 0);
-    eigenval[1]= gsl_vector_get(Sv_eigen, 1);
-    eigenval[2]= gsl_vector_get(Sv_eigen, 2);
-    vtx->eig0[0] = gsl_matrix_get(Sv_eigenV,0,0);
-    vtx->eig0[1] = gsl_matrix_get(Sv_eigenV,1,0);
-    vtx->eig0[2] = gsl_matrix_get(Sv_eigenV,2,0);
-    vtx->eig_v0 = eigenval[0];
-    vtx->eig1[0] = gsl_matrix_get(Sv_eigenV,0,1);
-    vtx->eig1[1] = gsl_matrix_get(Sv_eigenV,1,1);
-    vtx->eig1[2] = gsl_matrix_get(Sv_eigenV,2,1);
-    vtx->eig_v1 = eigenval[1];
-    vtx->eig2[0] = gsl_matrix_get(Sv_eigenV,0,2);
-    vtx->eig2[1] = gsl_matrix_get(Sv_eigenV,1,2);
-    vtx->eig2[2] = gsl_matrix_get(Sv_eigenV,2,2);
-    vtx->eig_v2 = eigenval[2];
+    tr = tSt + pSp;
+    det = tSt*pSp - tSp*pSt;
+    vtx->mean_curvature2 = tr/2;
+    vtx->gaussian_curvature2 = det;
+    lam1 = (tr + sqrt(tr*tr - 4*det))/2;
+    lam2 = (tr - sqrt(tr*tr - 4*det))/2;
+    vtx->eig_v0 = lam1;
+    vtx->eig_v1 = lam2;
+    vtx->eig_v2 = 0;
+    // constryct eigenvectors: make sure we don't have any 0 vectors!
+    if(tSt>pSp){ 
+        v1t = lam1-pSp; //pSt==0 -> lam1=tSt, v1t!=0
+        v1p = pSt;
+        v2t = tSp;
+        v2p = lam2-tSt;
+    }
+    else{
+        v1t = lam1-tSt;
+        v1p = pSt;
+        v2t = tSp;
+        v2p = lam2-pSp;
 
-    //And the stuff I'm tracking
-    //vtx->nx = vertex_normal_x;
-    //vtx->ny = vertex_normal_y;
-    //vtx->nz = vertex_normal_z;
-    //vtx->curvature = (eigenval[0] + eigenval[1])/2;
-    //vtx->curvature2 = eigenval[0]*eigenval[1];
-    vtx->mean_curvature2 = (eigenval[0]+ eigenval[1]);
-    vtx->gaussian_curvature2 = eigenval[0]*eigenval[1];
-    vtx->mean_energy2 = 0.25*vtx->xk*(pow(eigenval[0]+eigenval[1]-2*vtx->c,2))*Av;
-    vtx->gaussian_energy2 = vtx->xk2 * Av * eigenval[0]*eigenval[1];
-
+    }
+    lenv1 = sqrt(v1t*v1t + v1p*v1p);
+    v1t/=lenv1;
+    v1p/=lenv1;
+    lenv2 = sqrt(v2t*v2t + v2p*v2p);
+    v2t/=lenv2;
+    v2p/=lenv2;
+    vtx->eig0[0] = v1t*tx + v1p*px;
+    vtx->eig0[1] = v1t*ty + v1p*py;
+    vtx->eig0[2] = v1t*tz + v1p*pz;
+    vtx->eig1[0] = v2t*tx + v2p*px;
+    vtx->eig1[1] = v2t*ty + v2p*py;
+    vtx->eig1[2] = v2t*tz + v2p*pz;
     
+    vtx->eig2[0] = vertex_normal_x;
+    vtx->eig2[1] = vertex_normal_y;
+    vtx->eig2[2] = vertex_normal_z;
 
-    gsl_matrix_free(gsl_Sv);
-    gsl_vector_free(Sv_eigen);
-    gsl_matrix_free(Sv_eigenV);
-    gsl_eigen_symmv_free(workspace);
+    // spontaneous curvature ! isotropt=y here
+    tSt -= 0.5*vtx->c + 0.5*vtx->d;
+    pSp -= 0.5*vtx->c - 0.5*vtx->d;
+    tr = tSt + pSp;
+    det = tSt*pSp - pSt * tSp;
+    vtx->mean_energy2 = vtx->xk*Av* pow(tr,2);
+    vtx->gaussian_energy2 = vtx->xk2 * Av * det;
+
+
     return TS_SUCCESS;
 }
 
