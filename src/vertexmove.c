@@ -282,9 +282,9 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
         // cosomega=1-4(omega*omega)+2(omega*omega*omega*omega) // even closer to a cosine, fudge 1-(2+a)x^2+ax^4 as long as a<=2 to keep cosoega>=-1
         sinomega= (omega<0)? sqrt(1-pow(cosomega,2)) : -sqrt(1-pow(cosomega,2)) ; // 0<phi<pi: sin(phi)>0, -pi<phi<0: sin(phi)<0,
         // rotation: d = cos()d + sin()dxn
-        vtx->tx = cosomega*vtx->tx + sinomega*(vtx->ty*vtx->nz - vtx->tz*vtx->ny);
-        vtx->ty = cosomega*vtx->ty + sinomega*(vtx->tz*vtx->nx - vtx->tx*vtx->nz);
-        vtx->tz = cosomega*vtx->tz + sinomega*(vtx->tx*vtx->ny - vtx->ty*vtx->nx);
+        vtx->dx = cosomega*vtx->dx + sinomega*(vtx->dy*vtx->nz - vtx->dz*vtx->ny);
+        vtx->dy = cosomega*vtx->dy + sinomega*(vtx->dz*vtx->nx - vtx->dx*vtx->nz);
+        vtx->dz = cosomega*vtx->dz + sinomega*(vtx->dx*vtx->ny - vtx->dy*vtx->nx);
     }
     // bending energy of the vertex
     oenergy=vtx->energy;

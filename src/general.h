@@ -184,9 +184,9 @@ struct ts_vertex {
         ts_double fz;
         ts_double ad_w; // adhesive surface bonding
         ts_double d;  // spontaneous curvature deviator
-        ts_double tx; // director vector
-        ts_double ty;
-        ts_double tz;
+        ts_double dx; // director vector
+        ts_double dy;
+        ts_double dz;
         ts_double eig0[3];
         ts_double eig1[3];
         ts_double eig2[3];

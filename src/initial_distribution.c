@@ -172,13 +172,13 @@ ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
         vtx->fx=0; //force
         vtx->fy=0;
         vtx->fz=0;
-        vtx->tx=((1+i)%7-3.5); //director (quasirandom)
-        vtx->ty=((10-i)%13-6.5);
-        vtx->tz=((4+2*i)%11-5.5);
-        norml=sqrt((vtx->tx*vtx->tx)+(vtx->ty*vtx->ty)+(vtx->tz*vtx->tz)); // should be the same as sqrt(1-*(n.t)^2)
-        vtx->tx=vtx->tx/norml;
-        vtx->ty=vtx->ty/norml;
-        vtx->tz=vtx->tz/norml;
+        vtx->dx=((1+i)%7-3.5); //director (quasirandom)
+        vtx->dy=((10-i)%13-6.5);
+        vtx->dz=((4+2*i)%11-5.5);
+        norml=sqrt((vtx->dx*vtx->dx)+(vtx->dy*vtx->dy)+(vtx->dz*vtx->dz)); // should be the same as sqrt(1-*(n.t)^2)
+        vtx->dx=vtx->dx/norml;
+        vtx->dy=vtx->dy/norml;
+        vtx->dz=vtx->dz/norml;
     }
     j=i;
     // add however many types with for(i=j, i<j+n_next_type; i++) {vtx->prop=type_prop} j=i;
@@ -200,13 +200,13 @@ ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
         vtx->fx=0; //force
         vtx->fy=0;
         vtx->fz=0;
-        vtx->tx=((1+i)%8-3.5); //director (quasirandom)
-        vtx->ty=((10-i)%14-6.5);
-        vtx->tz=((4+3*i)%12-5.5);
-        norml=sqrt((vtx->tx*vtx->tx)+(vtx->ty*vtx->ty)+(vtx->tz*vtx->tz)); // should be the same as sqrt(1-*(n.t)^2)
-        vtx->tx=vtx->tx/norml;
-        vtx->ty=vtx->ty/norml;
-        vtx->tz=vtx->tz/norml;
+        vtx->dx=((1+i)%8-3.5); //director (quasirandom)
+        vtx->dy=((10-i)%14-6.5);
+        vtx->dz=((4+3*i)%12-5.5);
+        norml=sqrt((vtx->dx*vtx->dx)+(vtx->dy*vtx->dy)+(vtx->dz*vtx->dz)); // should be the same as sqrt(1-*(n.t)^2)
+        vtx->dx=vtx->dx/norml;
+        vtx->dy=vtx->dy/norml;
+        vtx->dz=vtx->dz/norml;
     }
     free(indices);
 

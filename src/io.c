@@ -1107,7 +1107,7 @@ ts_bool write_vertex_xml_file(ts_vesicle *vesicle, ts_idx timestepno, ts_cluster
     fprintf(fh,"</DataArray>\n");
 
     fprintf(fh,"<DataArray type=\"Float64\" Name=\"director\" NumberOfComponents=\"3\" format=\"ascii\">\n");
-    TS_WRITE_VECTOR_ITERATE_VTX("%.17e %.17e %.17e\n",tx,ty,tz);
+    TS_WRITE_VECTOR_ITERATE_VTX("%.17e %.17e %.17e\n",dx,dy,dz);
     fprintf(fh,"</DataArray>\n");
 
     fprintf(fh,"<DataArray type=\"Float64\" Name=\"eig0\" NumberOfComponents=\"3\" format=\"ascii\">\n");

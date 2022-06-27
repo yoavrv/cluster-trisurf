@@ -374,9 +374,9 @@ ts_bool vtx_set_global_values(ts_vesicle *vesicle){
 		vesicle->vlist->vtx[i]->fx=0; //force
 		vesicle->vlist->vtx[i]->fy=0;
 		vesicle->vlist->vtx[i]->fz=0;
-		vesicle->vlist->vtx[i]->tx=0; //director
-		vesicle->vlist->vtx[i]->ty=0;
-		vesicle->vlist->vtx[i]->tz=0;
+		vesicle->vlist->vtx[i]->dx=0; //director
+		vesicle->vlist->vtx[i]->dy=0;
+		vesicle->vlist->vtx[i]->dz=0;
     }
     return TS_SUCCESS;
 }

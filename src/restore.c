@@ -690,22 +690,22 @@ ts_bool parseXMLPointData(ts_vesicle *vesicle,xmlDocPtr doc, xmlNodePtr cur){
 				idx=0;
 				while(vtoken[0]!=NULL){
 					if(idx<vesicle->vlist->n){
-						vesicle->vlist->vtx[idx]->tx=atof(vtoken[0]);
-						vesicle->vlist->vtx[idx]->ty=atof(vtoken[1]);
-						vesicle->vlist->vtx[idx]->tz=atof(vtoken[2]);
+						vesicle->vlist->vtx[idx]->dx=atof(vtoken[0]);
+						vesicle->vlist->vtx[idx]->dy=atof(vtoken[1]);
+						vesicle->vlist->vtx[idx]->dz=atof(vtoken[2]);
 					} else if(vesicle->tape->nmono && vesicle->tape->npoly && idx<vesicle->vlist->n+vesicle->tape->nmono*vesicle->tape->npoly) {
 						polyidx=(idx-vesicle->vlist->n)/vesicle->tape->nmono;
 						monoidx=(idx-vesicle->vlist->n)%vesicle->tape->nmono;
-						vesicle->poly_list->poly[polyidx]->vlist->vtx[monoidx]->tx=atof(vtoken[0]);
-						vesicle->poly_list->poly[polyidx]->vlist->vtx[monoidx]->ty=atof(vtoken[1]);
-						vesicle->poly_list->poly[polyidx]->vlist->vtx[monoidx]->tz=atof(vtoken[2]);
+						vesicle->poly_list->poly[polyidx]->vlist->vtx[monoidx]->dx=atof(vtoken[0]);
+						vesicle->poly_list->poly[polyidx]->vlist->vtx[monoidx]->dy=atof(vtoken[1]);
+						vesicle->poly_list->poly[polyidx]->vlist->vtx[monoidx]->dz=atof(vtoken[2]);
 					} else {
 						filidx=(idx-vesicle->vlist->n-vesicle->tape->nmono*vesicle->tape->npoly)/vesicle->tape->nfono;
 						fonoidx=(idx-vesicle->vlist->n-vesicle->tape->nmono*vesicle->tape->npoly)%vesicle->tape->nfono;
 						//fprintf(stderr,"filidx=%d, fonoidx=%d, coord=%s,%s,%s\n",filidx,fonoidx,token[0],token[1],token[2]);
-						vesicle->filament_list->poly[filidx]->vlist->vtx[fonoidx]->tx=atof(vtoken[0]);
-						vesicle->filament_list->poly[filidx]->vlist->vtx[fonoidx]->ty=atof(vtoken[1]);
-						vesicle->filament_list->poly[filidx]->vlist->vtx[fonoidx]->tz=atof(vtoken[2]);
+						vesicle->filament_list->poly[filidx]->vlist->vtx[fonoidx]->dx=atof(vtoken[0]);
+						vesicle->filament_list->poly[filidx]->vlist->vtx[fonoidx]->dy=atof(vtoken[1]);
+						vesicle->filament_list->poly[filidx]->vlist->vtx[fonoidx]->dz=atof(vtoken[2]);
 				}
 				for(i=0;i<2;i++)	vtoken[i]=strtok(NULL," ");	
 				vtoken[2]=strtok(NULL,"\n");
