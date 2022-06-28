@@ -113,7 +113,7 @@ ts_double var_cluster_size(ts_vesicle *vesicle, ts_cluster_list* cstlist, ts_dou
     for (k=0; k<cstlist->n; k++){
         s += (cstlist->cluster[k]->nvtx-mean_size)*(cstlist->cluster[k]->nvtx-mean_size);
     }
-    s = s/(cstlist->n+1); //bessel correction
+    if (cstlist->n>1) s = s/(cstlist->n-1); //bessel correction
     return s;
 }
 
@@ -155,7 +155,7 @@ ts_double perimeter_tvvv(ts_vertex* p, ts_vertex* a, ts_vertex* b){
     pb_dot_pb=vtx_distance_sq(p,b); //shouldn't be zero!
     ab_dot_ab=vtx_distance_sq(a,b); // shouldn't be zero!
     mix_dot=(p->x-a->x)*(b->x-a->x)+ //carefull with the order!
-               (p->y-a->y)*(b->y-a->y)+ //don't want -|pa||ab|cos(theta)
+            (p->y-a->y)*(b->y-a->y)+ //don't want -|pa||ab|cos(theta)
             (p->z-a->z)*(b->z-a->z);
     cotan_theta=mix_dot/sqrt(pa_dot_pa*ab_dot_ab-mix_dot*mix_dot);
     perim=0.5*cotan_theta*sqrt(pb_dot_pb);
