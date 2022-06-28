@@ -428,20 +428,25 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
  * @returns TS_SUCCESS on successful calculation.
 */
 inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
-        
     
     ts_small_idx jj;
     ts_small_idx jjp,jjm;
-    ts_vertex *j,*jp, *jm;
-    ts_triangle *jt;
-    ts_double s=0.0,xh=0.0,yh=0.0,zh=0.0,txn=0.0,tyn=0.0,tzn=0.0;
+    ts_vertex *j; // current neighbor
+    ts_vertex *jp;// next neighbor
+    ts_vertex *jm;// prev neighbor
+    ts_triangle *jt; // triangle (vtx,j,jp)
+    ts_double s=0.0; // area
+    ts_double xh=0.0,yh=0.0,zh=0.0,txn=0.0,tyn=0.0,tzn=0.0;
     ts_double x1,x2,x3,ctp,ctm,tot,xlen;
     ts_double h,ht,norml;
     ts_double angle_sum=0;
     ts_double a_dot_b, a_cross_b_x, a_cross_b_y, a_cross_b_z, mag_a_cross_b;
-    ts_bool model=vesicle->tape->type_of_curvature_model;
+    ts_bool model=vesicle->tape->type_of_curvature_model; // control energy model: 0: regular, 10: curvature tensor energy, 11: calcualte curvature tensor energy but don't use it
 
-
+    // step 1. iterate over the neighbors
+    // - calculate the normal
+    // - calculate the dual lattice edge contribution to the curvature xh voodoo magic vector
+    // - calculate the angle sum for the gaussian curvature
     for(jj=0; jj<vtx->neigh_no;jj++){
         jjp=next_small(jj, vtx->neigh_no);
         jjm=prev_small(jj, vtx->neigh_no);
@@ -449,60 +454,47 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
         jp=vtx->neigh[jjp];
         jm=vtx->neigh[jjm];
 
-        jt=vtx->tristar[jj]; // not related to the j,jp,jm, just a separate sum for txn
-
-        x1=vtx_distance_sq(vtx,jp); //shouldn't be zero!
-        x2=vtx_distance_sq(j,jp); // shouldn't be zero!
-        //x1=pow(vtx->x-jp->x,2)+pow(vtx->y-jp->y,2)+pow(vtx->z-jp->z,2);
-        //x2=pow(j->x-jp->x,2)+pow(j->y-jp->y,2)+pow(j->z-jp->z,2);
-        x3=(j->x-jp->x)*(vtx->x-jp->x)+
-           (j->y-jp->y)*(vtx->y-jp->y)+
-           (j->z-jp->z)*(vtx->z-jp->z);
-        
-        ctp=x3/sqrt(x1*x2-x3*x3);
-        x1=vtx_distance_sq(vtx,jm);
-        x2=vtx_distance_sq(j,jm);
-        //x1=pow(vtx->x-jm->x,2)+pow(vtx->y-jm->y,2)+pow(vtx->z-jm->z,2);
-        //x2=pow(j->x-jm->x,2)+pow(j->y-jm->y,2)+pow(j->z-jm->z,2);
-        x3=(j->x-jm->x)*(vtx->x-jm->x)+
-           (j->y-jm->y)*(vtx->y-jm->y)+
-           (j->z-jm->z)*(vtx->z-jm->z);
-
-        ctm=x3/sqrt(x1*x2-x3*x3);
-
-        tot=ctp+ctm;
-        tot=0.5*tot;
-
-        //testing
-        xlen=vtx_distance_sq(j,vtx);
-        //xlen=pow(vtx->x-j->x,2)+pow(vtx->y-j->y,2)+pow(vtx->z-j->z,2);
-/*
-#ifdef  TS_DOUBLE_DOUBLE 
-        vtx->bond[jj-1]->bond_length=sqrt(xlen); 
-#endif
-#ifdef  TS_DOUBLE_FLOAT
-        vtx->bond[jj-1]->bond_length=sqrtf(xlen); 
-#endif
-#ifdef  TS_DOUBLE_LONGDOUBLE 
-        vtx->bond[jj-1]->bond_length=sqrtl(xlen); 
-#endif
-
-        vtx->bond[jj-1]->bond_length_dual=tot*vtx->bond[jj-1]->bond_length;
-*/
-        s+=tot*xlen;
-        xh+=tot*(j->x - vtx->x);
-        yh+=tot*(j->y - vtx->y);
-        zh+=tot*(j->z - vtx->z);
+        // step 1.1 calculate the contribution to the vertex normal
+        // txn normal points inwards!!
+        jt=vtx->tristar[jj]; 
         txn+=jt->xnorm;
         tyn+=jt->ynorm;
         tzn+=jt->znorm;
+    
+        // step 1.2 calculate cotangent of the edge, dual lattice edge triangles (vertex, edge middle, circumcenter-m), (vertex, edge middle, circumcenter-p)
+        // These have the same angle as the opposing angle (half of a central angle = inscribed angle)
+        x1=vtx_distance_sq(vtx,jp);
+        x2=vtx_distance_sq(j,jp);
+        x3=(j->x-jp->x)*(vtx->x-jp->x)+
+           (j->y-jp->y)*(vtx->y-jp->y)+
+           (j->z-jp->z)*(vtx->z-jp->z);
+        ctp=x3/sqrt(x1*x2-x3*x3);
+
+        x1=vtx_distance_sq(vtx,jm);
+        x2=vtx_distance_sq(j,jm);
+        x3=(j->x-jm->x)*(vtx->x-jm->x)+
+           (j->y-jm->y)*(vtx->y-jm->y)+
+           (j->z-jm->z)*(vtx->z-jm->z);
+        ctm=x3/sqrt(x1*x2-x3*x3);
+
+        // step 1.3 use the cotangents to calculate the dual lattice edge and area contribution
+        // given l as the length of the i-j edge
+        // sigma = l/2 * ctm + l/2 * ctp
+        tot=ctp+ctm;
+        tot=0.5*tot; // sigma = l*tot
+        xlen=vtx_distance_sq(j,vtx); // l^2
+        s+=tot*xlen; // 4 (1/2 (l/2) * sigma) = 4xarea associated to this edge
+    
+        xh+=tot*(j->x - vtx->x);
+        yh+=tot*(j->y - vtx->y); // sigma*(edge vector) contribution to the voodoo xh vector
+        zh+=tot*(j->z - vtx->z);
 
 
-
-        // angle stuff for gaussian curvature
+        // step 1.4 angle calculation for gaussian curvature
         // angle_sum += atan(ctp) + atan(ctm); // simple but slow!
-        // get the angle m-vtx-j
+        // instead: get the angle m-vtx-j
         // atan2(|axb|,a*b) was recommended at mathwork forum (cosin has small angle problems, and still need a sqrt)
+        // possibly more complicated but better one from linked pdf (kahan)
         a_dot_b = (jm->x-vtx->x)*(j->x-vtx->x)+
                   (jm->y-vtx->y)*(j->y-vtx->y)+
                   (jm->z-vtx->z)*(j->z-vtx->z);
@@ -512,39 +504,25 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
         mag_a_cross_b = sqrt(pow(a_cross_b_x,2)+pow(a_cross_b_y,2)+pow(a_cross_b_z,2));
         angle_sum += atan2(mag_a_cross_b, a_dot_b);
 
-    }
-    
-    h=xh*xh+yh *yh+zh*zh;
-    ht=txn*xh+tyn*yh + tzn*zh;
-    s=s/4.0; 
-#ifdef TS_DOUBLE_DOUBLE
+    } // end for jj neighbors
+
+    // step 2 calculate the curvatures from the xh voodoo formula
+    s=s/4.0; // area was calculated with an extra factor of 4
+    // xh voodoo magic vector has the mean curvature times area as the magnitude and a direction roughly(?) towards the center of curvature
+    h=xh*xh + yh*yh + zh*zh; 
+    ht=txn*xh + tyn*yh + tzn*zh; // direction of center of curvature with the normal i.e. convex or concave
     if(ht>=0.0) {
-        vtx->mean_curvature=sqrt(h)/s;
+        vtx->mean_curvature= sqrt(h)/s;
     } else {
         vtx->mean_curvature=-sqrt(h)/s;
     }
-#endif
-#ifdef TS_DOUBLE_FLOAT
-    if(ht>=0.0) {
-        vtx->curvature=sqrtf(h);
-    } else {
-        vtx->curvature=-sqrtf(h);
-    }
-#endif
-#ifdef TS_DOUBLE_LONGDOUBLE
-    if(ht>=0.0) {
-        vtx->curvature=sqrtl(h);
-    } else {
-        vtx->curvature=-sqrtl(h);
-    }
-#endif
-    //also great point to update normal: note that the triangle normal is inwards
-    norml=sqrt(txn*txn+tyn*tyn+tzn*tzn);
+    norml=sqrt(txn*txn+tyn*tyn+tzn*tzn); //also great point to update the vertex normal
     vtx->nx=-txn/norml;
-    vtx->ny=-tyn/norml;
+    vtx->ny=-tyn/norml; // !!the triangle normal points inwards!!
     vtx->nz=-tzn/norml;
     
-    // with normal: project the director on the tangent plane
+    // step 3 gaussian curvature and update for anisotropic vertex
+    // step 3.1 project the director to the tangent plane
     if ( model==11 || (model==10 && (vtx->type & is_anisotropic_vtx))){
         // t = t - (t.n)n   (or -nx(nxt)
         a_dot_b = (vtx->dx*vtx->nx)+(vtx->dy*vtx->ny)+(vtx->dz*vtx->nz); // temporarily used as the dot product
@@ -558,26 +536,27 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
         vtx->dy=vtx->dy/norml;
         vtx->dz=vtx->dz/norml;
     }
-
-    // c is spontaneous curvature energy for each vertex. Should be set to zero for
-    // normal circumstances.
-    /* the following statement is an expression for $\frac{1}{2}\int(c_1+c_2-c_0^\prime)^2\mathrm{d}A$, where $c_0^\prime=2c_0$ (twice the spontaneous curvature)  */
-    vtx->mean_energy=vtx->xk* 0.5*s*(vtx->mean_curvature-vtx->c)*(vtx->mean_curvature-vtx->c);
-    
+    // step 3.2 calculate gaussian curvature using sum angle formula
     vtx->gaussian_curvature = (2*M_PI- angle_sum)/s;
 
+    // step 3.3 save the curvatures using the gaussian and mean curvature
     x1 = sqrt(pow(vtx->mean_curvature,2)-vtx->gaussian_curvature); // deltaC/2 in temp variable
     vtx->new_c1 = vtx->mean_curvature + x1;
     vtx->new_c2 = vtx->mean_curvature - x1;
 
-
+    //step 4: calculate the curvature energy
+    // step 4.1 isotropic curvature energies
+    /* the following statement is an expression for $\frac{1}{2}\int(c_1+c_2-c_0^\prime)^2\mathrm{d}A$, where $c_0^\prime=2c_0$ (twice the spontaneous curvature)  */
+    vtx->mean_energy=vtx->xk* 0.5*s*(vtx->mean_curvature-vtx->c)*(vtx->mean_curvature-vtx->c);
     vtx->gaussian_energy = vtx->xk2 * s * vtx->gaussian_curvature;
 
-    
+    // step ?? calculate the energy using the curvature tensor model instead
     if (model==10 || model==11) {
         curvature_tensor_energy_vertex(vesicle, vtx);
     }
     
+    // step ??.2  use the new energy 
+    // (or dont', I'm a comment not a cop)
     if (model==10){
         vtx->energy = vtx->mean_energy2 + vtx->gaussian_energy2;
     }
