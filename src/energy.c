@@ -66,15 +66,23 @@ inline ts_bool bond_energy(ts_bond *bond,ts_poly *poly){
  *
  *  @returns TS_SUCCESS on successful calculation
 */
-/** @brief anisotropic subfunction of vertex_energy.
- *
- *  This function is experimental, branch from vertex_energy for anisotropic proteins 
- *  to calculate the tensor-based curvature values c1,c2 and principle directions,
- *  calculate the energy, and save it all on the vertex
- *
- *  @returns TS_SUCCESS on successful calculation
-*/
 inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
+    //  step 1. calculate the area assigned to the vertex and the vertex normal
+    //      step 1.1: update vertex normal and director, create normal-director-tangent frame
+    //  step 2. calculate and accumulate the shape operator per edge
+    //      step 2.1: calculate the normalized edge vector and edge length
+    //      step 2.2: get the edge adjacent triangles lm and lp
+    //      step 2.3: get the edge normal and edge binormal
+    //      step 2.4: get the dihedral curvature weight he[jj]
+    //      step 2.5: get the edge shape operator Se and edge weight We_Av
+    //      step 2.6: accumulate contribution to the vertex shape operator
+    //  step 3. use vertex shape operator to obtain energy and curvature information
+    //      step 3.1: project to a 2x2 matrix in the surface tangent plane
+    //      step 3.2: get curvature information from the 2x2 shape operator
+    //          step 3.2.1: get eigenvectors in the director-tangent directions
+    //          step 3.2.2: get eigenvectors in real space
+    //      step 3.3: get energy information from the 2x2 shape difference
+
     // we hardcoded 10 neighbor limit!
     ts_small_idx jj, i;
     ts_double edge_vector_x[10]={0,0,0,0,0,0,0,0,0,0};
@@ -131,10 +139,9 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     vertex_normal_y=vertex_normal_y/temp_length;
     vertex_normal_z=vertex_normal_z/temp_length;
 
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // step 1.1: update vertex normal and director based on the new normal
-    // and generates a director-tangent-normal frame
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // step 1.1: update vertex normal and director based, generates the director-tangent-normal frame
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     vtx->nx2 = vertex_normal_x;
     vtx->ny2 = vertex_normal_y;
     vtx->nz2 = vertex_normal_z;
@@ -167,9 +174,9 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     // !!! We start a VERY long loop over jj !!!
     // vertex must remain ordered through initial_dist and through bondflips
 
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // step 2.1: calculate the normalized edge vector and edge length
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     edge_vector_x[jj]=vtx->neigh[jj]->x - vtx->x;
     edge_vector_y[jj]=vtx->neigh[jj]->y - vtx->y;
     edge_vector_z[jj]=vtx->neigh[jj]->z - vtx->z;
@@ -209,9 +216,9 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     edge_binormal_y[jj]=-(edge_normal_x[jj]*edge_vector_z[jj])+(edge_normal_z[jj]*edge_vector_x[jj]);
     edge_binormal_z[jj]= (edge_normal_x[jj]*edge_vector_y[jj])-(edge_normal_y[jj]*edge_vector_x[jj]);
 
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // step 2.4: get the dihedral curvature weight he[j]
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // step 2.4: get the dihedral curvature weight he[jj]
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     cross_x = lm->ynorm*edge_normal_z[jj] - lm->znorm*edge_normal_y[jj];
     cross_y = lm->znorm*edge_normal_x[jj] - lm->xnorm*edge_normal_z[jj];
     cross_z = lm->xnorm*edge_normal_y[jj] - lm->ynorm*edge_normal_x[jj];
@@ -219,9 +226,9 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     he[jj]=edge_length*(cross_x*edge_vector_x[jj] + cross_y*edge_vector_y[jj] + cross_z*edge_vector_z[jj] );
     
 
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // step 2.5: get the edge shape operator Se and edge weight We_Av
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     Se11=edge_binormal_x[jj]*edge_binormal_x[jj]*he[jj];
     Se21=edge_binormal_x[jj]*edge_binormal_y[jj]*he[jj];
     Se22=edge_binormal_y[jj]*edge_binormal_y[jj]*he[jj];
@@ -235,9 +242,9 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     We_Av=We/Av;
 
 
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // step 2.5: add contribution to shape operator
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // step 2.6: accumulate contribution to shape operator
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     Sv[0][0]+=We_Av* Se11;
     Sv[0][1]+=We_Av* Se12;
     Sv[0][2]+=We_Av* Se13;
@@ -273,6 +280,8 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     Se33=Sv[2][2];
 
     // project shape operator to the director-tangent plane
+    // [a b] = [ dSd dSt ]
+    // [b d]   [ tSd tSt ]
     dSd =   director_x*Se11*director_x + director_x*Se12*director_y + director_x*Se13*director_z
            +director_y*Se21*director_x + director_y*Se22*director_y + director_y*Se23*director_z
            +director_z*Se31*director_x + director_z*Se32*director_y + director_z*Se33*director_z; 
@@ -291,10 +300,9 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     // first, the primary matrix invariants, the trace and determinant
     tr  = dSd + tSt;
     det = dSd*tSt - dSt*tSd;
-    // we can immidiately get the curvatures! up to signs and factors of 2
-    vtx->mean_curvature2 = tr/2;
+    vtx->mean_curvature2 = tr/2; // curvatures up to signs and factors of 2
     vtx->gaussian_curvature2 = det;
-    // eigenvalues: trace determinant formula. We expect real values only, so positive discriminant
+    // eigenvalues: trace determinant formula. We have real symmetric matrix, so positive discriminant
     discrim_sqrt = sqrt(tr*tr - 4*det);
     lambda1 = (tr + discrim_sqrt)/2;
     lambda2 = (tr - discrim_sqrt)/2;
@@ -307,6 +315,17 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     // ---------------------------------------------------------------
     // construct eigenvectors in the director-tangent plane: make sure we don't have any 0 vectors!
     // based on https://math.stackexchange.com/questions/4103294/is-there-a-closed-form-expression-for-the-eigenvectors-of-a-2x2-matrix
+    //      for [ a b ], we use  v+ = [l1 - d]  v- =  [  -b  ]  vectors if a>d 
+    //          [ b d ]               [   b  ],       [a - l2]    
+    //                    and    v+ = [   b  ]   v- = [l2 - d]  if d>a
+    //                                [l1 - a],       [   b  ]
+    //      with the v+, v- making a left handed xy plane 
+    //      playing in Mathematica shows switching these combinations lead to larger eigenvectors
+    //      in the [ a 0 ]  b=0 case, this also assures we have ~[1,0] and ~[0,1] vectors
+    //             [ 0 d ]
+    //      ( since lambda1 = max[a,d] and lambda2 = min[a,d])
+    //      for dSd==tSt and tSd==dSt!=0 i.e. [ [a,b],[b,a] ], mathematica shows both work
+    //      the only problematic case is dSd==tSt and tSd==dSt==0 [[a,0],[0,a]]=aI, which is the degenerate case
     // a. degenerate case
     if(lambda1==lambda2){
         eigen_vec1d = 1; // we pick the director and tangent vectors as the eigenvectors
@@ -316,20 +335,14 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     }
     else{
         // b. nondegenerate case
-        // playing in Mathematica shows this leads to the largest eigenvectors
-        // in the [ dSd  0  ]   case, this assures we have ~[1,0] and ~[0,1] vectors
-        //        [  0  tSt ]
-        // lambda1 = max[dSd,tSt] and lambda2 = min[dSd,tSt]
-        // for dSd==tSt and tSd==dSt!=0, mathematica shows both work
-        // the only problematic case is dSd==tSt and tSd==dSt==0, which is the degenerate case
-        if(dSd>=tSt){ 
-            eigen_vec1d = lambda1-tSt; //tSd==0 -> lambda1=dSd, eigen_vec1d!=0
+        if(dSd>=tSt){  // a>d
+            eigen_vec1d = lambda1-tSt;  //tSd==0 -> lambda1=dSd, eigen_vec1d!=0
             eigen_vec1t = tSd;
             eigen_vec2d = -dSt;
-            eigen_vec2t = -lambda2-dSd;
+            eigen_vec2t = -lambda2+dSd; //tSd==0 -> lambda2=tSt, eigen_vec2t!=0
         }
-        else { // dSd<tSt
-            eigen_vec2d = lambda2-tSt;
+        else { // dSd<tSt, d<a
+            eigen_vec2d = lambda2-tSt;  //tSd==0 -> lambda2=dSd, eigen_vec2d!=0
             eigen_vec2t = tSd;
             eigen_vec1d = dSt;
             eigen_vec1t = lambda1-dSd;; //tSd==0 -> lambda1=tSt, eigen_vec1t!=0
@@ -348,6 +361,7 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     vtx->eig0[0] = eigen_vec1d*director_x + eigen_vec1t*tangent_x;
     vtx->eig0[1] = eigen_vec1d*director_y + eigen_vec1t*tangent_y;
     vtx->eig0[2] = eigen_vec1d*director_z + eigen_vec1t*tangent_z;
+
     vtx->eig1[0] = eigen_vec2d*director_x + eigen_vec2t*tangent_x;
     vtx->eig1[1] = eigen_vec2d*director_y + eigen_vec2t*tangent_y;
     vtx->eig1[2] = eigen_vec2d*director_z + eigen_vec2t*tangent_z;
@@ -360,8 +374,8 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     // step 3.3: get energy information from the 2x2 shape difference
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // spontaneous curvature and isotropy go here!
-    dSd -= vtx->c + vtx->d;
-    tSt -= vtx->c - vtx->d;
+    dSd -= 0.5*(vtx->c + vtx->d);
+    tSt -= 0.5*(vtx->c - vtx->d);
     tr = dSd + tSt;
     det = dSd*tSt - tSd * dSt;
     vtx->mean_energy2 = vtx->xk*Av* pow(tr,2);
@@ -445,15 +459,7 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
            (j->y-jp->y)*(vtx->y-jp->y)+
            (j->z-jp->z)*(vtx->z-jp->z);
         
-#ifdef TS_DOUBLE_DOUBLE
         ctp=x3/sqrt(x1*x2-x3*x3);
-#endif
-#ifdef TS_DOUBLE_FLOAT
-        ctp=x3/sqrtf(x1*x2-x3*x3);
-#endif
-#ifdef TS_DOUBLE_LONGDOUBLE
-        ctp=x3/sqrtl(x1*x2-x3*x3);
-#endif
         x1=vtx_distance_sq(vtx,jm);
         x2=vtx_distance_sq(j,jm);
         //x1=pow(vtx->x-jm->x,2)+pow(vtx->y-jm->y,2)+pow(vtx->z-jm->z,2);
@@ -461,15 +467,9 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
         x3=(j->x-jm->x)*(vtx->x-jm->x)+
            (j->y-jm->y)*(vtx->y-jm->y)+
            (j->z-jm->z)*(vtx->z-jm->z);
-#ifdef TS_DOUBLE_DOUBLE
+
         ctm=x3/sqrt(x1*x2-x3*x3);
-#endif
-#ifdef TS_DOUBLE_FLOAT
-        ctm=x3/sqrtf(x1*x2-x3*x3);
-#endif
-#ifdef TS_DOUBLE_LONGDOUBLE
-        ctm=x3/sqrtl(x1*x2-x3*x3);
-#endif
+
         tot=ctp+ctm;
         tot=0.5*tot;
 
