@@ -316,17 +316,23 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     }
     else{
         // b. nondegenerate case
-        if(dSd>tSt){ 
+        // playing in Mathematica shows this leads to the largest eigenvectors
+        // in the [ dSd  0  ]   case, this assures we have ~[1,0] and ~[0,1] vectors
+        //        [  0  tSt ]
+        // lambda1 = max[dSd,tSt] and lambda2 = min[dSd,tSt]
+        // for dSd==tSt and tSd==dSt!=0, mathematica shows both work
+        // the only problematic case is dSd==tSt and tSd==dSt==0, which is the degenerate case
+        if(dSd>=tSt){ 
             eigen_vec1d = lambda1-tSt; //tSd==0 -> lambda1=dSd, eigen_vec1d!=0
             eigen_vec1t = tSd;
             eigen_vec2d = -dSt;
             eigen_vec2t = -lambda2-dSd;
         }
-        else{
-            eigen_vec1d = lambda1-dSd;
-            eigen_vec1t = tSd;
-            eigen_vec2d = -dSt;
-            eigen_vec2t = -lambda2-tSt;
+        else { // dSd<tSt
+            eigen_vec2d = lambda2-tSt;
+            eigen_vec2t = tSd;
+            eigen_vec1d = dSt;
+            eigen_vec1t = lambda1-dSd;; //tSd==0 -> lambda1=tSt, eigen_vec1t!=0
         }
         // normalize the eigenvectors
         temp_length = sqrt(eigen_vec1d*eigen_vec1d + eigen_vec1t*eigen_vec1t);
