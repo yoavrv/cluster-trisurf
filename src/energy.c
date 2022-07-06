@@ -306,10 +306,6 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     discrim_sqrt = sqrt(tr*tr - 4*det);
     lambda1 = (tr + discrim_sqrt)/2;
     lambda2 = (tr - discrim_sqrt)/2;
-    vtx->eig_v0 = lambda1;
-    vtx->eig_v1 = lambda2;
-    vtx->eig_v2 = 0; // we annihilate the shape operator in the normal direction
-
     // ---------------------------------------------------------------
     // step 3.2.1: get eigenvectors in the director-tangent directions
     // ---------------------------------------------------------------
@@ -326,24 +322,30 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     //      ( since lambda1 = max[a,d] and lambda2 = min[a,d])
     //      for dSd==tSt and tSd==dSt!=0 i.e. [ [a,b],[b,a] ], mathematica shows both work
     //      the only problematic case is dSd==tSt and tSd==dSt==0 [[a,0],[0,a]]=aI, which is the degenerate case
+    //
+    // To order the eigenvalues by magnitude and keep the orientation, we can always take v+ and construct v- out of it
+    // v- = [ -v+[1] , 
+    //         v+[0]  ]
+    // and only later 
+
     // a. degenerate case
     if(lambda1==lambda2){
         eigen_vec1d = 1; // we pick the director and tangent vectors as the eigenvectors
         eigen_vec1t = 0;
-        eigen_vec2d = 0;
-        eigen_vec2t = 1;
+        //eigen_vec2d = 0;
+        //eigen_vec2t = 1;
     }
     else{
         // b. nondegenerate case
         if(dSd>=tSt){  // a>d
             eigen_vec1d = lambda1-tSt;  //tSd==0 -> lambda1=dSd, eigen_vec1d!=0
             eigen_vec1t = tSd;
-            eigen_vec2d = -dSt;
-            eigen_vec2t = -lambda2+dSd; //tSd==0 -> lambda2=tSt, eigen_vec2t!=0
+            //eigen_vec2d = -dSt;
+            //eigen_vec2t = -lambda2+dSd; //tSd==0 -> lambda2=tSt, eigen_vec2t!=0
         }
         else { // dSd<tSt, d<a
-            eigen_vec2d = lambda2-tSt;  //tSd==0 -> lambda2=dSd, eigen_vec2d!=0
-            eigen_vec2t = tSd;
+            //eigen_vec2d = lambda2-tSt;  //tSd==0 -> lambda2=dSd, eigen_vec2d!=0
+            //eigen_vec2t = tSd;
             eigen_vec1d = dSt;
             eigen_vec1t = lambda1-dSd;; //tSd==0 -> lambda1=tSt, eigen_vec1t!=0
         }
@@ -351,20 +353,49 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
         temp_length = sqrt(eigen_vec1d*eigen_vec1d + eigen_vec1t*eigen_vec1t);
         eigen_vec1d/=temp_length;
         eigen_vec1t/=temp_length;
-        temp_length = sqrt(eigen_vec2d*eigen_vec2d + eigen_vec2t*eigen_vec2t);
-        eigen_vec2d/=temp_length;
-        eigen_vec2t/=temp_length;
+        //temp_length = sqrt(eigen_vec2d*eigen_vec2d + eigen_vec2t*eigen_vec2t);
+        //eigen_vec2d/=temp_length;
+        //eigen_vec2t/=temp_length;
     }
-    // -------------------------------------------
-    // step 3.2.2: get eigenvectors in real space
-    // -------------------------------------------
-    vtx->eig0[0] = eigen_vec1d*director_x + eigen_vec1t*tangent_x;
-    vtx->eig0[1] = eigen_vec1d*director_y + eigen_vec1t*tangent_y;
-    vtx->eig0[2] = eigen_vec1d*director_z + eigen_vec1t*tangent_z;
 
-    vtx->eig1[0] = eigen_vec2d*director_x + eigen_vec2t*tangent_x;
-    vtx->eig1[1] = eigen_vec2d*director_y + eigen_vec2t*tangent_y;
-    vtx->eig1[2] = eigen_vec2d*director_z + eigen_vec2t*tangent_z;
+    // ----------------------------------------------------------
+    // step 3.2.2: get eigenvalues and eigenvectors in real space
+    // ----------------------------------------------------------
+
+    //sort eigenvalues by absolute value
+    if(abs(lambda1)>=abs(lambda2)){
+        vtx->eig_v0 = lambda1;
+        vtx->eig_v1 = lambda2;
+
+        // lambda2's eigenvector is second
+        eigen_vec2d = -eigen_vec1t;
+        eigen_vec2t = eigen_vec1d;
+        
+        vtx->eig0[0] = eigen_vec1d*director_x + eigen_vec1t*tangent_x;
+        vtx->eig0[1] = eigen_vec1d*director_y + eigen_vec1t*tangent_y;
+        vtx->eig0[2] = eigen_vec1d*director_z + eigen_vec1t*tangent_z;
+
+        vtx->eig1[0] = eigen_vec2d*director_x + eigen_vec2t*tangent_x;
+        vtx->eig1[1] = eigen_vec2d*director_y + eigen_vec2t*tangent_y;
+        vtx->eig1[2] = eigen_vec2d*director_z + eigen_vec2t*tangent_z;
+    } else {
+        vtx->eig_v0 = lambda2;
+        vtx->eig_v1 = lambda1;
+
+        // lambda2's eigenvector is first
+        eigen_vec2d = eigen_vec1t;
+        eigen_vec2t = -eigen_vec1d;
+        
+        vtx->eig0[0] = eigen_vec2d*director_x + eigen_vec2t*tangent_x;
+        vtx->eig0[1] = eigen_vec2d*director_y + eigen_vec2t*tangent_y;
+        vtx->eig0[2] = eigen_vec2d*director_z + eigen_vec2t*tangent_z;
+
+        vtx->eig1[0] = eigen_vec1d*director_x + eigen_vec1t*tangent_x;
+        vtx->eig1[1] = eigen_vec1d*director_y + eigen_vec1t*tangent_y;
+        vtx->eig1[2] = eigen_vec1d*director_z + eigen_vec1t*tangent_z;
+    }
+    vtx->eig_v2 = 0; // we annihilate the shape operator in the normal direction
+
     
     vtx->eig2[0] = vertex_normal_x;
     vtx->eig2[1] = vertex_normal_y;
