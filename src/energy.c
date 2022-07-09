@@ -608,27 +608,62 @@ ts_bool sweep_attraction_bond_energy(ts_vesicle *vesicle){
     return TS_SUCCESS;
 }
 
-
+/**
+ * @brief calculate bonding energy between the two vertcies in a bond  
+ * 
+ * 
+ * 4 things determine the bonding (in theory): bond model, bond length, bonding strength, type of the vertices, and vertex orientation  
+ * bond models:  vesicle->tape->type_of_bond_model  
+ *    &1 : demand vertex type be the same to bond. (0: all bond, 1: same type)
+ *    &2 : anisotropic vertices have nematic order (2: )
+ * bond length: 
+ *   currently bonding is not affected
+ * vertex properties: bond->vtx1->#  and bond->vtx2->#
+ *   type: only if both vertices are of bbonding types they have bonding energy 
+ *        vtx->type&is_bonding_vertex ==0 -> energy=0
+ *         bond model &1 also demands type equality
+ *   w: bonding strength. currently used as if universal, so for now just set to mean
+ *       energy = -(w1+w2)/2
+ *   orientation: anisotropic vertices have direction vtx->dx,dy,dz
+ *         bond_model&2: should have nematic order E~(d1*d2)^2
+ * 
+ * @param vesicle pointer to primary simulation data structure, had bond model
+ * @param bond pointer to bond containng two vertices
+ * @return ts_bool 
+ */
 inline ts_bool attraction_bond_energy(ts_vesicle *vesicle, ts_bond *bond){
-
-    if (vesicle->tape->type_of_bond_model==0){ // bonding type bond together
+    ts_double energy=0;
+    ts_bool bond_model=0;
+    bond_model = vesicle->tape->type_of_bond_model;
+    // 1 bit: bond by type
+    if((bond_model&1) == 0){ 
+        // all bonding type bond together
         if((bond->vtx1->type&is_bonding_vtx && bond->vtx2->type&is_bonding_vtx)){
-            // f(w1,w2)
-            bond->energy=-0.5*(bond->vtx1->w+bond->vtx2->w);
+            energy=-0.5*(bond->vtx1->w+bond->vtx2->w);
         }
         else {
-            bond->energy=0.0;
+            energy=0.0;
         }
     }
-    if (vesicle->tape->type_of_bond_model==1){ // bond by same type
+    else{ 
+        // only bond by same type
         if((bond->vtx1->type&is_bonding_vtx && bond->vtx2->type==bond->vtx1->type)){
-            // f(w1,w2)
-            bond->energy=-0.5*(bond->vtx1->w+bond->vtx2->w);
+            energy=-0.5*(bond->vtx1->w+bond->vtx2->w);
         }
         else {
-            bond->energy=0.0;
+            energy=0.0;
         }
     }
+    //2 bit: anisotropy
+    if(bond_model & 2){ 
+        // bond by director with nematic order (arc-like proteins)
+        if((bond->vtx1->type&is_anisotropic_vtx && bond->vtx2->type&is_anisotropic_vtx)){
+            energy*=pow( bond->vtx1->dx*bond->vtx2->dx
+                        +bond->vtx1->dy*bond->vtx2->dy
+                        +bond->vtx1->dz*bond->vtx2->dz,2);
+        }
+    }
+    bond->energy=energy;
     return TS_SUCCESS;
 }
 
