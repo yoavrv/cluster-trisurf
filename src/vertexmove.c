@@ -18,7 +18,7 @@
 #include <time.h>
 
 ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *time_1, clock_t *time_2){
-    ts_small_idx i;
+    ts_small_idx i,j;
     ts_double dist;
     ts_bool retval; 
     ts_uint cellidx; 
@@ -297,6 +297,22 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
         delta_energy+=(vtx->neigh[i]->energy-oenergy);
     }
 
+    // bonding energy can change due to director updates
+    for(i=0;i<vtx->neigh_no;i++){
+        for(j=0;j<vtx->neigh[i]->bond_no;j++){
+            if(vtx->neigh[i]->bond[j]->vtx1==vtx->neigh[prev_small(i,vtx->neigh_no)] || vtx->neigh[i]->bond[j]->vtx2==vtx->neigh[prev_small(i,vtx->neigh_no)] ){
+                //skip bond with previous neighbor (which was calculated for it)
+            }
+            else{
+                oenergy=vtx->neigh[i]->bond[j]->energy;
+                attraction_bond_energy(vesicle, vtx->neigh[i]->bond[j]);
+                delta_energy+=(vtx->neigh[i]->bond[j]->energy-oenergy);
+            }
+        }
+    }
+
+
+
     if(vesicle->pswitch == 1 || vesicle->tape->constvolswitch >0){
         for(i=0;i<vtx->tristar_no;i++) dvol+=vtx->tristar[i]->volume;
         if(vesicle->pswitch==1) delta_energy-=vesicle->pressure*dvol;
@@ -308,27 +324,41 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
         if(fabs(vesicle->area+darea-A0)>epsarea){
             //restore old state.
              vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
-                for(i=0;i<vtx->neigh_no;i++){
-                    vtx->neigh[i]=memcpy((void *)vtx->neigh[i],(void *)&backupvtx[i+1],sizeof(ts_vertex));
+            for(i=0;i<vtx->neigh_no;i++){
+                vtx->neigh[i]=memcpy((void *)vtx->neigh[i],(void *)&backupvtx[i+1],sizeof(ts_vertex));
+            }
+            // unupdate triangles
+            for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]);
+            //unupdate bonds
+            for(i=0;i<vtx->neigh_no;i++){
+                for(j=0;j<vtx->neigh[i]->bond_no;j++){
+                    // no problem double updating, just double counting the energy
+                    attraction_bond_energy(vesicle, vtx->neigh[i]->bond[j]);
                 }
-                for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]);
-
-                *time_2 += clock()-stopwatch;
-                return TS_FAIL;
+            }
+            *time_2 += clock()-stopwatch;
+            return TS_FAIL;
         }
     }
     if(vesicle->tape->constvolswitch==2){
         /*check whether the dvol is gt than epsvol */
         if(fabs(vesicle->volume+dvol-V0)>epsvol){
             //restore old state.
-             vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
-                for(i=0;i<vtx->neigh_no;i++){
-                    vtx->neigh[i]=memcpy((void *)vtx->neigh[i],(void *)&backupvtx[i+1],sizeof(ts_vertex));
+            vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
+            for(i=0;i<vtx->neigh_no;i++){
+                vtx->neigh[i]=memcpy((void *)vtx->neigh[i],(void *)&backupvtx[i+1],sizeof(ts_vertex));
+            }
+            // unupdate triangles
+            for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]);
+            //unupdate bonds
+            for(i=0;i<vtx->neigh_no;i++){
+                for(j=0;j<vtx->neigh[i]->bond_no;j++){
+                    // no problem double updating, just double counting the energy
+                    attraction_bond_energy(vesicle, vtx->neigh[i]->bond[j]);
                 }
-                    for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]); 
-
-                    *time_2 += clock()-stopwatch;
-                    return TS_FAIL;
+            }
+            *time_2 += clock()-stopwatch;
+            return TS_FAIL;
         }
 
     } else
@@ -343,8 +373,15 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
             for(i=0;i<vtx->neigh_no;i++){
                 vtx->neigh[i]=memcpy((void *)vtx->neigh[i],(void *)&backupvtx[i+1],sizeof(ts_vertex));
             }
+            // unupdate triangles
             for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]);
-
+            //unupdate bonds
+            for(i=0;i<vtx->neigh_no;i++){
+                for(j=0;j<vtx->neigh[i]->bond_no;j++){
+                    // no problem double updating, just double counting the energy
+                    attraction_bond_energy(vesicle, vtx->neigh[i]->bond[j]);
+                }
+            }
             *time_2 += clock()-stopwatch;
             return TS_FAIL;
         }
@@ -403,25 +440,28 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
     //MONTE CARLOOOOOOOO
     // if(vtx->c!=0.0) printf("DE=%f\n",delta_energy);
     if(delta_energy>=0){
-#ifdef TS_DOUBLE_DOUBLE
-        if(exp(-delta_energy)< drand48())
-#endif
-#ifdef TS_DOUBLE_FLOAT
-        if(expf(-delta_energy)< (ts_float)drand48())
-#endif
-#ifdef TS_DOUBLE_LONGDOUBLE
-        if(expl(-delta_energy)< (ts_ldouble)drand48())
-#endif
-        {   //if block chosen by macro
+        if(exp(-delta_energy)< drand48()) { 
             //not accepted, reverting changes
             // fprintf(stderr,"MC failed\n");
+            // Fz balance
+            if (vesicle->tape->force_balance_along_z_axis==1) direct_force_from_Fz_balance(vesicle,backupvtx,vtx);
+
+            //unupdate vertices
             vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
             for(i=0;i<vtx->neigh_no;i++){
                 vtx->neigh[i]=memcpy((void *)vtx->neigh[i],(void *)&backupvtx[i+1],sizeof(ts_vertex));
             }
     
-            //update the normals of triangles that share bead i.
+            //unupdate the normals of triangles that share bead i.
             for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]);
+            //unupdate bond energy
+            for(i=0;i<vtx->neigh_no;i++){
+                for(j=0;j<vtx->neigh[i]->bond_no;j++){
+                    // no problem double updating, just double counting the energy
+                    attraction_bond_energy(vesicle, vtx->neigh[i]->bond[j]);
+                }
+            }
+
             //stretching energy 3 of 3
             if(vesicle->tape->stretchswitch==1){
                 for(i=0;i<vtx->tristar_no;i++){ 
@@ -434,9 +474,9 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
                 constvolumerestore(vesicle, constvol_vtx_moved,constvol_vtx_backup);
             }
 
-        //exit, stop clock
-        *time_2 += clock()-stopwatch;
-        return TS_FAIL; 
+            //exit, stop clock
+            *time_2 += clock()-stopwatch;
+            return TS_FAIL; 
         }
     }
     //accepted	

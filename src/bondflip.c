@@ -884,16 +884,7 @@ c
 
 /* MONTE CARLO */
     if(delta_energy>=0){
-#ifdef TS_DOUBLE_DOUBLE
-        if(exp(-delta_energy)< drand48())
-#endif
-#ifdef TS_DOUBLE_FLOAT
-        if(expf(-delta_energy)< (ts_float)drand48())
-#endif
-#ifdef TS_DOUBLE_LONGDOUBLE
-        if(expl(-delta_energy)< (ts_ldouble)drand48())
-#endif
-        {
+        if(exp(-delta_energy)< drand48())  {
             //not accepted, reverting changes
 	        //restore all backups
             // fprintf(stderr,"Restoring!!!\n");
