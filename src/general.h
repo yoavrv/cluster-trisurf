@@ -224,6 +224,16 @@ struct ts_vertex {
         // flags for all 32 bytes of an int
 
 };
+
+/** Enums for various options
+ * 
+ * These are intended to work by
+ * x&is_option_A  (i.e. "x and is option A")
+ * y&to_B      (i.e. "y and to do B")
+ * or
+ * z==model_vicsek_1overR
+ * 
+ * */
 enum vertex_type {
     is_bonding_vtx=1, // bonding vertex, form bond with other bonding vertices
     is_active_vtx=2, // active vertex under normally directed force
@@ -234,6 +244,37 @@ enum vertex_type {
     is_edge_vtx=64, // edge vertex has unordered tristars
     is_ghost_vtx=-128, // ghost vertex can only be moved artificially
 }; 
+enum bond_model_type {
+    is_bonding_type_specific=1,
+    is_anisotropic_bonding_nematic=2,
+};
+enum curvature_model_type{
+    to_disable_calculate_laplace_beltrami=64, // The original isotropic mean curvature calculation
+    to_calculate_sum_angle=1, // "isotropic" gaussian curvature calculation
+    to_calculate_shape_operator=2, // new anisotropic calculation. if to_use is not enabled, this is saved but not used!
+    to_update_director_shapeless=4, // update director without shape operator
+    to_use_shape_operator_energy=8, // actually use the new energy, rather than just calculate and save.
+    to_use_shape_for_anisotropy_only=16, // use the shape method, but only for anisotropic vertices
+    to_not_rotate_directors=32, // do not rotate directro as a monte carlo step
+    
+    model_laplace_beltrami_only=0, // the original method
+    model_isotropic=1, // calculate gaussian curvature energy
+    model_shape_operator_only=74, // use shape operator only
+    model_debug_old_energy=7, // calculate everything but use old energy
+    model_debug_new_energy=15, // calculate everything but use new shape operator energy
+    model_debug_parallerl_transport_directors=35, // prevent director random move
+    model_debug_assumed_final=18, // anisotropic shape method only for anisotropic vertices, old method otherwise
+    
+};
+enum force_model_type{
+    model_vertex_meanW=0, // regular bonding model
+    model_active_neigh_interfer=1, // force is proportional to # non-active neighbors
+    model_concave_neigh_interfer=2, // force is proportional to # non-concave neighbors
+    model_concave_neigh_disable=3, // force is disabled by any concave neighbor
+    is_vicsek_model=16, // use a vicsek model. All vicsek model should have (model_vicsek_x&is_vicsek_model) true
+    model_vicsek_1overR=17, // use vicsek model with 1/R weights
+
+};
 
 
 typedef struct ts_vertex ts_vertex;

@@ -6,7 +6,7 @@ dmax=1.7
 # dmin_interspecies in the min. dist. between different vertex species (in units l_min)
 dmin_interspecies=1.2
 # bending rigidity of the membrane (in units kT)
-xk0=28.5
+xk0=20
 # max step size (in units l_min)
 stepsize=0.15
 
@@ -109,11 +109,17 @@ plane_d=10
 #plane to vesicle repulsion force while closing
 plane_F=1.0
 
-# bond model- 0: bonding vtx mean(w), 1: require type identity
+# bond model- bonding vtx mean(w). and 0x1: require type identity, and 0x2: nematic interaction between anisotropic vtx
 bond_model=0
 
-# curvature model- 0: only mean curvature, 1: Gaussian curavture for anisotropic proteins, 2: Gaussian curavture (but not energy) for all
-curvature_model=0
+# curvature model:
+# and 0x1  : calculate angle-sum gaussian curvature,  and 0x2  : calculate shape operator, 
+# and 0x4  : update director even in the old method.  and 0x8  : use shape operator energy rather than just save it
+# and 0x10 : use shape, but only for anisotropic.     and 0x20 : do not rotate director as a MC step
+# example of important models: 
+# 0: old method. 7: debug, save everything but use energy from old method. 35: parallel transport of directors only
+curvature_model=7
+
 # xk2: second bending modulus: due to Gauss-Bonet, excees (xkG-xkG0)
 xk2=0 
 

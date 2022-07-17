@@ -461,7 +461,7 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
 inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     
     ts_small_idx jj;
-    ts_small_idx jjp,jjm;
+    ts_small_idx jjp,jjm; // next (p) and prev (m) neighbor idx
     ts_vertex *j; // current neighbor
     ts_vertex *jp;// next neighbor
     ts_vertex *jm;// prev neighbor
@@ -472,7 +472,23 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     ts_double h,ht,norml;
     ts_double angle_sum=0;
     ts_double a_dot_b, a_cross_b_x, a_cross_b_y, a_cross_b_z, mag_a_cross_b;
-    ts_bool model=vesicle->tape->type_of_curvature_model; // control energy model: 0: regular, 10: curvature tensor energy, 11: calcualte curvature tensor energy but don't use it
+    ts_bool model=vesicle->tape->type_of_curvature_model; // control how and what model we use to calculate energy: see enum curvature_model_type in general.h
+
+    // we have 4 steps:
+    // ?: at some point, use the new shape-operator based method (depends on model)
+    // 1: iterate neighbors: calculate things on the dual lattice (+ normal + angle sum + area)
+    // 2: get mean curvature using the dual lattice laplace-beltrami formula
+    // 3: calculate gaussian curvature and project director (depends on model)
+    // 4: calcualte the bending energy
+    // ?: based on model, choose which energy to use in the Monte Carlo.
+
+
+    if (model&to_disable_calculate_laplace_beltrami){
+        // just use the new version and skip everything else.
+        curvature_tensor_energy_vertex(vesicle, vtx);
+        vtx->energy = vtx->mean_energy2 + vtx->gaussian_energy2;
+        return TS_SUCCESS;
+    }
 
     // step 1. iterate over the neighbors
     // - calculate the normal
@@ -526,6 +542,7 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
         // instead: get the angle m-vtx-j
         // atan2(|axb|,a*b) was recommended at mathwork forum (cosin has small angle problems, and still need a sqrt)
         // possibly more complicated but better one from linked pdf (kahan)
+        if (model&to_calculate_sum_angle){
         a_dot_b = (jm->x-vtx->x)*(j->x-vtx->x)+
                   (jm->y-vtx->y)*(j->y-vtx->y)+
                   (jm->z-vtx->z)*(j->z-vtx->z);
@@ -534,6 +551,7 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
         a_cross_b_z = (jm->x-vtx->x)*(j->y-vtx->y)-(jm->y-vtx->y)*(j->x-vtx->x);
         mag_a_cross_b = sqrt(pow(a_cross_b_x,2)+pow(a_cross_b_y,2)+pow(a_cross_b_z,2));
         angle_sum += atan2(mag_a_cross_b, a_dot_b);
+        }
 
     } // end for jj neighbors
 
@@ -554,7 +572,7 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     
     // step 3 gaussian curvature and update for anisotropic vertex
     // step 3.1 project the director to the tangent plane
-    if ( model==11 || (model==10 && (vtx->type & is_anisotropic_vtx))){
+    if (model&to_update_director_shapeless){
         // t = t - (t.n)n   (or -nx(nxt)
         a_dot_b = (vtx->dx*vtx->nx)+(vtx->dy*vtx->ny)+(vtx->dz*vtx->nz); // temporarily used as the dot product
         vtx->dx = vtx->dx - a_dot_b*vtx->nx;
@@ -567,32 +585,39 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
         vtx->dy=vtx->dy/norml;
         vtx->dz=vtx->dz/norml;
     }
+
     // step 3.2 calculate gaussian curvature using sum angle formula
-    vtx->gaussian_curvature = (2*M_PI- angle_sum)/s;
+    if (model&to_calculate_sum_angle){
+        vtx->gaussian_curvature = (2*M_PI- angle_sum)/s;
 
-    // step 3.3 save the curvatures using the gaussian and mean curvature
-    x1 = sqrt(pow(vtx->mean_curvature,2)-vtx->gaussian_curvature); // deltaC/2 in temp variable
-    vtx->new_c1 = vtx->mean_curvature + x1;
-    vtx->new_c2 = vtx->mean_curvature - x1;
 
-    //step 4: calculate the curvature energy
+        // step 3.3 save the curvatures using the gaussian and mean curvature
+        x1 = sqrt(pow(vtx->mean_curvature,2)-vtx->gaussian_curvature); // deltaC/2 in temp variable
+        vtx->new_c1 = vtx->mean_curvature + x1;
+        vtx->new_c2 = vtx->mean_curvature - x1;
+    }
+
+    //step 4: calculate the bending energy
     // step 4.1 isotropic curvature energies
     /* the following statement is an expression for $\frac{1}{2}\int(c_1+c_2-c_0^\prime)^2\mathrm{d}A$, where $c_0^\prime=2c_0$ (twice the spontaneous curvature)  */
     vtx->mean_energy=vtx->xk* 0.5*s*(vtx->mean_curvature-vtx->c)*(vtx->mean_curvature-vtx->c);
-    vtx->gaussian_energy = vtx->xk2 * s * vtx->gaussian_curvature;
+    vtx->gaussian_energy = model&to_calculate_sum_angle ? vtx->xk2 * s * vtx->gaussian_curvature : 0;
+
+    vtx->energy = vtx->mean_energy + vtx->gaussian_energy;
 
     // step ?? calculate the energy using the curvature tensor model instead
-    if (model==10 || model==11) {
+    if (model&to_calculate_shape_operator || (model&to_use_shape_for_anisotropy_only && (vtx->type & is_anisotropic_vtx))) {
         curvature_tensor_energy_vertex(vesicle, vtx);
     }
     
     // step ??.2  use the new energy 
-    // (or dont', I'm a comment not a cop)
-    if (model==10){
+    // model has to use the shape operator energy
+    // if the model is for anisotropy only, also make sure the vertex type is anisotropic
+    if (model&to_use_shape_operator_energy && !(model&to_use_shape_for_anisotropy_only)){
         vtx->energy = vtx->mean_energy2 + vtx->gaussian_energy2;
     }
-    else {
-        vtx->energy = vtx->mean_energy + vtx->gaussian_energy;
+    if (model&to_use_shape_operator_energy && (model&to_use_shape_for_anisotropy_only  && (vtx->type & is_anisotropic_vtx))){
+        vtx->energy = vtx->mean_energy2 + vtx->gaussian_energy2;
     }
 
     return TS_SUCCESS;
@@ -636,7 +661,7 @@ inline ts_bool attraction_bond_energy(ts_vesicle *vesicle, ts_bond *bond){
     ts_bool bond_model=0;
     bond_model = vesicle->tape->type_of_bond_model;
     // 1 bit: bond by type
-    if((bond_model&1) == 0){ 
+    if((bond_model&is_bonding_type_specific) == 0){ 
         // all bonding type bond together
         if((bond->vtx1->type&is_bonding_vtx && bond->vtx2->type&is_bonding_vtx)){
             energy=-0.5*(bond->vtx1->w+bond->vtx2->w);
@@ -655,7 +680,7 @@ inline ts_bool attraction_bond_energy(ts_vesicle *vesicle, ts_bond *bond){
         }
     }
     //2 bit: anisotropy
-    if(bond_model & 2){ 
+    if(bond_model&is_anisotropic_bonding_nematic){ 
         // bond by director with nematic order (arc-like proteins)
         if((bond->vtx1->type&is_anisotropic_vtx && bond->vtx2->type&is_anisotropic_vtx)){
             energy*=pow( bond->vtx1->dx*bond->vtx2->dx
@@ -712,8 +737,9 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 
 
     // if vicsek type and vicsek model is relevant
-    if ( vtx->type&is_vicsek_vtx && (model==16 || model==17) 
-        && fabs(vicsek_strength)>1e-15 && fabs(vicsek_radius)>1e-15) {
+    if ( (model&is_vicsek_model)
+        && fabs(vicsek_strength)>1e-15 && fabs(vicsek_radius)>1e-15 
+        && vtx->type&is_vicsek_vtx ) {
         
         //vicsek model
         //force directed by Vicsek sum-over-neighbors-normals
@@ -779,7 +805,7 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
 
                         //add normal to the sum
                         // Vicsek model 17: weight by 1/distance
-                        if (vesicle->tape->type_of_force_model == 17) {
+                        if (vesicle->tape->type_of_force_model == model_vicsek_1overR) {
                             vixnorm += vicsek_strength * seen_vtx->vtx[i]->neigh[j]->nx / curr_dist;
                             viynorm += vicsek_strength * seen_vtx->vtx[i]->neigh[j]->ny / curr_dist;
                             viznorm += vicsek_strength * seen_vtx->vtx[i]->neigh[j]->nz / curr_dist;
@@ -826,7 +852,7 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
     //we recalculate the force based on inhibition: we want the real force to be recorded!
 
     // HIV_Gag inhibition model
-    if (model==1){
+    if (model==model_active_neigh_interfer){
         // force ~ number of active neighbors
         No_neigh_activating = 0;
         for (i=0; i<vtx->neigh_no; i++){ 
@@ -843,7 +869,7 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
         vtx->fz *= inhibition_factor;
     }
 
-    if (model==2){
+    if (model==model_concave_neigh_interfer){
         // force ~ number of c>0 neighbors
         No_neigh_activating = 0;
         for (i=0; i<vtx->neigh_no; i++){
@@ -852,14 +878,14 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
             }
         }
         inhibition_factor = 1;
-        inhibition_factor *= No_neigh_activating;  //take that, integer-integer division!
+        inhibition_factor *= No_neigh_activating; 
         inhibition_factor /= vtx->neigh_no;
         // change force by factor
         vtx->fx *= inhibition_factor;
         vtx->fy *= inhibition_factor;
         vtx->fz *= inhibition_factor;
     }
-    if (model==3){
+    if (model==model_concave_neigh_disable){
         // force disabled for any c<0 neighbors
         for (i=0; i<vtx->neigh_no; i++){
             if ( vtx->neigh[i]->c < -1e-15   ) {
