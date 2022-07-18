@@ -9,6 +9,9 @@ Modified by Yoav based on Rajkumar's cluster version of Samo and Miha's trisurf-
 * added random_seed option to the tape: default (0) to epoch
 * commandline --tape-options now works for adhesion and vicsek parameter too and is saved on the .vtu \<tape\>: use in the form
 > $trisurf --tape-options vicsek_model=0,adhesion_model=2,nshell=5,random_seed=9
+* gaussian curvature with angle sum formula
+* anisotropy (in progress)
+* more vertex data is outputted to the .vtu (type, force, normal, curvatures...)
 
 
 1. Installation

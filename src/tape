@@ -116,6 +116,7 @@ bond_model=0
 # and 0x1  : calculate angle-sum gaussian curvature,  and 0x2  : calculate shape operator, 
 # and 0x4  : update director even in the old method.  and 0x8  : use shape operator energy rather than just save it
 # and 0x10 : use shape, but only for anisotropic.     and 0x20 : do not rotate director as a MC step
+# and 0x40 : disable old method (use shape op only)   and 0x80 : calculate angle sum only if kx2!-9
 # example of important models: 
 # 0: old method. 7: debug, save everything but use energy from old method. 35: parallel transport of directors only
 curvature_model=7

@@ -473,6 +473,10 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     ts_double angle_sum=0;
     ts_double a_dot_b, a_cross_b_x, a_cross_b_y, a_cross_b_z, mag_a_cross_b;
     ts_flag model=vesicle->tape->type_of_curvature_model; // control how and what model we use to calculate energy: see enum curvature_model_type in general.h
+    ts_bool do_angle_sum=0;
+    do_angle_sum=(model&to_calculate_sum_angle && 
+                    (!(model&to_use_sum_angle_for_kx2_only) || (model&to_use_sum_angle_for_kx2_only && vtx->xk2!=0))
+                    );
 
     // we have 4 steps:
     // ?: at some point, use the new shape-operator based method (depends on model)
@@ -542,7 +546,7 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
         // instead: get the angle m-vtx-j
         // atan2(|axb|,a*b) was recommended at mathwork forum (cosin has small angle problems, and still need a sqrt)
         // possibly more complicated but better one from linked pdf (kahan)
-        if (model&to_calculate_sum_angle){
+        if (do_angle_sum){
         a_dot_b = (jm->x-vtx->x)*(j->x-vtx->x)+
                   (jm->y-vtx->y)*(j->y-vtx->y)+
                   (jm->z-vtx->z)*(j->z-vtx->z);
@@ -587,7 +591,7 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     }
 
     // step 3.2 calculate gaussian curvature using sum angle formula
-    if (model&to_calculate_sum_angle){
+    if (do_angle_sum){
         vtx->gaussian_curvature = (2*M_PI- angle_sum)/s;
 
 
@@ -601,7 +605,7 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     // step 4.1 isotropic curvature energies
     /* the following statement is an expression for $\frac{1}{2}\int(c_1+c_2-c_0^\prime)^2\mathrm{d}A$, where $c_0^\prime=2c_0$ (twice the spontaneous curvature)  */
     vtx->mean_energy=vtx->xk* 0.5*s*(vtx->mean_curvature-vtx->c)*(vtx->mean_curvature-vtx->c);
-    vtx->gaussian_energy = model&to_calculate_sum_angle ? vtx->xk2 * s * vtx->gaussian_curvature : 0;
+    vtx->gaussian_energy = do_angle_sum ? vtx->xk2 * s * vtx->gaussian_curvature : 0;
 
     vtx->energy = vtx->mean_energy + vtx->gaussian_energy;
 

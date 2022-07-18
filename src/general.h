@@ -260,6 +260,7 @@ enum curvature_model_type{
     to_use_shape_operator_energy=8, // actually use the new energy, rather than just calculate and save.
     to_use_shape_for_anisotropy_only=16, // use the shape method, but only for anisotropic vertices
     to_not_rotate_directors=32, // do not rotate directro as a monte carlo step
+    to_use_sum_angle_for_kx2_only=128, // only calculate the sum angle formula for vtx with kx2!=0
     
     model_laplace_beltrami_only=0, // the original method
     model_isotropic=1, // calculate gaussian curvature energy
@@ -267,7 +268,7 @@ enum curvature_model_type{
     model_debug_old_energy=7, // calculate everything but use old energy
     model_debug_new_energy=15, // calculate everything but use new shape operator energy
     model_debug_parallerl_transport_directors=35, // prevent director random move
-    model_debug_assumed_final=18, // anisotropic shape method only for anisotropic vertices, old method otherwise
+    model_debug_assumed_final=146, // anisotropic shape method only for anisotropic vertices, old method otherwise
     
 };
 enum force_model_type{
