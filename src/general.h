@@ -283,8 +283,9 @@ enum force_model_type{
 enum adhesion_model_type{
   model_step_potential=1,
   model_parabolic_potential=2,
-  model_cylindrical_step_potential=4,
   model_spherical_step_potential=3,
+  model_cylindrical_step_potential=4,
+
 };
 
 

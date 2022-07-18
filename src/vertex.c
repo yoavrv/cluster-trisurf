@@ -814,6 +814,7 @@ ts_bool order_edge_vertex(ts_vertex* vtx){
             }
         }
     }
+    return TS_SUCCESS;
 }
 
 

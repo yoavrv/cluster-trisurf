@@ -2,27 +2,30 @@ TRISURF NG
 ==========
 Modified by Yoav based on Rajkumar's cluster version of Samo and Miha's trisurf-ng
 
-0. Diff
+### 0. Diff
 --------------
 * vicsek interaction: setting vicsek_model=1, the force now sums normals on the 'connected cluster up to vicsek_radius' with weight vicsek_strength
-* adhesion works as it did, does not conflict: turn off vicsek for normal adhesion (vicsek_model=0)
-* added random_seed option to the tape: default (0) to epoch
+* adhesion from Raj: step, parabolic, spherical and cylindrical
+* added random_seed option to the tape: default (0) to this moment (linux epoch)
 * commandline --tape-options now works for adhesion and vicsek parameter too and is saved on the .vtu \<tape\>: use in the form
 > $trisurf --tape-options vicsek_model=0,adhesion_model=2,nshell=5,random_seed=9
 * gaussian curvature with angle sum formula
-* anisotropy (in progress)
+* anisotropy (in progress)\
+* minimal dihedral angle cosine between triangles option (to prevent spikiness) - optional to tape (default to -1 i.e. no effect)
 * more vertex data is individualized as well as outputted to the .vtu (type, force, normal, bending modulii, curvatures...)
 
-Things that are not working
-* shape operator still has problems
-* initial distribution need more work for adding more types (partway there)
-* ghost (unmoving) and edge vertices are not working yet: energy doesn't work, bondflip is iffy, no initialization
-* making less huge vtu
-* keeping the same random seed sequence after restorations (currently it's reseting each time to the tape value/current time)
-* probably much much more
+*Things that are not working:*
+* shape operator still has problems  
+* spikiness still happens:  
+    * probably because $\kappa$ is incorrect
+* initial distribution need more work for adding more types (partway there)  
+* ghost (unmoving) and edge vertices are not working yet: energy doesn't work, bondflip is iffy, no initialization  
+* making less huge vtu  
+* keeping the same random seed sequence after restorations (currently it's resetting each time to the tape value/current time). might be okay?  
+* probably much much more  
 
 
-1. Installation
+### 1. Installation
 --------------
 
 To compile the program, user must have ``automake``, and ``gcc`` tools installed on the computer.
@@ -73,7 +76,7 @@ If you are experiencing difficulties due to different automake versions, proceed
 This procedure can be done automatically by calling the build.sh script.
 (build.sh is modified not to make install)
 
-2. Use
+### 2. Use
 ------
 
 Prepare tape file, storing the definition for the simulation. You can use the sample tape file in the ``src/`` directory as a template for your simulation.

@@ -405,11 +405,12 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     // step 3.3: get energy information from the 2x2 shape difference
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // spontaneous curvature and isotropy go here!
-    dSd -= 0.5*(vtx->c + vtx->d);
-    tSt -= 0.5*(vtx->c - vtx->d);
+    // curvature is flipped due to normals
+    dSd += 0.5*(vtx->c + vtx->d);
+    tSt += 0.5*(vtx->c - vtx->d);
     tr = dSd + tSt;
     det = dSd*tSt - tSd * dSt;
-    vtx->mean_energy2 = vtx->xk*Av* pow(tr,2);
+    vtx->mean_energy2 = vtx->xk*Av* pow(tr,2)/2;
     vtx->gaussian_energy2 = vtx->xk2 * Av * det;
 
 
