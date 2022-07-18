@@ -760,9 +760,9 @@ ts_bool assert_vtx_ordered(ts_vertex* vtx){
 }
 
 // check if vertex is ordered (0-ordered, 1-bad triangles, 2-bad bonds, 3-bad both)
-ts_int is_vtx_ordered(ts_vertex* vtx){
+ts_big_flag is_vtx_ordered(ts_vertex* vtx){
     ts_small_idx i;
-    ts_int out=0;
+    ts_flag out=0;
     for (i=0; i<vtx->neigh_no; i++){
         if (!in_tri(vtx->tristar[i], vtx->neigh[i]) && !in_tri(vtx->tristar[i], vtx->neigh[next_small(i,vtx->neigh_no)])){
             out |= 1;

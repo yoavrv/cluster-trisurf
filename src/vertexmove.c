@@ -141,21 +141,21 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx, clock_t *ti
 
     // adhesion check whether the new position of vertex will be out of bounds
     if(vesicle->tape->adhesion_switch){
-        if (vesicle->tape->type_of_adhesion_model==1 || vesicle->tape->type_of_adhesion_model==2){
+        if (vesicle->tape->type_of_adhesion_model==model_step_potential || vesicle->tape->type_of_adhesion_model==model_parabolic_potential){
             if(vtx->z<vesicle->tape->z_adhesion){
             vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
             *time_1 += clock()-stopwatch;
             return TS_FAIL;
             }
         }
-        if (vesicle->tape->type_of_adhesion_model==3){
+        if (vesicle->tape->type_of_adhesion_model==model_spherical_step_potential){
             if((pow(vesicle->adhesion_center - vtx->z,2) + pow(vtx->x,2) + pow(vtx->y,2)) < pow(vesicle->tape->adhesion_radius,2)){
             vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
             *time_1 += clock()-stopwatch;
             return TS_FAIL;
             }
         }
-        if (vesicle->tape->type_of_adhesion_model==4){
+        if (vesicle->tape->type_of_adhesion_model==model_cylindrical_step_potential){
             if((pow(vesicle->adhesion_center - vtx->z,2) + pow(vtx->x,2)) < pow(vesicle->tape->adhesion_radius,2)){
             vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
             *time_1 += clock()-stopwatch;

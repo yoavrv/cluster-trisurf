@@ -40,12 +40,12 @@ ts_bool centermass(ts_vesicle *vesicle){
 		vesicle->cm[2]=0;
 	}
 	//center mass for x component does not  change for cylyndrical substrate
-	if(vesicle->tape->type_of_adhesion_model==4){
+	if(vesicle->tape->type_of_adhesion_model==model_cylindrical_step_potential){
 		vesicle->cm[0]=0;
 	}
 
 	//center mass for x and y component does not  change for spherical substrate
-	if(vesicle->tape->type_of_adhesion_model==3){
+	if(vesicle->tape->type_of_adhesion_model==model_spherical_step_potential){
 		vesicle->cm[0]=0;
 		vesicle->cm[1]=0;
 	}
@@ -139,7 +139,7 @@ ts_bool cell_occupation(ts_vesicle *vesicle){
 // same as cell_occupation but with special check to prevent
 // overfilling a single cell with >256 {x=0,y=0,z=0} vertices
 ts_bool initialization_cell_occupation(ts_vesicle *vesicle){
-	ts_bool uninitialized=1;
+	ts_bool is_initialized=0;
 	ts_idx rolling = 0;
 	ts_idx i, j, n=vesicle->vlist->n;
     ts_uint cellidx;
@@ -153,13 +153,13 @@ ts_bool initialization_cell_occupation(ts_vesicle *vesicle){
 	vlist = vesicle->vlist;
 	for (i=0; i<n; i++){
 		if (vlist->vtx[i]->x!=0 ||vlist->vtx[i]->y!=0 || vlist->vtx[i]->z!=0)
-			uninitialized=0;
+			is_initialized=1;
 	}
     for(i=0;i<n;i++){
     	cellidx=vertex_self_avoidance(vesicle, vlist->vtx[i]);
 		//	already done in cell_add_vertex
 		// vesicle->vlist->vtx[i]->cell=vesicle->clist->cell[cellidx];
-		if (!uninitialized){
+		if (is_initialized){
     		cell_add_vertex(clist->cell[cellidx], vlist->vtx[i]);
 		}
 		else{
@@ -173,11 +173,11 @@ ts_bool initialization_cell_occupation(ts_vesicle *vesicle){
 			vlist = poly_list->poly[i]->vlist;
 			for (j=0; j<vlist->n; j++){
 				if (vlist->vtx[j]->x!=0 || vlist->vtx[j]->y!=0 || vlist->vtx[j]->z!=0)
-					uninitialized=0;
+					is_initialized=1;
 			}
 			for(j=0;j<vlist->n;j++){
     			cellidx=vertex_self_avoidance(vesicle, vlist->vtx[j]);
-				if (!uninitialized){
+				if (is_initialized){
     				cell_add_vertex(clist->cell[cellidx], vlist->vtx[i]);
 				}
 				else{
@@ -193,11 +193,11 @@ ts_bool initialization_cell_occupation(ts_vesicle *vesicle){
 			vlist = filament_list->poly[i]->vlist;
 			for (j=0; j<vlist->n; j++){
 				if (vlist->vtx[j]->x!=0 || vlist->vtx[j]->y!=0 || vlist->vtx[j]->z!=0)
-					uninitialized=0;
+					is_initialized=1;
 			}
 			for(j=0;j<vlist->n;j++){
     			cellidx=vertex_self_avoidance(vesicle, vlist->vtx[j]);
-				if (!uninitialized){
+				if (is_initialized){
     				cell_add_vertex(clist->cell[cellidx], vlist->vtx[i]);
 				}
 				else{

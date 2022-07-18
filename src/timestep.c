@@ -30,6 +30,7 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_massive_idx mcsweeps, ts_idx init
     ts_ulong epochtime;
     ts_double max_z;
     clock_t time_0, time_1, time_2, time_3; // benchmarking clocks
+    ts_flag adhesion_model = vesicle->tape->type_of_adhesion_model;
     FILE *fd3=NULL;
      char filename[10000];
     //struct stat st;
@@ -47,22 +48,6 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_massive_idx mcsweeps, ts_idx init
     if(start_iteration==0)
         fprintf(fd, "Epoch,OuterLoop,VertexMoveSucessRate,BondFlipSuccessRate,Volume,Area,lamdba1,lambda2,lambda3,Kc(2-9),Kc(6-9),Kc(2-end),Kc(3-6),\n");
 
-    /*if(vesicle->sphHarmonics!=NULL){
-        strcpy(filename,command_line_args.path);
-        strcat(filename,"ulm2.csv"); 
-    //	int result = stat(filename, &st);
-    if(start_iteration==0)
-        fd2=fopen(filename,"w");
-    else
-        fd2=fopen(filename,"a");
-    if(fd2==NULL){
-        fatal("Cannot open ulm2.csv file for writing",1);
-    } 
-
-    if(start_iteration==0) //file does not exist
-        fprintf(fd2, "Timestep u_00^2 u_10^2 u_11^2 u_20^2 ...\n");	
-    }
-    */
 
     /* RANDOM SEED SET BY CURRENT TIME */
     epochtime=get_epoch();	
@@ -128,7 +113,7 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_massive_idx mcsweeps, ts_idx init
         //end plane confinement
 
         //adhesion
-        if(vesicle->tape->type_of_adhesion_model==3 || vesicle->tape->type_of_adhesion_model==4){	
+        if(adhesion_model==model_spherical_step_potential || adhesion_model==model_cylindrical_step_potential){	
             vesicle->adhesion_center = vesicle->tape->z_adhesion - vesicle->tape->adhesion_radius;
         }
         //end of adhesion
@@ -136,20 +121,6 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_massive_idx mcsweeps, ts_idx init
 
         // MAIN INNER LOOP
         // MONTE CARLO SWEEP
-        //debug 
-        if (vesicle->vlist->n>800){
-            ts_fprintf(stdout,"_______________________________________________________________________________\n");
-            ts_fprintf(stdout,"____________________________timestep %d________________________________________\n",i);
-            ts_fprintf(stdout,"_______________________________________________________________________________\n");
-            debug_energy_vertex(vesicle,vesicle->vlist->vtx[677]); //677
-            ts_fprintf(stdout,"__________________________________________________________________\n");
-            debug_energy_vertex(vesicle,vesicle->vlist->vtx[761]); //761
-            ts_fprintf(stdout,"__________________________________________________________________\n");
-            debug_energy_vertex(vesicle,vesicle->vlist->vtx[769]); // 769
-            ts_fprintf(stdout,"__________________________________________________________________\n");
-            debug_energy_vertex(vesicle,vesicle->vlist->vtx[762]); // 762
-            ts_fprintf(stdout,"____________________________timestep %d_______________________________________\n",i);
-        }
         for(j=0;j<mcsweeps;j++){
             single_timestep(vesicle, &vmsrt, &bfsrt, &time_0, &time_1, &time_2, &time_3);
             vmsr+=vmsrt;
@@ -179,48 +150,7 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_massive_idx mcsweeps, ts_idx init
             write_master_xml_file(command_line_args.output_fullfilename);
             epochtime=get_epoch();			
             gyration_eigen(vesicle, &l1, &l2, &l3);
-            //r0=getR0(vesicle);
-            /*            
-            if(vesicle->sphHarmonics!=NULL){
-                preparationSh(vesicle,r0);
-                //calculateYlmi(vesicle);
-                calculateUlmComplex(vesicle);
-                storeUlmComplex2(vesicle);
-                saveAvgUlm2(vesicle);
-                kc1=calculateKc(vesicle, 2,9);
-                kc2=calculateKc(vesicle, 6,9);
-                kc3=calculateKc(vesicle, 2,vesicle->sphHarmonics->l);
-                kc4=calculateKc(vesicle, 3,6);
-
-                strcpy(filename,command_line_args.path);
-                strcat(filename,"state.dat");  
-                fd1=fopen(filename,"w");
-                fprintf(fd1,"%e %e\n",vesicle->volume, getR0(vesicle));
-                for(k=0;k<vesicle->vlist->n;k++){
-                    fprintf(fd1,"%e %e %e %e %e\n",
-                        vesicle->vlist->vtx[k]->x,
-                        vesicle->vlist->vtx[k]->y,
-                        vesicle->vlist->vtx[k]->z,
-                        vesicle->vlist->vtx[k]->solAngle,
-                        vesicle->vlist->vtx[k]->relR
-                    );
-                }
-                fclose(fd1);
-        
-            fprintf(fd2,"%u ", i);
-            for(l=0;l<vesicle->sphHarmonics->l;l++){
-                for(m=l;m<2*l+1;m++){
-                    fprintf(fd2,"%e ", gsl_complex_abs2(vesicle->sphHarmonics->ulmComplex[l][m]) );
-                }
-            }
-                fprintf(fd2,"\n");
-    
-                fflush(fd2);	
-
-
-            }
-            */
-
+  
             fprintf(fd, "%lu,%u,%e,%e,%1.16e,%1.16e,%1.16e,%1.16e,%1.16e,%1.16e,%1.16e,%1.16e,%1.16e,\n",epochtime,i,vmsr,bfsr,vesicle->volume, vesicle->area,l1,l2,l3,kc1, kc2, kc3,kc4);
 
             fflush(fd);	
@@ -271,19 +201,9 @@ ts_bool single_timestep(ts_vesicle *vesicle,ts_double *vmsr, ts_double *bfsr, cl
     stopwatch=clock();
     for(i=0;i<3*vesicle->vlist->n;i++){
         b=rand() % vesicle->blist->n;
-        if (0 && b==2230){
-            print_vertex_ordered(vesicle->blist->bond[b]->vtx1);
-            print_vertex_ordered(vesicle->blist->bond[b]->vtx2);
-        }
         //find a bond and return a pointer to a bond...
         //call single_bondflip_timestep...
         retval=single_bondflip_timestep_ordered(vesicle,vesicle->blist->bond[b],rnvec);
-        if (retval==TS_SUCCESS){
-            if ((vesicle->blist->bond[b]->vtx1->idx==677 && vesicle->blist->bond[b]->vtx2->idx==769)
-             || (vesicle->blist->bond[b]->vtx2->idx==677 && vesicle->blist->bond[b]->vtx1->idx==769)){
-                ts_fprintf(stdout,"FLIPPED\n");
-            }
-        }
         // b++; retval=TS_FAIL;
         if(retval==TS_SUCCESS) bfsrcnt++;   
     }

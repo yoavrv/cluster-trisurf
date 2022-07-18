@@ -129,6 +129,10 @@ extern inline ts_small_idx next_small(ts_small_idx i, ts_small_idx max);
 extern inline ts_idx next_idx(ts_idx i, ts_idx max);
 extern inline ts_small_idx prev_small(ts_small_idx i, ts_small_idx max);
 extern inline ts_idx prev_idx(ts_idx i, ts_idx max);
+// for the many flags: ts_flag to distinguish from ts_bool
+// with the idea that ts_bool is only 0/1 like TS_SUCCESS or TS_FAIL
+typedef char ts_flag;
+typedef int ts_big_flag;
 
 /* STRUCTURES */
 
@@ -218,7 +222,7 @@ struct ts_vertex {
         3rd bit: adhesive, 4th bit: anisotropic, 
         5th bit: reserved, 6th bit: vicsek 
         7th bit: edge, 8th bit: ghost*/
-        ts_bool type; 
+        ts_flag type; 
 
         // apparently using a bool for the type flag does nothing, but I don't want to reserve 
         // flags for all 32 bytes of an int
@@ -274,6 +278,12 @@ enum force_model_type{
     is_vicsek_model=16, // use a vicsek model. All vicsek model should have (model_vicsek_x&is_vicsek_model) true
     model_vicsek_1overR=17, // use vicsek model with 1/R weights
 
+};
+enum adhesion_model_type{
+  model_step_potential=1,
+  model_parabolic_potential=2,
+  model_cylindrical_step_potential=4,
+  model_spherical_step_potential=3,
 };
 
 
@@ -429,13 +439,13 @@ typedef struct {
     ts_bool stretchswitch;
     ts_bool quiet;
     ts_bool plane_confinement_switch;
-    ts_bool type_of_adhesion_model;
+    ts_flag type_of_adhesion_model;
     ts_bool allow_xy_plane_movement;
     ts_bool force_balance_along_z_axis;
     ts_bool adhesion_switch;
-    ts_bool type_of_bond_model;
-    ts_bool type_of_curvature_model;
-    ts_bool type_of_force_model;
+    ts_flag type_of_bond_model;
+    ts_flag type_of_curvature_model;
+    ts_flag type_of_force_model;
     //char *multiprocessing;
 } ts_tape;
 
