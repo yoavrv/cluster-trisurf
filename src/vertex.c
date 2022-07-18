@@ -607,7 +607,7 @@ ts_bool swap_bonds(ts_vertex* vtx, ts_small_idx i, ts_small_idx j){
     return TS_SUCCESS;
 }
 
-// check if triangle is ordered wrt to v1,v2 ordered
+// check if triangle is ordered with respect to v1,v2 ordered
 ts_bool tri_ordered(ts_triangle* t, ts_vertex* v1, ts_vertex* v2){
     return (    (t->vertex[0]==v1 && t->vertex[1]==v2) 
              || (t->vertex[1]==v1 && t->vertex[2]==v2)
@@ -657,6 +657,7 @@ ts_bool order_vertex_triangles(ts_vertex* vtx){
     ts_small_idx t, jj=0, li, ri, rri=0, lli=1;
     ts_triangle* jt;
     ts_bond* bi;
+    if (vtx->type&is_edge_vtx) return order_edge_vertex(vtx);
     if (vtx->tristar_no != vtx->neigh_no || vtx->bond_no != vtx->neigh_no){
         print_vertex_ordered(vtx);
         ts_fprintf(stdout, "vertex %u with neigh_no=%u, tristar_no=%u, bond_no=%u\n",vtx->idx,vtx->tristar_no, vtx->neigh_no, vtx->bond_no);
@@ -747,9 +748,11 @@ ts_bool order_vertex_triangles(ts_vertex* vtx){
 ts_bool assert_vtx_ordered(ts_vertex* vtx){
     ts_small_idx i;
     for (i=0; i<vtx->neigh_no; i++){
-        if (!in_tri(vtx->tristar[i], vtx->neigh[i]) && !in_tri(vtx->tristar[i], vtx->neigh[next_small(i,vtx->neigh_no)])){
-            print_vertex_ordered(vtx);
-            fatal("not ordered in triangles",3);
+        if (!(vtx->type&is_edge_vtx && i==vtx->neigh_no-1) ){
+            if (!in_tri(vtx->tristar[i], vtx->neigh[i]) || !in_tri(vtx->tristar[i], vtx->neigh[next_small(i,vtx->neigh_no)])){
+                print_vertex_ordered(vtx);
+                fatal("not ordered in triangles",3);
+            }
         }
         if (!in_bond(vtx->bond[i], vtx->neigh[i])){
             print_vertex_ordered(vtx);
@@ -764,8 +767,10 @@ ts_big_flag is_vtx_ordered(ts_vertex* vtx){
     ts_small_idx i;
     ts_flag out=0;
     for (i=0; i<vtx->neigh_no; i++){
-        if (!in_tri(vtx->tristar[i], vtx->neigh[i]) && !in_tri(vtx->tristar[i], vtx->neigh[next_small(i,vtx->neigh_no)])){
-            out |= 1;
+        if (!(vtx->type&is_edge_vtx && i==vtx->neigh_no-1) ){
+            if (!in_tri(vtx->tristar[i], vtx->neigh[i]) || !in_tri(vtx->tristar[i], vtx->neigh[next_small(i,vtx->neigh_no)])){
+                out |= 1;
+            }
         }
         if (!in_bond(vtx->bond[i], vtx->neigh[i])){
             out |= 2;
@@ -773,6 +778,44 @@ ts_big_flag is_vtx_ordered(ts_vertex* vtx){
     }
     return out;
 }
+
+/**
+ * @brief order the triangles and bonds of an edge vertex
+ * only the 1st triangle has the 1st vertex, so ordering is easier
+ * 
+ * @param vtx 
+ * @return ts_bool 
+ */
+ts_bool order_edge_vertex(ts_vertex* vtx){
+    ts_vertex* vl;
+    ts_small_idx li, ri;
+    ts_triangle* jt;
+    ts_bond* bi;
+
+    for (li=0; li<vtx->tristar_no; li++){
+        vl=vtx->neigh[li];
+         for (ri=li; ri<vtx->tristar_no; ri++){
+            jt = vtx->tristar[ri];
+            if (in_tri(jt,vl)){
+                swap_bonds(vtx, li, ri);
+                break;
+            }
+        }
+    }
+
+    // and for bonds
+    for (li=0; li<vtx->neigh_no; li++){
+        vl = vtx->neigh[li];
+        for (ri=li; ri<vtx->neigh_no; ri++){
+            bi = vtx->bond[ri];
+            if (in_bond(bi,vl)){
+                swap_bonds(vtx, li, ri);
+                break;
+            }
+        }
+    }
+}
+
 
 // add tristar to vertex at index- shift other vertex. use to maintain tristar order
 ts_bool vtx_insert_tristar_at(ts_vertex *vtx, ts_triangle *tristarmem, ts_small_idx i){
@@ -808,7 +851,7 @@ ts_bool vtx_remove_tristar_at(ts_vertex *vtx, ts_small_idx i){
     return TS_SUCCESS;
 }
 
-// It is the caller's responsibility to 1. add the vertex to the neighbor's list, 2. maintain order
+// It is the callers responsibility to 1. add the vertex to the neighbors list, 2. maintain order
 ts_bool vtx_insert_neigh_at(ts_vertex *vtx, ts_vertex *vtxmem, ts_small_idx i){
 
     if ( i>vtx->neigh_no){
@@ -826,7 +869,7 @@ ts_bool vtx_insert_neigh_at(ts_vertex *vtx, ts_vertex *vtxmem, ts_small_idx i){
 	return TS_SUCCESS;
 }
 
-// It is the caller's responsibility to remove the vertex from the neighbor's list
+// It is the callers responsibility to remove the vertex from the neighbors list
 ts_bool vtx_remove_neigh_at(ts_vertex *vtx, ts_small_idx i){
 
     if ( i>=vtx->neigh_no){
@@ -843,7 +886,7 @@ ts_bool vtx_remove_neigh_at(ts_vertex *vtx, ts_small_idx i){
     return TS_SUCCESS;
 }
 
-// It is the caller's responsibility to 1. add the bond to the neighbor's list, 2. maintain order
+// It is the callers responsibility to 1. add the bond to the neighbors list, 2. maintain order
 ts_bool vtx_insert_bond_at(ts_vertex *vtx, ts_bond *bondmem, ts_small_idx i){
 
     if ( i>vtx->bond_no){
@@ -861,7 +904,7 @@ ts_bool vtx_insert_bond_at(ts_vertex *vtx, ts_bond *bondmem, ts_small_idx i){
 	return TS_SUCCESS;
 }
 
-// It is the caller's responsibility to remove the bond from the neighbor's list
+// It is the callers responsibility to remove the bond from the neighbors list
 ts_bool vtx_remove_bond_at(ts_vertex *vtx, ts_small_idx i){
 
     if ( i>=vtx->bond_no){
@@ -878,7 +921,7 @@ ts_bool vtx_remove_bond_at(ts_vertex *vtx, ts_small_idx i){
     return TS_SUCCESS;
 }
 
-// It is the caller's responsibility to 1. add to the neighbor's list, 2. maintain order
+// It is the callers responsibility to 1. add to the neighbors list, 2. maintain order
 ts_bool vtx_insert_at(ts_vertex *vtx, ts_vertex *vtx_add, ts_bond* bond_add, ts_triangle* tri_add, ts_small_idx i){
 
     vtx_insert_neigh_at(vtx, vtx_add, i);
@@ -887,7 +930,7 @@ ts_bool vtx_insert_at(ts_vertex *vtx, ts_vertex *vtx_add, ts_bond* bond_add, ts_
 	return TS_SUCCESS;
 }
 
-// It is the caller's responsibility to remove the vertex from the neighbor's list
+// It is the callers responsibility to remove the vertex from the neighbors list
 ts_bool vtx_remove_at(ts_vertex *vtx, ts_small_idx i){
 
     vtx_remove_neigh_at(vtx, i);

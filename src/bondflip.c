@@ -33,7 +33,9 @@ c
     ts_small_idx nei,neip,neim;
     ts_small_idx i,j;
     ts_double oldenergy, delta_energy, dvol=0.0, darea=0.0;
+    ts_double tri_normals_angle_cosine_old_min,tri_normals_angle_cosine_new_min;
     ts_triangle *lm=NULL,*lp=NULL, *lp1=NULL, *lm2=NULL;
+    ts_triangle *lm1=NULL, *lp2=NULL;
 
     ts_vertex *kp,*km;
 
@@ -56,10 +58,17 @@ c
             break;
         }
     }
+
     neip=nei+1;  // I don't like it.. Smells like I must have it in correct order
     neim=nei-1;
-    if(neip>=it->neigh_no) neip=0;
-    if(nei==0) neim=it->neigh_no-1; /* casting is essential... If not there the neim is never <0 !!! */
+    if(neip>=it->neigh_no) {
+        if(it->type&is_edge_vtx) return TS_FAIL; // edge are not cyclic: no neighbor to swap!
+        neip=0;
+    }
+    if(nei==0) {
+        if(it->type&is_edge_vtx) return TS_FAIL; // edge are not cyclic: no neighbor to swap!
+        neim=it->neigh_no-1; /* casting is essential... If not there the neim is never <0 !!! */
+    }
     //  fprintf(stderr,"The numbers are: %u %u\n",neip, neim);
     km=it->neigh[neim];  // We located km and kp
     kp=it->neigh[neip];
@@ -122,7 +131,27 @@ c
         }
     }
 
-    if(lm2==NULL || lp1==NULL) fatal("ts_flip_bond: Cannot find triangles lm2 and lp1!",999);
+    // if(lm2==NULL || lp1==NULL) fatal("ts_flip_bond: Cannot find triangles lm2 and lp1!\n yoav: Not brave enough to test, made some null checks in bond_flip for edge vertices so this fatal() could be deleted",999);
+
+    //we look for the unimportant triangles lp2 and lm1 which we now need for dihedral angle .
+
+    for(i=0;i<it->tristar_no;i++){
+        for(j=0;j<kp->tristar_no;j++){
+                if((it->tristar[i] == kp->tristar[j]) && it->tristar[i]!=lp){ // אם זה משולש משותף
+                    lp2=it->tristar[i];
+            }
+        }
+    }
+
+    for(i=0;i<k->tristar_no;i++){
+        for(j=0;j<km->tristar_no;j++){
+            if((k->tristar[i] == km->tristar[j]) && k->tristar[i]!=lm){ //ce gre za skupen trikotnik
+                    lm1=k->tristar[i];
+            } 
+        }
+    }
+
+    // if(lm1==NULL || lp2==NULL) fatal("ts_flip_bond: Cannot find triangles lm1 and lp2!",999);
 
 
     // ####### Passed all base tests #######
@@ -130,7 +159,7 @@ c
     /* backup old structure */
     /* need to backup:
     * vertices k, kp, km, it
-    * triangles lm, lp, lm2, lp1
+    * triangles lm, lp, lm2, lp1 (unless they are NULL, in which case they are skipped)
     * bond
     */
     ts_vertex *bck_vtx[4];
@@ -139,29 +168,26 @@ c
     ts_vertex *orig_vtx[]={k,it,kp,km};
     ts_triangle *orig_tria[]={lm,lp,lm2,lp1};
 
-    //fprintf(stderr,"Backuping!!!\n");
+
 	bck_bond=(ts_bond *)malloc(sizeof(ts_bond));
     for(i=0;i<4;i++){
-    /*	fprintf(stderr,"vtx neigh[%d]=",i);
-	    for(j=0;j<orig_vtx[i]->neigh_no;j++) fprintf(stderr," %d", orig_vtx[i]->neigh[j]->idx);
-	    fprintf(stderr,"\n");
-    */
+
 	    bck_vtx[i]=(ts_vertex *)malloc(sizeof(ts_vertex));
 	    bck_tria[i]=(ts_triangle *)malloc(sizeof(ts_triangle));
     	memcpy((void *)bck_vtx[i],(void *)orig_vtx[i],sizeof(ts_vertex));
-    	memcpy((void *)bck_tria[i],(void *)orig_tria[i],sizeof(ts_triangle));
+    	if (orig_tria[i]!=NULL) memcpy((void *)bck_tria[i],(void *)orig_tria[i],sizeof(ts_triangle));
 	    /* level 2 pointers */
 
     	bck_vtx[i]->neigh=(ts_vertex **)malloc(orig_vtx[i]->neigh_no*sizeof(ts_vertex *));
     	bck_vtx[i]->tristar=(ts_triangle **)malloc(orig_vtx[i]->tristar_no*sizeof(ts_triangle *));
     	bck_vtx[i]->bond=(ts_bond **)malloc(orig_vtx[i]->bond_no*sizeof(ts_bond *));
-    	bck_tria[i]->neigh=(ts_triangle **)malloc(orig_tria[i]->neigh_no*sizeof(ts_triangle *));
+    	if (orig_tria[i]!=NULL) bck_tria[i]->neigh=(ts_triangle **)malloc(orig_tria[i]->neigh_no*sizeof(ts_triangle *));
 
     	memcpy((void *)bck_vtx[i]->neigh,(void *)orig_vtx[i]->neigh,orig_vtx[i]->neigh_no*sizeof(ts_vertex *));
     	memcpy((void *)bck_vtx[i]->tristar,(void *)orig_vtx[i]->tristar,orig_vtx[i]->tristar_no*sizeof(ts_triangle *));
     	memcpy((void *)bck_vtx[i]->bond,(void *)orig_vtx[i]->bond,orig_vtx[i]->bond_no*sizeof(ts_bond *));
     
-    	memcpy((void *)bck_tria[i]->neigh,(void *)orig_tria[i]->neigh,orig_tria[i]->neigh_no*sizeof(ts_triangle *));	
+    	if (orig_tria[i]!=NULL) memcpy((void *)bck_tria[i]->neigh,(void *)orig_tria[i]->neigh,orig_tria[i]->neigh_no*sizeof(ts_triangle *));	
     }
 	memcpy(bck_bond,bond,sizeof(ts_bond));
     //fprintf(stderr,"Backup complete!!!\n");
@@ -182,9 +208,47 @@ c
     /*    vesicle_volume(vesicle);
     fprintf(stderr,"Volume in the beginning=%1.16e\n", vesicle->volume);
     */
+
+    // minimal angle constraint 
+    if(vesicle->tape->min_dihedral_angle_cosine>-1){
+    tri_normals_angle_cosine_old_min=triangle_dot_normals(lm,lp);
+    if (lp1!=NULL) tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lm,lp1));
+    if (lm1!=NULL) tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lm,lm1));
+    if (lm2!=NULL) tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lp,lm2));
+    if (lp2!=NULL) tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lp,lp2));
+    }
+
     /* fix data structure for flipped bond */
     ts_flip_bond(vesicle, k,it,km,kp, bond,lm, lp, lm2, lp1);
 
+    // minimal angle constraint 
+    if(vesicle->tape->min_dihedral_angle_cosine>-1){
+    tri_normals_angle_cosine_new_min=triangle_dot_normals(lm,lp);
+    if (lp1!=NULL) tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lm,lp1));
+    if (lm1!=NULL) tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lm,lm1));
+    if (lm2!=NULL) tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lp,lm2));
+    if (lp2!=NULL) tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lp,lp2));
+    if( tri_normals_angle_cosine_new_min<vesicle->tape->min_dihedral_angle_cosine && tri_normals_angle_cosine_new_min < tri_normals_angle_cosine_old_min){
+        //restore old state.
+        for(i=0;i<4;i++){
+            free(orig_vtx[i]->neigh);
+            free(orig_vtx[i]->tristar);
+            free(orig_vtx[i]->bond);
+            if (orig_tria[i]!=NULL) free(orig_tria[i]->neigh);
+            memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
+            if (orig_tria[i]!=NULL) memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
+            /* level 2 pointers are redirected*/
+        }
+        memcpy(bond,bck_bond,sizeof(ts_bond));
+        for(i=0;i<4;i++){
+            free(bck_vtx[i]);
+            if (orig_tria[i]!=NULL) free(bck_tria[i]);
+        }
+        free(bck_bond);
+        return TS_FAIL;
+
+	}
+    }
 
     /* Calculating the new energy */
     delta_energy=0;
@@ -249,16 +313,16 @@ c
 				free(orig_vtx[i]->neigh);
 				free(orig_vtx[i]->tristar);
 				free(orig_vtx[i]->bond);
-				free(orig_tria[i]->neigh);
+				if (orig_tria[i]!=NULL) free(orig_tria[i]->neigh);
 				memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
-				memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
+				if (orig_tria[i]!=NULL) memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
 			//			fprintf(stderr,"Restored vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
 				/* level 2 pointers are redirected*/
 			    }
 			    memcpy(bond,bck_bond,sizeof(ts_bond));
 			    for(i=0;i<4;i++){
-				free(bck_vtx[i]);
-				free(bck_tria[i]);
+				    free(bck_vtx[i]);
+				    if (orig_tria[i]!=NULL) free(bck_tria[i]);
 			/*			fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d =",i, orig_vtx[i]->neigh_no );
 				for(j=0;j<orig_vtx[i]->neigh_no;j++) fprintf(stderr," %d", orig_vtx[i]->neigh[j]->idx);
 				fprintf(stderr,"\n"); */
@@ -282,16 +346,16 @@ c
 				free(orig_vtx[i]->neigh);
 				free(orig_vtx[i]->tristar);
 				free(orig_vtx[i]->bond);
-				free(orig_tria[i]->neigh);
+				if (orig_tria[i]!=NULL) free(orig_tria[i]->neigh);
 				memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
-				memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
+				if (orig_tria[i]!=NULL) memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
 			//			fprintf(stderr,"Restored vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
 				/* level 2 pointers are redirected*/
 			    }
 			    memcpy(bond,bck_bond,sizeof(ts_bond));
 			    for(i=0;i<4;i++){
-				free(bck_vtx[i]);
-				free(bck_tria[i]);
+				    free(bck_vtx[i]);
+				    if (orig_tria[i]!=NULL) free(bck_tria[i]);
 			/*			fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d =",i, orig_vtx[i]->neigh_no );
 				for(j=0;j<orig_vtx[i]->neigh_no;j++) fprintf(stderr," %d", orig_vtx[i]->neigh[j]->idx);
 				fprintf(stderr,"\n"); */
@@ -311,16 +375,16 @@ c
                 free(orig_vtx[i]->neigh);
                 free(orig_vtx[i]->tristar);
                 free(orig_vtx[i]->bond);
-                free(orig_tria[i]->neigh);
+                if (orig_tria[i]!=NULL) free(orig_tria[i]->neigh);
                 memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
-                memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
+                if (orig_tria[i]!=NULL) memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
     //			fprintf(stderr,"Restored vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
                 /* level 2 pointers are redirected*/
             }
             memcpy(bond,bck_bond,sizeof(ts_bond));
             for(i=0;i<4;i++){
                 free(bck_vtx[i]);
-                free(bck_tria[i]);
+                if (orig_tria[i]!=NULL) free(bck_tria[i]);
     /*			fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d =",i, orig_vtx[i]->neigh_no );
                 for(j=0;j<orig_vtx[i]->neigh_no;j++) fprintf(stderr," %d", orig_vtx[i]->neigh[j]->idx);
                 fprintf(stderr,"\n"); */
@@ -334,59 +398,50 @@ c
 
 /* MONTE CARLO */
     if(delta_energy>=0){
-#ifdef TS_DOUBLE_DOUBLE
-        if(exp(-delta_energy)< drand48())
-#endif
-#ifdef TS_DOUBLE_FLOAT
-        if(expf(-delta_energy)< (ts_float)drand48())
-#endif
-#ifdef TS_DOUBLE_LONGDOUBLE
-        if(expl(-delta_energy)< (ts_ldouble)drand48())
-#endif
-        {
-            //not accepted, reverting changes
+        if(exp(-delta_energy)< drand48()) {
+        //not accepted, reverting changes
 	    //restore all backups
-//		fprintf(stderr,"Restoring!!!\n");
+        //fprintf(stderr,"Restoring!!!\n");
         if(vesicle->tape->constvolswitch == 1){
             constvolumerestore(vesicle, constvol_vtx_moved,constvol_vtx_backup);
         }
 
 		for(i=0;i<4;i++){
-//			fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
+        // fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
 			free(orig_vtx[i]->neigh);
 			free(orig_vtx[i]->tristar);
 			free(orig_vtx[i]->bond);
-			free(orig_tria[i]->neigh);
+			if (orig_tria[i]!=NULL) free(orig_tria[i]->neigh);
 			memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
-			memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
-//			fprintf(stderr,"Restored vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
+			if (orig_tria[i]!=NULL) memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
+        // fprintf(stderr,"Restored vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
 			/* level 2 pointers are redirected*/
 		}
 		memcpy(bond,bck_bond,sizeof(ts_bond));
 
 		for(i=0;i<4;i++){
 			free(bck_vtx[i]);
-			free(bck_tria[i]);
-/*			fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d =",i, orig_vtx[i]->neigh_no );
+			if (orig_tria[i]!=NULL) free(bck_tria[i]);
+            /* fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d =",i, orig_vtx[i]->neigh_no );
 			for(j=0;j<orig_vtx[i]->neigh_no;j++) fprintf(stderr," %d", orig_vtx[i]->neigh[j]->idx);
 			fprintf(stderr,"\n"); */
 		}
 
 		free(bck_bond);
 
-//		fprintf(stderr,"Restoration complete!!!\n");
-//    vesicle_volume(vesicle);
-//    fprintf(stderr,"Volume after fail=%1.16e\n", vesicle->volume);
-	if(vesicle->tape->stretchswitch==1){
-		stretchenergy(vesicle,lm);
-		stretchenergy(vesicle,lp);
-	}
+        // fprintf(stderr,"Restoration complete!!!\n");
+        // vesicle_volume(vesicle);
+        // fprintf(stderr,"Volume after fail=%1.16e\n", vesicle->volume);
+	    if(vesicle->tape->stretchswitch==1){
+		    stretchenergy(vesicle,lm);
+		    stretchenergy(vesicle,lp);
+	    }
 
 		return TS_FAIL;
         }
     }
      /* IF BONDFLIP ACCEPTED, THEN RETURN SUCCESS! */
-//            fprintf(stderr,"SUCCESS!!!\n");
+    // fprintf(stderr,"SUCCESS!!!\n");
 
     if(vesicle->tape->constvolswitch == 2){
 	    vesicle->volume+=dvol;
@@ -400,15 +455,15 @@ c
 	for(i=0;i<4;i++){
 	    free(bck_vtx[i]->neigh);
 	    free(bck_vtx[i]->bond);
-	    free(bck_vtx[i]->tristar);
+        free(bck_vtx[i]->tristar);
 	    free(bck_vtx[i]);
- 	    free(bck_tria[i]->neigh);
-        free(bck_tria[i]);
+ 	    if (orig_tria[i]!=NULL) free(bck_tria[i]->neigh);
+        if (orig_tria[i]!=NULL) free(bck_tria[i]);
 	}
 	free(bck_bond);
 
-//    vesicle_volume(vesicle);
-//    fprintf(stderr,"Volume after success=%1.16e\n", vesicle->volume);
+    // vesicle_volume(vesicle);
+    // fprintf(stderr,"Volume after success=%1.16e\n", vesicle->volume);
     return TS_SUCCESS;
 }
 
@@ -452,15 +507,15 @@ ts_bool ts_flip_bond(ts_vesicle *vesicle, ts_vertex *k,ts_vertex *it,ts_vertex *
 
     // 5. step. Correct neighbouring triangles 
    
-    triangle_remove_neighbour(lp,lp1);
-    triangle_remove_neighbour(lp1,lp);
-    triangle_remove_neighbour(lm,lm2);
-    triangle_remove_neighbour(lm2,lm);
+    if(lp1!=NULL) triangle_remove_neighbour(lp,lp1);
+    if(lp1!=NULL) triangle_remove_neighbour(lp1,lp);
+    if(lm2!=NULL) triangle_remove_neighbour(lm,lm2);
+    if(lm2!=NULL) triangle_remove_neighbour(lm2,lm);
    
-    triangle_add_neighbour(lm,lp1);    
-    triangle_add_neighbour(lp1,lm);
-    triangle_add_neighbour(lp,lm2);  //Vrstni red?!
-    triangle_add_neighbour(lm2,lp);
+    if(lp1!=NULL) triangle_add_neighbour(lm,lp1);    
+    if(lp1!=NULL) triangle_add_neighbour(lp1,lm);
+    if(lm2!=NULL) triangle_add_neighbour(lp,lm2);  //Vrstni red?!
+    if(lm2!=NULL) triangle_add_neighbour(lm2,lp);
 
 
 
@@ -568,11 +623,11 @@ c
     ts_vertex *it=bond->vtx1;
     ts_vertex *k=bond->vtx2;
     ts_small_idx nei,neip,neim;
-    ts_small_idx nei_k_at_km, nei_kp_at_k, nei_it_at_kp; // nei_k_at_it == neim
+    ts_small_idx nei_k_at_km, nei_kp_at_k, nei_it_at_kp; // nei_km_at_it == neim
     ts_small_idx i;
     ts_double oldenergy, delta_energy, dvol=0.0, darea=0.0;
-    ts_triangle *lm=NULL,*lp=NULL, *lp1=NULL, *lm2=NULL;
     ts_double tri_normals_angle_cosine_old_min, tri_normals_angle_cosine_new_min;
+    ts_triangle *lm=NULL,*lp=NULL, *lp1=NULL, *lm2=NULL;
     ts_triangle *lm1=NULL,*lp2=NULL;
 
     ts_vertex *kp,*km;
@@ -581,17 +636,18 @@ c
     ts_vertex *constvol_vtx_moved, *constvol_vtx_backup;
     ts_bool retval;
 
+    if(k==NULL || it==NULL){
+        fatal("bond vertex are NULL!",999);
+    }
     if (it->type==is_ghost_vtx && k->type==is_ghost_vtx) return TS_FAIL;
 
     if(it->neigh_no< 3) return TS_FAIL;
     if(k->neigh_no< 3) return TS_FAIL;
-    if(k==NULL || it==NULL){
-        fatal("In bondflip, number of neighbours of k or it is less than 3!",999);
-    }
 
     nei=find_neigh_idx(it, k);
     neip=next_small(nei, it->neigh_no);  //  must have it in correct order
     neim=prev_small(nei, it->neigh_no);
+    if (it->type&is_edge_vtx && (nei==0 || neip==0)) return TS_FAIL; // edge bond can't be flipped. No hidden edge: if bond is k's edge, bond is it's edge
 
     km=it->neigh[neim];  // We located km and kp
     kp=it->neigh[neip];
@@ -599,16 +655,16 @@ c
     if(km==NULL || kp==NULL){
         fatal("In bondflip, cannot determine km and kp!",999);
     }
-    if (km->type==is_ghost_vtx && kp->type==is_ghost_vtx) return TS_FAIL;
+    if (km->type==is_ghost_vtx && kp->type==is_ghost_vtx) return TS_FAIL; // ghost bonds do not move!
 
     if(it->type & is_edge_vtx || km->type & is_edge_vtx || k->type & is_edge_vtx || kp->type & is_edge_vtx){
         // not even bothering for the mixed case
         // hoping compiler can throw out repeated steps when composing
         retval = single_bondflip_timestep(vesicle, bond, rn);
-        if (!(it->type & is_edge_vtx)) order_vertex_triangles(it);
-        if (!(km->type & is_edge_vtx)) order_vertex_triangles(km);
-        if (!( k->type & is_edge_vtx)) order_vertex_triangles(k);
-        if (!(kp->type & is_edge_vtx)) order_vertex_triangles(kp);
+        (it->type & is_edge_vtx) ? order_edge_vertex(it) : order_vertex_triangles(it);
+        (km->type & is_edge_vtx) ? order_edge_vertex(km) : order_vertex_triangles(km);
+        ( k->type & is_edge_vtx) ? order_edge_vertex( k) : order_vertex_triangles( k);
+        (kp->type & is_edge_vtx) ? order_edge_vertex(kp) : order_vertex_triangles(kp);
         return retval;
     }
 

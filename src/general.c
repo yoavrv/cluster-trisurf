@@ -138,27 +138,27 @@ char *libVersion(){
     return TS_VERSION;
 }
 
-// next index after i in cyclic vector size max (i++)%max
+// next index after i in cyclic vector i==max? 0, i. fatal if i>max or i<0
 ts_small_idx next_small(ts_small_idx i, ts_small_idx max){
-    if (i>=max) fatal("index out of bounds",3);
+    if (i>=max || i<0) fatal("index out of bounds",3);
     if (i+1==max) return 0;
     return i+1;
 }
-// next index after i in cyclic vector size max (i++)%max
+// next index after i in cyclic vector i==max? 0, i. fatal if i>max or i<0
 ts_idx next_idx(ts_idx i, ts_idx max){
-    if (i>=max) fatal("index out of bounds",3);
+    if (i>=max || i<0) fatal("index out of bounds",3);
     if (i+1==max) return 0;
     return i+1;
 }
-// previous index after i in cyclic vector size max (i--)%max
+// previous index after i in cyclic vector i==0? max-1, i. fatal if i>max or i<0
 ts_small_idx prev_small(ts_small_idx i, ts_small_idx max){
-    if (i>=max) fatal("index out of bounds",3);
+    if (i>=max || i<0) fatal("index out of bounds",3);
     if (i==0) return max-1;
     return i-1;
 }
-// previous index after i in cyclic vector size max (i--)%max
+// previous index after i in cyclic vector i==0? max-1, i. fatal if i>max or i<0
 ts_idx prev_idx(ts_idx i, ts_idx max){
-    if (i>=max) fatal("index out of bounds",3);
+    if (i>=max || i<0) fatal("index out of bounds",3);
     if (i==0) return max-1;
     return i-1;
 }
