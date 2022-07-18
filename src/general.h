@@ -122,13 +122,13 @@ out of bound might be simpler: it's always i greater than vec->max
 // ncmaxes (because heck if I know what goes in the calculations there) and cellno (by extension),
 // and spherical harmonics indexes.
 // also not touching the FORTRAN indexes with a ten foot pole in intial distribution
-typedef unsigned char ts_small_idx; // for tiny indices <<64, mostly short circular neighbor vectors
-typedef unsigned int ts_idx; // for big indices
-typedef unsigned long ts_massive_idx; //for mcsweeps
-ts_small_idx next_small(ts_small_idx i, ts_small_idx max);
-ts_idx next_idx(ts_idx i, ts_idx max);
-ts_small_idx prev_small(ts_small_idx i, ts_small_idx max);
-ts_idx prev_idx(ts_idx i, ts_idx max);
+typedef signed char ts_small_idx; // for tiny indices <<64, mostly short circular neighbor vectors
+typedef signed int ts_idx; // for big indices
+typedef signed long ts_massive_idx; //for mcsweeps
+extern inline ts_small_idx next_small(ts_small_idx i, ts_small_idx max);
+extern inline ts_idx next_idx(ts_idx i, ts_idx max);
+extern inline ts_small_idx prev_small(ts_small_idx i, ts_small_idx max);
+extern inline ts_idx prev_idx(ts_idx i, ts_idx max);
 
 /* STRUCTURES */
 

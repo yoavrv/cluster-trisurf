@@ -141,7 +141,7 @@ ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
     ts_vertex* vtx;
     ts_double norml;
     n = vesicle->vlist->n;
-    indices = (ts_uint*) malloc(n * sizeof(ts_uint));
+    indices = (ts_idx*) malloc(n * sizeof(ts_idx));
     // create an array fo indices; copied a bunch from wikipedia "Fisher-Yates shuffle"
     for (i=0; i<n; i++){
         indices[i] = i;
