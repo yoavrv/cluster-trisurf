@@ -121,6 +121,9 @@ bond_model=0
 # 0: old method. 7: debug, save everything but use energy from old method. 35: parallel transport of directors only
 curvature_model=7
 
+# limit sharp edges by having a dihedral angle cosine limit cos(phi_ab)>x. defaults to -1 (no limit)
+# min_dihedral_angle_cosine = -1
+
 # xk2: second bending modulus: due to Gauss-Bonet, excees (xkG-xkG0)
 xk2=0 
 

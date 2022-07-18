@@ -11,7 +11,15 @@ Modified by Yoav based on Rajkumar's cluster version of Samo and Miha's trisurf-
 > $trisurf --tape-options vicsek_model=0,adhesion_model=2,nshell=5,random_seed=9
 * gaussian curvature with angle sum formula
 * anisotropy (in progress)
-* more vertex data is outputted to the .vtu (type, force, normal, curvatures...)
+* more vertex data is individualized as well as outputted to the .vtu (type, force, normal, bending modulii, curvatures...)
+
+Things that are not working
+* shape operator still has problems
+* initial distribution need more work for adding more types (partway there)
+* ghost (unmoving) and edge vertices are not working yet: energy doesn't work, bondflip is iffy, no initialization
+* making less huge vtu
+* keeping the same random seed sequence after restorations (currently it's reseting each time to the tape value/current time)
+* probably much much more
 
 
 1. Installation

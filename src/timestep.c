@@ -29,7 +29,6 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_massive_idx mcsweeps, ts_idx init
     ts_double l1,l2,l3,vmsr,bfsr, vmsrt, bfsrt; //gyration eigenvalues, statistics succsess rate
     ts_ulong epochtime;
     ts_double max_z;
-    clock_t time_0, time_1, time_2, time_3; // benchmarking clocks
     ts_flag adhesion_model = vesicle->tape->type_of_adhesion_model;
     FILE *fd3=NULL;
      char filename[10000];
@@ -86,10 +85,7 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_massive_idx mcsweeps, ts_idx init
     for(i=start_iteration;i<inititer+iterations;i++){
         vmsr=0.0;
         bfsr=0.0;
-        time_0=0;
-        time_1=0;
-        time_2=0;
-        time_3=0;
+
 
         //plane confinement
         if(vesicle->tape->plane_confinement_switch){
@@ -122,7 +118,7 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_massive_idx mcsweeps, ts_idx init
         // MAIN INNER LOOP
         // MONTE CARLO SWEEP
         for(j=0;j<mcsweeps;j++){
-            single_timestep(vesicle, &vmsrt, &bfsrt, &time_0, &time_1, &time_2, &time_3);
+            single_timestep(vesicle, &vmsrt, &bfsrt);
             vmsr+=vmsrt;
             bfsr+=bfsrt;
         }
@@ -165,22 +161,18 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_massive_idx mcsweeps, ts_idx init
         fclose(fd3);
 
         ts_fprintf(stdout,"Done %d out of %d iterations (x %d MC sweeps).\n",i+1,inititer+iterations,mcsweeps);
-        ts_fprintf(stdout,"time_0: %f (time1: %f time2: %f), time3: %f (x %d MC sweeps).\n",0.001*time_0,0.001*time_1,0.001*time_2,0.001*time_3,mcsweeps);
-
     }
     fclose(fd);
     //	if(fd2!=NULL) fclose(fd2);
     return TS_SUCCESS;
 }
 
-ts_bool single_timestep(ts_vesicle *vesicle,ts_double *vmsr, ts_double *bfsr, clock_t *time_0,clock_t *time_1, clock_t *time_2, clock_t *time_3){
+ts_bool single_timestep(ts_vesicle *vesicle,ts_double *vmsr, ts_double *bfsr){
     ts_bool retval;
     ts_double rnvec[3];
     ts_idx i,j,b;
     ts_uint vmsrcnt=0;
-    clock_t stopwatch;
 
-    stopwatch=clock();
     for(i=0;i<vesicle->vlist->n;i++){
         //rnvec[0]=drand48();
         //rnvec[1]=drand48();
@@ -190,15 +182,12 @@ ts_bool single_timestep(ts_vesicle *vesicle,ts_double *vmsr, ts_double *bfsr, cl
             retval=TS_FAIL;
         }
         else {
-            retval=single_verticle_timestep(vesicle,vesicle->vlist->vtx[i], time_1, time_2);
+            retval=single_verticle_timestep(vesicle,vesicle->vlist->vtx[i]);
         }
         if(retval==TS_SUCCESS) vmsrcnt++;
     }
-    *time_0+=clock()-stopwatch;
     
     ts_int bfsrcnt=0;
-    //for benchmarking
-    stopwatch=clock();
     for(i=0;i<3*vesicle->vlist->n;i++){
         b=rand() % vesicle->blist->n;
         //find a bond and return a pointer to a bond...
@@ -208,7 +197,6 @@ ts_bool single_timestep(ts_vesicle *vesicle,ts_double *vmsr, ts_double *bfsr, cl
         if(retval==TS_SUCCESS) bfsrcnt++;   
     }
 
-    *time_3+=clock()-stopwatch; //time bondflip
 
     for(i=0;i<vesicle->poly_list->n;i++){
         for(j=0;j<vesicle->poly_list->poly[i]->vlist->n;j++){
