@@ -1367,33 +1367,28 @@ ts_tape *parsetapebuffer(char *buffer){
         CFG_INT("type_of_adhesion_model", 1, CFGF_NONE),
         CFG_INT("allow_xy_plane_movement", 0, CFGF_NONE),
         CFG_INT("force_balance_along_z_axis", 0, CFGF_NONE),
-        //CFG_SIMPLE_INT("spherical_harmonics_coefficients",&tape->shc),
         CFG_FLOAT("c0", 0.5, CFGF_NONE),
         CFG_FLOAT("w", 1.5, CFGF_NONE),
         CFG_FLOAT("F", 0.7, CFGF_NONE),
-/* Variables related to plane confinement */
+        /* Variables related to plane confinement */
         CFG_INT("plane_confinement_switch", 0, CFGF_NONE),
         CFG_FLOAT("plane_d", 15, CFGF_NONE),
         CFG_FLOAT("plane_F", 1000, CFGF_NONE),
-/* Variables related to adhesion */
+        /* Variables related to adhesion */
         CFG_INT("adhesion_switch", 0, CFGF_NONE),
         CFG_FLOAT("adhesion_cuttoff", 15, CFGF_NONE),
         CFG_FLOAT("adhesion_strength", 1000, CFGF_NONE),
         CFG_FLOAT("adhesion_radius", 1000, CFGF_NONE),
         CFG_FLOAT("z_adhesion", 1000, CFGF_NONE),
-/* Variables related to stretching */
-//	CFG_FLOAT("stretchswitch", 0, CFGF_NONE),
-//	CFG_FLOAT("xkA0",0,CFGF_NONE),
-
-/* variables for Vicsek interaction and general interaction modification*/
+        /* variables for Vicsek interaction and general interaction modification*/
         CFG_INT("force_model", 0, CFGF_NONE),
         CFG_FLOAT("vicsek_strength", 0.1, CFGF_NONE),
         CFG_FLOAT("vicsek_radius", 1.0, CFGF_NONE),
         CFG_INT("bond_model", 0, CFGF_NONE),
         CFG_INT("curvature_model", 0, CFGF_NONE),
-/* Dihedral angle cosine constraint*/
+        /* Dihedral angle cosine constraint*/
         CFG_FLOAT("min_dihedral_angle_cosine",-1,CFGF_NONE),
-/* random seed */
+        /* random seed */
         CFG_INT("random_seed",0,CFGF_NONE),
         CFG_END()
     };

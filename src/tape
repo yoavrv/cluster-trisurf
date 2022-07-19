@@ -77,20 +77,9 @@ spherical_harmonics_coefficients=0
 #shut up if we are using cluster!!!
 quiet=false
  
+# no multiprocessing
 
-
-#what type of multiprocessing? (*none, smp, cluster, distributed, cuda, auto)
-#currently only none makes sense.
-multiprocessing=none
-#how many cores are allowed to process in SMP?
-smp_cores=2
-#how many nodes in cluster?
-cluster_nodes=50
-#max number of processes in distributed (voluntary) environment
-distributed_processes=50
-#cuda options???
-
-
+###### Active CMC properties #######
 #number of vertices with spontaneous curvature (integer)
 number_of_vertices_with_c0=50
 #c0/2 is spontaneous curvature. c0 is used as (c1+c1-c0)^2 in energy term (float)
@@ -99,34 +88,8 @@ c0=0.5
 w=1.0
 #direct force on vesicles with spontaneous curvature (float)
 F=1.0
-
-
-
-#plane confinement; two plates between the substrate-vesicle system, upper plate in moving downwards untill plan_d, lower plate is stationary
-plane_confinement_switch=0
-#final plane distance (float in lmin)
-plane_d=10
-#plane to vesicle repulsion force while closing
-plane_F=1.0
-
 # bond model- bonding vtx mean(w). and 0x1: require type identity, and 0x2: nematic interaction between anisotropic vtx
 bond_model=0
-
-# curvature model:
-# and 0x1  : calculate angle-sum gaussian curvature,  and 0x2  : calculate shape operator, 
-# and 0x4  : update director even in the old method.  and 0x8  : use shape operator energy rather than just save it
-# and 0x10 : use shape, but only for anisotropic.     and 0x20 : do not rotate director as a MC step
-# and 0x40 : disable old method (use shape op only)   and 0x80 : calculate angle sum only if kx2!-9
-# example of important models: 
-# 0: old method. 7: debug, save everything but use energy from old method. 35: parallel transport of directors only
-curvature_model=7
-
-# limit sharp edges by having a dihedral angle cosine limit cos(phi_ab)>x. defaults to -1 (no limit)
-# min_dihedral_angle_cosine = -1
-
-# xk2: second bending modulus: due to Gauss-Bonet, excees (xkG-xkG0)
-xk2=0 
-
 # force_model- 0: regular, force in normal direction, 
 # 1: inhibition, F~nonactive_neigh, 2: F~c0>=0 neigh
 # 3: F=0 if any neigh c0 less than 0 
@@ -135,17 +98,38 @@ force_model=0
 #Vicsek: force direction is sum of own normal + (nearest neighbor normals * vicsek_strength)
 #interaction strength parameter: Vicsek: weight of neighbors
 vicsek_strength=0.1
-#interactionr radius parameter: Vicsek: max. neighbor distance (int)
+#interaction radius parameter: Vicsek: max. neighbor distance (int)
 vicsek_radius=4.0
+# curvature model:
+# and 0x1  : calculate angle-sum gaussian curvature,  and 0x2  : calculate shape operator, 
+# and 0x4  : update director even in the old method.  and 0x8  : use shape operator energy rather than just save it
+# and 0x10 : use shape, but only for anisotropic.     and 0x20 : do not rotate director as a MC step
+# and 0x40 : disable old method (use shape op only)   and 0x80 : calculate angle sum only if kx2!-9
+# example of important models: 
+# 0: old method. 7: debug, save everything but use energy from old method. 35: parallel transport of directors only
+curvature_model=7
+# limit sharp edges by having a dihedral angle cosine limit cos(phi_ab)>x. defaults to -1 (no limit)
+# min_dihedral_angle_cosine = -1
+# xk2: second bending modulus: due to Gauss-Bonet, this should be excees (xkG-xkG0)
+xk2=0 
 
-#some important parameters
+###### Plane confinement ############
+#plane confinement; two plates between the substrate-vesicle system, upper plate in moving downwards untill plan_d, lower plate is stationary
+plane_confinement_switch=0
+#final plane distance (float in lmin)
+plane_d=10
+#plane to vesicle repulsion force while closing
+plane_F=1.0
+
+
+
+##### Adhesion to surface #######
 #which type of adhesion model do you want; step_potential (1), parabolic potential (2) , for shperical surface with step potential (3), for cylindrical surface with step potential (4)
 type_of_adhesion_model=0
 #do you want to see any crawling motion on x-y plane, then choose 1, 0 otherwise; only for flate and cylindrical substrate 
 allow_xy_plane_movement=0
 #in active case, we need to apply an external force in the z-direction for overall force balance along z-direction, choose 1 if you want this, 0 otherwise
 force_balance_along_z_axis=0
-
 #Adhesion
 adhesion_switch=0
 #potential range (float in lmin)

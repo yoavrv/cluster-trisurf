@@ -4,24 +4,32 @@ Modified by Yoav based on Rajkumar's cluster version of Samo and Miha's trisurf-
 
 ### 0. Diff
 --------------
-* vicsek interaction: setting vicsek_model=1, the force now sums normals on the 'connected cluster up to vicsek_radius' with weight vicsek_strength
+* vicsek interaction: setting vicsek_model=1, the force direction is average of normals in connected cluster, up to vicsek_radius, with weight vicsek_strength
 * adhesion from Raj: step, parabolic, spherical and cylindrical
 * added random_seed option to the tape: default (0) to this moment (linux epoch)
-* commandline --tape-options now works for adhesion and vicsek parameter too and is saved on the .vtu \<tape\>: use in the form
-> $trisurf --tape-options vicsek_model=0,adhesion_model=2,nshell=5,random_seed=9
-* gaussian curvature with angle sum formula
-* anisotropy (in progress)\
-* minimal dihedral angle cosine between triangles option (to prevent spikiness) - optional to tape (default to -1 i.e. no effect)
+* commandline --tape-options (-c) now works for most things and is saved on the .vtu \<tape\> section: use in the form
+> $trisurf --tape-options vicsek_model=0,adhesion_model=2,nshell=5,random_seed=9,iterations=10
+* gaussian curvature with angle sum formula $\frac{1}{A}\left( 2\pi-\sum\theta_i\right)$
+* anisotropy (in progress)
+* option to have angle limits between triangles (to prevent spikiness) - optional to tape (default to -1 i.e. no effect)
 * more vertex data is individualized as well as outputted to the .vtu (type, force, normal, bending modulii, curvatures...)
+* added -flto=auto flag to configure.ac (link time optimization)
+* thrown away multiprocessing options
+* did some changes to spherical harmonics (some sort of sectioning it out?)
+* lots of tabs and spaces changes due to viewing from VScode
 
 *Things that are not working:*
 * shape operator still has problems  
 * spikiness still happens:  
     * probably because $\kappa$ is incorrect
+* constvol and constarea are almost certainly broken somehow, since they involve "side steps" which have not been updated
 * initial distribution need more work for adding more types (partway there)  
 * ghost (unmoving) and edge vertices are not working yet: energy doesn't work, bondflip is iffy, no initialization  
 * making less huge vtu  
 * keeping the same random seed sequence after restorations (currently it's resetting each time to the tape value/current time). might be okay?  
+* in addition to lto, add pgo (profile guided optimization) to the compilation? 
+    * I would guess it could be very effective, since the simulation is fairly constrained and we can run several very short but realistic examples
+    * No clue how to mix it with autotools (makefile.am and configure.am)
 * probably much much more  
 
 

@@ -551,7 +551,7 @@ int createPidFile(const char *progName, const char *pidFile, int flags);
 int lockRegion(int fd, int type, int whence, int start, int len);
 char *libVersion();
 
-// ifdefs to stop vscode from complaning
+// ifdefs to stop vscode from complaining
 #ifndef TS_VERSION
 #define TS_VERSION "whatever"
 #endif
