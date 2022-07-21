@@ -4,8 +4,8 @@
 #include "vertex.h"
 
 ts_cell_list  *init_cell_list(ts_uint ncmax1, ts_uint ncmax2, ts_uint ncmax3, ts_double stepsize){
-    ts_idx i;
-    ts_idx nocells=ncmax1*ncmax2*ncmax3;
+    ts_uint i;
+    ts_uint nocells=ncmax1*ncmax2*ncmax3;
     ts_cell_list *clist=(ts_cell_list *)malloc(sizeof(ts_cell_list));
     if(clist==NULL) fatal("Error while allocating memory for cell list!",100);
 
@@ -34,9 +34,9 @@ ts_bool cell_free(ts_cell* cell){
 }
 
 ts_bool cell_list_free(ts_cell_list *clist){
-    ts_idx i;
+    ts_uint i;
     if(clist==NULL) return TS_FAIL;
-    ts_idx nocells=clist->cellno;
+    ts_uint nocells=clist->cellno;
     for(i=0;i<nocells;i++)
          if(clist->cell[i] != NULL) cell_free(clist->cell[i]);
     free(clist->cell);
@@ -84,7 +84,7 @@ inline ts_bool cell_add_vertex(ts_cell *cell, ts_vertex *vtx){
     return TS_SUCCESS;
 }
 
-// remove vertex from vell->vertex (does not chenge vertex->cell)
+// remove vertex from cell->vertex (does not change vertex->cell)
 inline ts_bool cell_remove_vertex(ts_cell *cell, ts_vertex *vtx){
     ts_small_idx i,j=0;
     for(i=0;i<cell->nvertex;i++){
@@ -110,7 +110,7 @@ inline ts_bool cell_remove_vertex(ts_cell *cell, ts_vertex *vtx){
 
 // free each cell->vertex i.e. return to a pristine space
 ts_bool cell_list_cell_occupation_clear(ts_cell_list *clist){
-    ts_idx i;
+    ts_uint i;
     for(i=0;i<clist->cellno;i++){
         if(clist->cell[i]->vertex != NULL){
             free(clist->cell[i]->vertex);

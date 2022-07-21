@@ -337,7 +337,7 @@ typedef struct ts_triangle_list ts_triangle_list;
 
 typedef struct ts_cell {
     ts_vertex **vertex;
-    ts_idx idx;
+    ts_uint idx;
     ts_small_idx nvertex;
 } ts_cell; 
 

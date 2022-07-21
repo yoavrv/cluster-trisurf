@@ -94,7 +94,7 @@ ts_vesicle *parseDump(char *dumpfname) {
 	}
 	xmlFreeDoc(doc);
 
-//	vesicle->poly_list=init_poly_list(0, 0, vesicle->vlist, vesicle);
+	// vesicle->poly_list=init_poly_list(0, 0, vesicle->vlist, vesicle);
 	//set_vesicle_values_from_tape(vesicle); //moved to vesicle initialization
 	init_normal_vectors(vesicle->tlist);
 	for (i=0; i<vesicle->vlist->n; i++){
@@ -114,12 +114,8 @@ ts_vesicle *parseDump(char *dumpfname) {
 	adhesion energy is calculated at each point, not saved (not needed)
 	
 	*/
-/* TODO: filaments */
+	/* TODO: filaments */
 
-//	ts_fprintf(stdout,"Restoration completed\n");
-//	write_vertex_xml_file(vesicle,999);
-//	vesicle_free(vesicle);
-//	exit(0);
 	return vesicle;
 }
 
@@ -176,10 +172,10 @@ ts_vesicle *parseTrisurfTag(xmlDocPtr doc, xmlNodePtr cur){
 	nmono=xmlGetProp(cur, (xmlChar *)"nmono");
 	update_tapetxt(tapetxt, command_line_args.tape_opts);
 	ts_tape *tape=parsetapebuffer(tapetxt);
-	//fprintf(stderr,"nvtx=%u\n",atoi((char *)nvtx));
-	//TODO: check if nvtx is in agreement with nshell from tape
+	// fprintf(stderr,"nvtx=%u\n",atoi((char *)nvtx));
+	// TODO: check if nvtx is in agreement with nshell from tape
 	ts_vesicle *vesicle=init_vesicle(atoi((char *)nvtx),tape->ncxmax,tape->ncymax,tape->nczmax,tape->stepsize);
-//	vesicle->poly_list=init_poly_list(atoi((char *)npoly),atoi((char *)nmono), vesicle->vlist, vesicle);
+	// vesicle->poly_list=init_poly_list(atoi((char *)npoly),atoi((char *)nmono), vesicle->vlist, vesicle);
 	vesicle->poly_list=init_empty_poly_list(atoi((char *)npoly),atoi((char *)nmono));
 	xmlFree(nvtx);
 	xmlFree(npoly);

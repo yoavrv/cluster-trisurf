@@ -137,10 +137,10 @@ ts_bool cell_occupation(ts_vesicle *vesicle){
 }
 
 // same as cell_occupation but with special check to prevent
-// overfilling a single cell with >256 {x=0,y=0,z=0} vertices
+// overfilling a single cell with too many {x=0,y=0,z=0} vertices
 ts_bool initialization_cell_occupation(ts_vesicle *vesicle){
 	ts_bool is_initialized=0;
-	ts_idx rolling = 0;
+	ts_uint rolling = 0;
 	ts_idx i, j, n=vesicle->vlist->n;
     ts_uint cellidx;
 	ts_cell_list *clist=vesicle->clist; //aliases for less wide code

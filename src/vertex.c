@@ -8,7 +8,6 @@
 #include "bond.h"
 #include "triangle.h"
 
-#define p_diff(i, j) ((long int) (i) - (long int) (j))/ (long int) sizeof(*(i))
 
 ts_bool vertex_list_assign_id(ts_vertex_list *vlist, ts_idx id){
 	ts_idx i;	
@@ -69,6 +68,7 @@ ts_seen_vertex *init_seen_vertex(ts_idx max_size){
     return seen_vtx;
 }
 
+// add nvtx to vtx->neigh
 ts_bool vtx_add_neighbour(ts_vertex *vtx, ts_vertex *nvtx){
     ts_small_idx i;
     /* no neighbour can be null! */
@@ -791,6 +791,12 @@ ts_bool order_edge_vertex(ts_vertex* vtx){
     ts_small_idx li, ri;
     ts_triangle* jt;
     ts_bond* bi;
+
+    if (vtx->tristar_no != vtx->neigh_no-1 || vtx->bond_no != vtx->neigh_no){
+        print_vertex_ordered(vtx);
+        ts_fprintf(stdout, "edge vertex %u with neigh_no=%u, tristar_no=%u, bond_no=%u\n",vtx->idx,vtx->tristar_no, vtx->neigh_no, vtx->bond_no);
+        fatal("Unable to order a vertex",3);
+    }
 
     for (li=0; li<vtx->tristar_no; li++){
         vl=vtx->neigh[li];

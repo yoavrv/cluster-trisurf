@@ -179,7 +179,7 @@ ts_bool triangle_remove_neighbour(ts_triangle *tria, ts_triangle *ntria){
 }
 
 
-/** @brief Calculates normal vector of the triangle, its corresponding area and volume.
+/** @brief Calculates normal vector of the triangle, update its corresponding area and volume.
   * @param *tria is a triangle pointer for which normal, area and volume is
   * to be calculated.
   * @returns TS_SUCCESS on success. (always)
@@ -223,15 +223,9 @@ ts_bool triangle_normal_vector(ts_triangle *tria){
     xden=tria->xnorm*tria->xnorm +
          tria->ynorm*tria->ynorm + 
          tria->znorm*tria->znorm;
-#ifdef TS_DOUBLE_DOUBLE
+
     xden=sqrt(xden);
-#endif
-#ifdef TS_DOUBLE_FLOAT
-    xden=sqrtf(xden);
-#endif
-#ifdef TS_DOUBLE_LONGDOUBLE
-    xden=sqrtl(xden);
-#endif
+
     tria->xnorm=tria->xnorm/xden;
     tria->ynorm=tria->ynorm/xden;
     tria->znorm=tria->znorm/xden;	

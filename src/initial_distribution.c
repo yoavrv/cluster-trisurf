@@ -556,7 +556,7 @@ ts_bool init_common_vertex_triangle_neighbours(ts_vesicle *vesicle){
 
 ts_bool init_normal_vectors(ts_triangle_list *tlist){
     /* Normals point INSIDE vesicle */
-    ts_uint k;
+    ts_idx k;
     ts_triangle **tria=tlist->tria -1; //for 0 indexing
     for(k=1;k<=tlist->n;k++){
         triangle_normal_vector(tria[k]);	
