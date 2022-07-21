@@ -1658,7 +1658,7 @@ ts_bool update_tapetxt(char* tape_txt, char* cmd_line_tape_args){
         // go over the new options in args and see if this can be replaced
         arg_str = cmd_line_tape_args;
         for (i=0; i<num_opts; i++){
-            while(arg_str==',') arg_str++; // skip ','
+            while(*arg_str==',') arg_str++; // skip ','
             option_name_len=strcspn(arg_str,"=,");
             option_value_len=strcspn(arg_str,",");
 
@@ -1691,7 +1691,7 @@ ts_bool update_tapetxt(char* tape_txt, char* cmd_line_tape_args){
     // step 4: add all remaining new options in cmd_line at the end
     arg_str = cmd_line_tape_args;
     for (i=0; i<num_opts; i++){ // i=0, arg_str = cmd_line_tape_options...
-        while(arg_str==',') arg_str++; // skip ','
+        while(*arg_str==',') arg_str++; // skip ','
         option_name_len=strcspn(arg_str,"=,");
         option_value_len=strcspn(arg_str,",");
     
