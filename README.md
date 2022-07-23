@@ -1,6 +1,6 @@
 TRISURF NG
 ==========
-Modified by Yoav based on Rajkumar's cluster version of Samo and Miha's trisurf-ng
+Modified by Yoav based on Rajkumar's cluster version of Samo and Miha's trisurf-ng followed further developments with Samo, Mitja, Raj, and Shubhadeep
 
 ### 0. Diff
 --------------
@@ -8,19 +8,28 @@ Modified by Yoav based on Rajkumar's cluster version of Samo and Miha's trisurf-
 - adhesion from Raj: step, parabolic, spherical and cylindrical
 - added random_seed option to the tape: default (0) to this moment (linux epoch)
 - gaussian curvature with angle sum formula $\frac{1}{A}\left( 2\pi-\sum\theta_i\right)$
-- anisotropy (in progress)
+- anisotropy (in progress): director $\hat{d}$ and shape operator energy $E(\hat{S})$
 - option to have angle limits between triangles (to prevent spikiness) - optional to tape (default to -1 i.e. no effect, to use add e.g. "min_dihedral_angle_cosine=0.5")
-- more vertex data is individualized as well as outputted to the .vtu (type, force, normal, bending modulii, curvatures...)
+- more vertex data is individualized as well as outputted to the .vtu 
+    - type
+    - force
+    - normal
+    - bending modulii
+    - curvatures...
 - added -flto=auto flag to configure.ac (link time optimization)
 - thrown away multiprocessing options
-- did some changes to spherical harmonics (some sort of sectioning it out?)
-- lots of unaccounted changed to bonds in order to make sure vertices and bonds and triangles remain ordered.
-- lots of tabs and spaces changes due to viewing from VScode
+- did some changes to spherical harmonics (some sort of refactoring out of ts_vtx?)
+- did some changes to polymers (some sort of refactoring but can't even remember what)
+- lots of unaccounted changed to bonds in order to make sure vertices and bonds and triangles remain ordered.  
+    - vtx->neigh = [0, 1, 2, 3, 4, 5]  
+    - vtx->bond = [{0,vtx}, {1,vtx}, {2,vtx}, {3,vtx}, {4,vtx}, {5,vtx}]  
+    - vtx->tristar = [{0,1,vtx}, {1,2,vtx}, {2,3,vtx}, {3,4,vtx}, {4,5,vtx}, {5,0,vtx}]  
+- lots of tabs and spaces changes due to viewing and working from VScode
 - commandline --tape-options (-c) now works for most things and is saved on the .vtu \<tape\> section: use in the form
-> $trisurf --tape-options vicsek_model=0,adhesion_model=2,nshell=5,random_seed=9,iterations=10
+> ```$trisurf --tape-options vicsek_model=0,adhesion_model=2,nshell=5,random_seed=9,iterations=10```
 
-*Things that are not working:*
-- shape operator still has problems  
+**Things that are not working:**
+- shape operator energy still has problems  
 - spikiness still happens:  
     - probably because $\kappa$ is incorrect
 - constvol and constarea are almost certainly broken somehow, since they involve "side steps" which have not been updated
@@ -28,6 +37,9 @@ Modified by Yoav based on Rajkumar's cluster version of Samo and Miha's trisurf-
 - ghost (unmoving) and edge vertices are not working yet: energy doesn't work, bondflip is iffy, no initialization  
     - general rework of bonding and vertex order: to make a vtx-vtx bond there are several different functions which do different parts.
 - making less huge vtu  
+    - export less debug data or make it optional
+    - however the heck compression works (in tape?)
+    - somehow discard <trisurf> tag and use the vtk tags (like connectivity) instead: something with parseTrisurfTag
 - keeping the same random seed sequence after restorations (currently it's resetting each time to the tape value/current time). might be okay?  
 - in addition to lto, add pgo (profile guided optimization) to the compilation? 
     - I would guess it could be very effective, since the simulation is fairly constrained and we can run several very short but realistic examples

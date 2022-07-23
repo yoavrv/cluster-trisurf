@@ -54,12 +54,28 @@ ts_vesicle *create_vesicle_from_tape(ts_tape *tape){
     return vesicle;
 }
 
+/**
+ * @brief Set vesicle values and globals of vertices from tape
+ * note: runs before any particular function (initial population, parseXML[]) 
+ * Yoav: I think this takes a vesicle that has it's "skeleton" initialized (graph of vtx, bonds, triangles) and a tape, and give default/initial values for everything else (vtx->prop, tria->prop, etc.)
+ * 
+ * @param vesicle a vesicle with tape and (?) full vlist, blist, and tlist (and neighbor relations)
+ * @return ts_bool TS_SUCCESS if done
+ */
 ts_bool set_vesicle_values_from_tape(ts_vesicle *vesicle){
     // Set vesicle values and globals of vertices from tape
     // note: runs before any particular function (initial population, parseXML[]) 
-    // Nucleus:
+    //
+    // step 1: Nucleus
+    // step 2: filaments/poly
+    // step 3: transfer some tape parameters to vesicle (refactor to only use tape?)
+    // step 4: transfer some tape parameters to all the vtx (default to be changed in initial population and parseXML datapoint)
+    // step 4: cell list
+    // step 5: initialize spherical harmonics
+    // step 6: calculate rest area of triangle a0 (?stretch, if turned, would be k(a-a0)^2 ?)
     ts_vertex *vtx;
     ts_tape *tape=vesicle->tape;
+    // Nucleus
     vesicle->R_nucleus=tape->R_nucleus*tape->R_nucleus;
     vesicle->R_nucleusX=tape->R_nucleusX*tape->R_nucleusX;
     vesicle->R_nucleusY=tape->R_nucleusY*tape->R_nucleusY;
@@ -75,6 +91,7 @@ ts_bool set_vesicle_values_from_tape(ts_vesicle *vesicle){
     vesicle->filament_list=init_poly_list(tape->nfil,tape->nfono, NULL, vesicle);
     poly_assign_filament_xi(vesicle,tape);
 
+    // update bonds x y z and length
     ts_idx i,j;
     for(i=0;i<vesicle->filament_list->n;i++){
         for(j=0;j<vesicle->filament_list->poly[i]->blist->n;j++){
@@ -82,7 +99,7 @@ ts_bool set_vesicle_values_from_tape(ts_vesicle *vesicle){
             vesicle->filament_list->poly[i]->blist->bond[j]->bond_length = sqrt(vtx_distance_sq(vesicle->filament_list->poly[i]->blist->bond[j]->vtx1,vesicle->filament_list->poly[i]->blist->bond[j]->vtx2));
         }
     }
-
+    // update vtx energy
     for(i=0;i<vesicle->filament_list->n;i++){
         for(j=0;j<vesicle->filament_list->poly[i]->vlist->n;j++){
             vtx = vesicle->filament_list->poly[i]->vlist->vtx[j];
@@ -96,21 +113,14 @@ ts_bool set_vesicle_values_from_tape(ts_vesicle *vesicle){
         vertex_list_assign_id(vesicle->filament_list->poly[i]->vlist,TS_ID_FILAMENT);
     }
 
-
-    //Initialize the position of the adhesive surface
-    // ts_double z_adh=1e10;
-    // for(k=0;k<vesicle->vlist->n;k++){
-    //  if(vesicle->vlist->vtx[k]->z < z_adh) z_adh=vesicle->vlist->vtx[k]->z;
-    //  }
-    // vesicle->adhesion.z_adhesion = z_adh;
-
-
     // vesicle->spring_constant=tape->kspring;
     // poly_assign_spring_const(vesicle);
 
 
     vesicle->nshell=tape->nshell;
     vesicle->dmax=tape->dmax*tape->dmax; /* dmax^2 in the vesicle dmax variable */
+    vesicle->pressure= tape->pressure;
+    vesicle->pswitch=tape->pswitch;
     vtx_set_global_values(vesicle); /* make xk0 xk2 default value for every vertex  */ 
     // ts_fprintf(stdout, "Tape setting: xk0=%e\n",tape->xk0);
     vesicle->stepsize=tape->stepsize;
@@ -119,8 +129,6 @@ ts_bool set_vesicle_values_from_tape(ts_vesicle *vesicle){
     vesicle->clist->ncmax[2]=tape->nczmax;
     vesicle->clist->max_occupancy=16; /* hard coded max occupancy? */
 
-    vesicle->pressure= tape->pressure;
-    vesicle->pswitch=tape->pswitch;
     if(tape->shc>0){
         vesicle->sphHarmonics=complex_sph_init(vesicle->vlist,tape->shc);
     }
@@ -553,7 +561,7 @@ ts_bool init_common_vertex_triangle_neighbours(ts_vesicle *vesicle){
     return TS_SUCCESS;
 }
 
-
+// initialize triangle normals
 ts_bool init_normal_vectors(ts_triangle_list *tlist){
     /* Normals point INSIDE vesicle */
     ts_idx k;

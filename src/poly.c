@@ -21,11 +21,11 @@ ts_bool poly_assign_filament_xi(ts_vesicle *vesicle, ts_tape *tape){
 
 
 ts_bool poly_assign_spring_const(ts_vesicle *vesicle){
-    ts_uint i;
+    ts_idx i;
 
     for(i=0;i<vesicle->poly_list->n;i++){
-     vesicle->poly_list->poly[i]->k = vesicle->spring_constant;
-        }
+         vesicle->poly_list->poly[i]->k = vesicle->spring_constant;
+    }
     
     return TS_SUCCESS;
 }

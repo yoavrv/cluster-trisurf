@@ -8,7 +8,7 @@
 #include "bond.h"
 #include "triangle.h"
 
-
+// assign to each vertex in vlist the id of the vlist i.e. vlist->vtx[:]->id=vlist->id
 ts_bool vertex_list_assign_id(ts_vertex_list *vlist, ts_idx id){
 	ts_idx i;	
 	for(i=0;i<vlist->n;i++){
@@ -654,7 +654,7 @@ ts_bool print_vertex_ordered(ts_vertex* vtx){
 ts_bool order_vertex_triangles(ts_vertex* vtx){
 
     ts_vertex* vl, *vr;
-    ts_small_idx t, jj=0, li, ri, rri=0, lli=1;
+    ts_small_idx t, index_0=0, li, ri, index_1=0, index_end=1;
     ts_triangle* jt;
     ts_bond* bi;
     if (vtx->type&is_edge_vtx) return order_edge_vertex(vtx);
@@ -678,25 +678,25 @@ ts_bool order_vertex_triangles(ts_vertex* vtx){
         jt = vtx->tristar[t];
         if (in_tri(jt,vl)){
             if (in_tri(jt,vr)){
-                jj = t;
+                index_0 = t;
             }
             else{
-                lli = t;
+                index_end = t;
             }
           
         }
         else if (in_tri(jt,vr)){
-            rri = t;
+            index_1 = t;
         }  
     }
-    swap_triangles(vtx, jj, 0); // move (0,1) to 0
+    swap_triangles(vtx, index_0, 0); // move (0,1) to 0
 
-    if (lli==0) lli=jj; // if 0 was occupied by (end,0), it is now at jj 
-    swap_triangles(vtx, lli, vtx->tristar_no-1);
+    if (index_end==0) index_end=index_0; // if 0 was occupied by (end,0), it is now at index_0 
+    swap_triangles(vtx, index_end, vtx->tristar_no-1);
 
-    if (rri==0) rri=jj; // if 0 was occupied by (1,2), it is now at jj
-    if (rri==vtx->tristar_no-1) rri=lli; // if end was occupied by (1,2), it is now at lli
-    swap_triangles(vtx, rri, 1);
+    if (index_1==0) index_1=index_0; // if 0 was occupied by (1,2), it is now at index_0
+    if (index_1==vtx->tristar_no-1) index_1=index_end; // if end was occupied by (1,2), it is now at index_end
+    swap_triangles(vtx, index_1, 1);
 
     // now triangles can only be left of left or right of right
     ri = 2;
@@ -733,14 +733,6 @@ ts_bool order_vertex_triangles(ts_vertex* vtx){
         }
     }
 
-    //for (i=0; i<vtx->neigh_no; i++){
-    //    if (!in_tri(vtx->tristar[i], vtx->neigh[i]) && !in_tri(vtx->tristar[i], vtx->neigh[next_small(i,vtx->neigh_no)])){
-    //        fatal("not ordered in triangles",3);
-    //    }
-    //    if (!in_bond(vtx->bond[i], vtx->neigh[i])){
-    //        fatal("not ordered in bonds",3);
-    //    }
-    //}
     return TS_SUCCESS;
 }
 

@@ -27,13 +27,13 @@ int cmpfunc(const void *x, const void *y)
 */
 ts_bool mean_curvature_and_energy(ts_vesicle *vesicle){
 
-    ts_uint i;
+    ts_idx i;
     
     ts_vertex_list *vlist=vesicle->vlist;
     ts_vertex **vtx=vlist->vtx;
 
     for(i=0;i<vlist->n;i++){
-        if (!(vtx[i]->type&is_ghost_vtx)) {       
+        if (!(vtx[i]->type==is_ghost_vtx)) {       
             energy_vertex(vesicle, vtx[i]);
         }
         

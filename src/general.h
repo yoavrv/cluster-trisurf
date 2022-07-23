@@ -344,7 +344,7 @@ typedef struct ts_cell {
 typedef struct ts_cell_list{
     ts_double dcell;
     ts_double shift;
-    ts_double dmin_interspecies;
+    ts_double dmin_interspecies; // ? minimum distance between non-connected vertices squared ?
     ts_cell **cell;
     ts_uint ncmax[3]; // no idea what kind of indexing goes on here
     ts_uint cellno;

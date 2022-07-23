@@ -13,8 +13,9 @@
 #include "sh.h"
 #include "shcomplex.h"
 
-
+// initialize complex spherical harmonic structure up to order l, pre-computing coefficients
 ts_spharm *complex_sph_init(ts_vertex_list *vlist, ts_uint l){
+    // yoav: moved some vtx->prop to sph->vtx_prop
     ts_uint j,i;
     ts_spharm *sph=(ts_spharm *)malloc(sizeof(ts_spharm));
 

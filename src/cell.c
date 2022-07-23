@@ -121,7 +121,7 @@ ts_bool cell_list_cell_occupation_clear(ts_cell_list *clist){
     return TS_SUCCESS;
 }
 
-// ??? perhaps ??? check vertex is not too close to tohers in a 3x3x3 cell neighborhood
+// ??? perhaps ??? check vertex is not too close to others in a 3x3x3 cell neighborhood
 ts_bool cell_occupation_number_and_internal_proximity(ts_cell_list *clist, ts_uint cellidx, ts_vertex *vtx){
     ts_uint ncx,ncy,ncz,remainder,cell_occupation;
     ts_uint i,j,k,l,neigh_cidx;

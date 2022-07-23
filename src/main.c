@@ -40,8 +40,7 @@ int main(int argv, char *argc[]){
     ts_fprintf(stdout,"Programming done by: Samo Penic and Miha Fosnaric\n");
     ts_fprintf(stdout,"Released under terms of GPLv3\n");
     ts_fprintf(stdout,"Starting program...\n\n");
-    // vesicle = parseDump("timestep_000000.vtu");
-    // run_simulation(vesicle, vesicle->tape->mcsweeps, vesicle->tape->inititer, vesicle->tape->iterations, 1);
+
 
     if(command_line_args.dump_from_vtk[0]!=0){
         ts_fprintf(stdout,"************************************************\n");
@@ -123,9 +122,6 @@ int main(int argv, char *argc[]){
             }
         }
     }
-    //printf("nucleus coords: %.17e %.17e %.17e\n",vesicle->nucleus_center[0], vesicle->nucleus_center[1], vesicle->nucleus_center[2]);
-    //	write_vertex_xml_file(vesicle,0);
-    //	exit(1);
 
     //write_vertex_xml_file(vesicle,1000);
 

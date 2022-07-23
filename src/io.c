@@ -1311,7 +1311,7 @@ ts_tape *parsetape(char *filename){
     fseek (fd, 0, SEEK_SET);
     size=fread (tapetxt, 1, length, fd);
     fclose(fd);
-    if(size);
+    if(size);//?
 
 
     // fix the tape that is recorded to the .vtu
@@ -1358,7 +1358,7 @@ ts_tape *parsetapebuffer(char *buffer){
         CFG_INT("iterations", 100, CFGF_NONE),
         CFG_INT("mcsweeps", 200000, CFGF_NONE),
         CFG_INT("inititer", 0, CFGF_NONE),
-        CFG_SIMPLE_BOOL("quiet",(cfg_bool_t *)&tape->quiet),
+        CFG_BOOL("quiet", 0, CFGF_NONE),
         //CFG_SIMPLE_STR("multiprocessing",&tape->multiprocessing),
         //CFG_SIMPLE_INT("smp_cores",&tape->brezveze0),
         //CFG_SIMPLE_INT("cluster_nodes",&tape->brezveze1),
@@ -1428,6 +1428,7 @@ ts_tape *parsetapebuffer(char *buffer){
     tape->iterations = cfg_getint(cfg,"iterations");
     tape->mcsweeps = cfg_getint(cfg,"mcsweeps");
     tape->inititer = cfg_getint(cfg,"inititer");  
+    tape->quiet = cfg_getbool(cfg,"quiet"); 
     tape->shc = cfg_getint(cfg,"spherical_harmonics_coefficients");
     tape->number_of_vertices_with_c0 = cfg_getint(cfg,"number_of_vertices_with_c0");
     tape->type_of_adhesion_model = cfg_getint(cfg,"type_of_adhesion_model");

@@ -122,7 +122,6 @@ plane_d=10
 plane_F=1.0
 
 
-
 ##### Adhesion to surface #######
 #which type of adhesion model do you want; step_potential (1), parabolic potential (2) , for shperical surface with step potential (3), for cylindrical surface with step potential (4)
 type_of_adhesion_model=0

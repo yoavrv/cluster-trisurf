@@ -36,7 +36,7 @@ ts_bond  *bond_add(ts_bond_list *blist, ts_vertex *vtx1, ts_vertex *vtx2){
 	return blist->bond[blist->n-1];
 }
 
-
+// update bond vector bond->[xyz] = bond->vtx1->[xyz] - bond->vtx2->[xyz]
 ts_bool bond_vector(ts_bond *bond){
 	
 	bond->x = bond->vtx1->x - bond->vtx2->x;
@@ -57,6 +57,7 @@ ts_bool bond_list_free(ts_bond_list *blist){
     return TS_SUCCESS;
 }
 
+// is vertex v in bond b
 ts_bool in_bond(ts_bond* b, ts_vertex* v){
     return (b->vtx1==v || b->vtx2==v);
 }
