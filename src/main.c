@@ -125,6 +125,14 @@ int main(int argv, char *argc[]){
 
     //write_vertex_xml_file(vesicle,1000);
 
+    if (vesicle->tape->type_of_curvature_model==7){
+        ts_fprintf(stdout,"using debug curvature model 7 (use old energy): set to 15 to use the new energy method\n");
+        ts_fprintf(stdout,"set to 0 to use only the old method (faster), set to 1 to use sum-angle gaussian curvature (E+= kx2*c1*c2)\n");
+    }
+    if (vesicle->tape->type_of_curvature_model==15){
+        ts_fprintf(stdout,"using debug curvature model 15 (use new energy): set to 7 to use the old energy method\n");
+    }
+
     // ##########################
     // # Running the simulation #
     // ##########################

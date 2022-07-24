@@ -10,7 +10,32 @@ xk0=20
 # max step size (in units l_min)
 stepsize=0.15
 
-# Pressure calculations
+
+#######  Cell definitions ############
+nxmax=100
+nymax=100
+nzmax=100
+
+
+####### Program Control ############
+#how many MC sweeps between subsequent records of states to disk. 200000 is reasonable value
+mcsweeps=1000
+#how many initial mcsweeps*inititer MC sweeps before recording to disk?
+inititer=0
+#how many records do you want on the disk iteration are there in a run?
+iterations=100
+
+
+###### Spherical harmonics ###########
+# If 0 then spherical harmonics are not calculated at all.
+spherical_harmonics_coefficients=0
+
+#shut up if we are using cluster!!!
+quiet=false
+ 
+# no multiprocessing
+
+######## Pressure/volume/area/tension calculations ############
 # (pswitch=1: calc. p*dV energy contribution)
 pswitch = 0
 # pressure difference: p_inside - p_outside (in units kT/l_min^3):
@@ -23,28 +48,10 @@ constvolprecision=1e-14
 #Constant area constraint (0 disable constant area, 2 enable constant area with epsarea)
 constareaswitch=0
 
-
 #Stretching
 stretchswitch=0
 xkA0=1.0
 
-####### Polymer (brush) definitions ###########
-# npoly is a number of polymers attached to npoly distinct vertices on vesicle
-npoly=0
-# nmono is a number of monomers in each polymer
-nmono=20
-# Spring constant between monomers of the polymer
-k_spring=800
-#set to 1 if half of the polymeres are inside the vesicle
-internal_poly=0
-
-####### Filament (inside the vesicle) definitions ###########
-# nfil is a number of filaments inside the vesicle
-nfil=0
-# nfono is a number of monomers in each filament
-nfono=3
-# Persistence lenght of the filaments (in units l_min)
-xi=100
 
 ####### Nucleus (inside the vesicle) ###########
 # Radius of an impenetrable hard sphere inside the vesicle
@@ -52,32 +59,7 @@ R_nucleus=0
 R_nucleusX=0
 R_nucleusY=0
 R_nucleusZ=0
-#######  Cell definitions ############
-nxmax=100
-nymax=100
-nzmax=100
 
-
-####### Program Control ############
-#how many MC sweeps between subsequent records of states to disk
-#200000
-mcsweeps=1000
-#how many initial mcsweeps*inititer MC sweeps before recording to disk?
-#2
-inititer=0
-#how many records do you want on the disk iteration are there in a run?
-#10000
-iterations=100
-
-
-###### Spherical harmonics ###########
-# If 0 then spherical harmonics are not calculated at all.
-spherical_harmonics_coefficients=0
-
-#shut up if we are using cluster!!!
-quiet=false
- 
-# no multiprocessing
 
 ###### Active CMC properties #######
 #number of vertices with spontaneous curvature (integer)
@@ -113,6 +95,7 @@ curvature_model=7
 # xk2: second bending modulus: due to Gauss-Bonet, this should be excees (xkG-xkG0)
 xk2=0 
 
+
 ###### Plane confinement ############
 #plane confinement; two plates between the substrate-vesicle system, upper plate in moving downwards untill plan_d, lower plate is stationary
 plane_confinement_switch=0
@@ -139,12 +122,23 @@ adhesion_strength=1.0
 adhesion_radius=5.0
 #position of the adhesive surface
 z_adhesion= -15.771934
-#17, -10.724914687230324 
-#18, -11.355792021773285 
-#19, -11.986669356316245 
-#20, -12.617546690859205 
-#25, -15.771933363574005 
-#27, -17.033688032659928 
-#29, -18.29544270174585 
-#31, -19.55719737083177 
-#33, -20.818952039917686 
+# bipyramid topmost is z0*nshell, approx z_max = 0.630877*nshell, so -z_max is a good guess
+
+
+####### Polymer (brush) definitions ###########
+# npoly is a number of polymers attached to npoly distinct vertices on vesicle
+npoly=0
+# nmono is a number of monomers in each polymer
+nmono=20
+# Spring constant between monomers of the polymer
+k_spring=800
+#set to 1 if half of the polymeres are inside the vesicle
+internal_poly=0
+
+####### Filament (inside the vesicle) definitions ###########
+# nfil is a number of filaments inside the vesicle
+nfil=0
+# nfono is a number of monomers in each filament
+nfono=3
+# Persistence lenght of the filaments (in units l_min)
+xi=100
