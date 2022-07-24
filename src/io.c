@@ -1589,14 +1589,13 @@ ts_bool read_geometry_file(char *fname, ts_vesicle *vesicle){
 /**
  * @brief update a tape pointed by tape_txt by the string in cmd_line_tape_args.
  * very hacky newbie c-code running over strings with pointers
+ * now preserves newlines!
  * 
  * @param tape_txt a tape file, lines of comments "# comment" and options "optname=value"
  * @param cmd_line_tape_args a string of options in format "opt1=val1,opt2=val2"
  * @return ts_bool TS_SUCCESS if worked (always)
  */
 ts_bool update_tapetxt(char* tape_txt, char* cmd_line_tape_args){
-    // update the tape using arguments in the command line
-    // now preserves \n!
     /*
     step 1: check if there are tape arguments from the command line
     step 2: find the number of options

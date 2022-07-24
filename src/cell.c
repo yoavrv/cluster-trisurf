@@ -3,6 +3,7 @@
 #include "general.h"
 #include "vertex.h"
 
+// allocate a cell list, allocating ncmax1*ncmax2*ncmax3 cells
 ts_cell_list  *init_cell_list(ts_uint ncmax1, ts_uint ncmax2, ts_uint ncmax3, ts_double stepsize){
     ts_uint i;
     ts_uint nocells=ncmax1*ncmax2*ncmax3;

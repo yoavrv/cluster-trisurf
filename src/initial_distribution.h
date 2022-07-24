@@ -19,10 +19,11 @@ ts_bool set_vesicle_values_from_tape(ts_vesicle *vesicle);
 ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape);
 /** Sets the initial position of the vertexes to dipyramid
  *
+ *      @para, *vesicle is a pointer to vesicle
  *      @param *vlist is a pointer to list of vertices
  *      @returns TS_SUCCESS on success, TS_FAIL otherwise
  */
-ts_bool pentagonal_dipyramid_vertex_distribution(ts_vertex_list *vlist);
+ts_bool pentagonal_dipyramid_vertex_distribution(ts_vesicle *vesicle, ts_vertex_list *vlist);
 
 /** Finds the neighbouring vertices and add them to a list of each vertex
  *

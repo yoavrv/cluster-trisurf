@@ -23,7 +23,7 @@ ts_vesicle *initial_distribution_dipyramid(ts_uint nshell, ts_uint ncmax1, ts_ui
     ts_vesicle *vesicle=init_vesicle(no_vertices,ncmax1,ncmax2,ncmax3,stepsize);
     vesicle->nshell=nshell;
     //retval = vtx_set_global_values(vesicle);
-    retval = pentagonal_dipyramid_vertex_distribution(vesicle->vlist);
+    retval = pentagonal_dipyramid_vertex_distribution(vesicle, vesicle->vlist);
     retval = init_vertex_neighbours(vesicle->vlist);
     vesicle->vlist = init_sort_neighbours(vesicle->blist,vesicle->vlist);
    // retval = init_vesicle_bonds(vesicle); // bonds are created in sort_neigh
@@ -228,32 +228,24 @@ ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
 }
 
 
-ts_bool pentagonal_dipyramid_vertex_distribution(ts_vertex_list *vlist){
+ts_bool pentagonal_dipyramid_vertex_distribution(ts_vesicle *vesicle, ts_vertex_list *vlist){
     /* Some often used relations */
     const ts_double s1= sin(2.0*M_PI/5.0);
     const ts_double s2= sin(4.0*M_PI/5.0);
     const ts_double c1= cos(2.0*M_PI/5.0);
     const ts_double c2= cos(4.0*M_PI/5.0);
 
-    /* Calculates projection lenght of an edge bond to pentagram plane */
+    /* Calculates projection lengh of an edge bond to pentagram plane */
     const ts_double xl0=DEF_A0/(2.0*sin(M_PI/5.0));
-#ifdef TS_DOUBLE_DOUBLE
     const ts_double z0=sqrt(pow(DEF_A0,2)-pow(xl0,2));
-#endif
-#ifdef TS_DOUBLE_FLOAT
-    const ts_double z0=sqrtf(powf(DEF_A0,2)-powf(xl0,2));
-#endif
-#ifdef TS_DOUBLE_LONGDOUBLE
-    const ts_double z0=sqrtl(powl(DEF_A0,2)-powl(xl0,2));
-#endif
+
     //	const z0=sqrt(A0*A0 -xl0*xl0); /* I could use pow function but if pow is used make a check on the float type. If float then powf, if long double use powl */
 
     /*placeholder for the pointer to vertex datastructure list... DIRTY: actual pointer points towards invalid address, one position before actual beginning of the list... This is to solve the difference between 1 based indexing in original program in fortran and 0 based indexing in C. All algorithms remain unchanged because of this!*/
     ts_vertex **vtx=vlist->vtx -1 ; 
 
+    ts_uint nshell=vesicle->nshell;
 
-    ts_uint nshell=(ts_uint)( sqrt((ts_double)(vlist->n-2)/5));
-    //	printf("nshell=%u\n",nshell);
     ts_uint i,n0; // some for loop prereq
     ts_int j,k;
     ts_double dx,dy; // end loop prereq
@@ -304,7 +296,7 @@ ts_bool pentagonal_dipyramid_vertex_distribution(ts_vertex_list *vlist){
         }
     }
 
-    /* for botom part of dipyramide we calculate the positions of vertices */
+    /* for bottom part of dipyramide we calculate the positions of vertices */
     for(i=2+5*nshell*(nshell+1)/2;i<=vlist->n;i++){
         vtx[i]->x=vtx[vlist->n - i +1]->x;
         vtx[i]->y=vtx[vlist->n - i +1]->y;
@@ -348,6 +340,7 @@ ts_bool init_vertex_neighbours(ts_vertex_list *vlist){
 }
 
 // TODO: with new datastructure can be rewritten. Partially it is done, but it is complicated.
+// take vlist and blist, update blist, free vlist and returns new vlist with sorted neighbros
 ts_vertex_list *init_sort_neighbours(ts_bond_list *blist,ts_vertex_list *vlist){
     ts_vertex **vtx=vlist->vtx -1; // take a look at dipyramid function for comment.
     ts_uint i,l,j,jj,jjj,k=0;
@@ -359,30 +352,33 @@ ts_vertex_list *init_sort_neighbours(ts_bond_list *blist,ts_vertex_list *vlist){
 
     ts_double dist2; // Square of distance of neighbours
     ts_double direct; // Something, dont know what, but could be normal of some kind
+
+    // what the heck is done here?
+    // go over all vtx:
+    // add the first neighbor vtx->neigh[jj]
+    // add the next (counter?)clockwise neighbor, in the imaginary triangle {vtx, neigh[jj], neigh2[j]}, by checking they are all mutual neighbors and make a (counter?)clockwise triangle
+    // Update j,jj and repeat until all neighbors are accounted, which is exactly neigh_no-1 times (the for(l) expression)
     for(i=1;i<=vlist->n;i++){
         k++; // WHY i IS NOT GOOD??
-           vtx_add_cneighbour(blist,tvtx[k], tvtx[vtx[i]->neigh[0]->idx+1]); //always add 1st
-           jjj=1;
-           jj=1;
-           for(l=2;l<=vtx[i]->neigh_no;l++){
-               for(j=2;j<=vtx[i]->neigh_no;j++){
-                    dist2=vtx_distance_sq(vtx[i]->neigh[j-1],vtx[i]->neigh[jj-1]);
-                    direct=vtx_direct(vtx[i],vtx[i]->neigh[j-1],vtx[i]->neigh[jj-1]);
-                    // TODO: check if fabs can be used with all floating point types!!
-                    if( (fabs(dist2-DEF_A0*DEF_A0)<=eps) && (direct>0.0) && (j!=jjj) ){
-                        vtx_add_cneighbour(blist,tvtx[k],tvtx[vtx[i]->neigh[j-1]->idx+1]);
-                        jjj=jj;
-                        jj=j;
-                        break;
-                   }
-               }
-           }	
+        vtx_add_cneighbour(blist,tvtx[k], tvtx[vtx[i]->neigh[0]->idx+1]); //always add 1st
+        jjj=1;
+        jj=1;
+        for(l=2;l<=vtx[i]->neigh_no;l++){ // while(have neighbors to add){
+            for(j=2;j<=vtx[i]->neigh_no;j++){
+                dist2=vtx_distance_sq(vtx[i]->neigh[j-1],vtx[i]->neigh[jj-1]); // close enough to be neighbors
+                direct=vtx_direct(vtx[i],vtx[i]->neigh[j-1],vtx[i]->neigh[jj-1]); // would make ordered triangle
+                // TODO: check if fabs can be used with all floating point types!!
+                if( (fabs(dist2-DEF_A0*DEF_A0)<=eps) && (direct>0.0) && (j!=jjj) ){
+                    vtx_add_cneighbour(blist,tvtx[k],tvtx[vtx[i]->neigh[j-1]->idx+1]);
+                    jjj=jj;
+                    jj=j;
+                    break;
+                }
+            }
+        }	
     }
     /* We use the temporary vertex for our main vertices and we abandon main
      * vertices, because their neighbours are not correctly ordered */
-    // tvtx=vlist->vtx;
-    // vlist->vtx=tvtx;
-    // tvlist->vtx=vtx;
     vtx_list_free(vlist);
     /* Let's make a check if the number of bonds is correct */
     if((blist->n)!=3*(tvlist->n-2)){

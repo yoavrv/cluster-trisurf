@@ -26,7 +26,7 @@ Modified by Yoav based on Rajkumar's cluster version of Samo and Miha's trisurf-
     - vtx->tristar = [{0,1,vtx}, {1,2,vtx}, {2,3,vtx}, {3,4,vtx}, {4,5,vtx}, {5,0,vtx}]  
 - lots of tabs and spaces changes due to viewing and working from VScode
 - commandline --tape-options (-c) now works for most things and is saved on the .vtu \<tape\> section: use in the form
-> ```$trisurf --tape-options vicsek_model=0,adhesion_model=2,nshell=5,random_seed=9,iterations=10```
+> ```$trisurf --tape-options adhesion_model=2,nshell=5,random_seed=9,iterations=10,#added_this_comment_at_end```
 
 **Things that are not working:**
 - shape operator energy still has problems  

@@ -34,18 +34,9 @@ ts_vertex_list *init_vertex_list(ts_idx N){
     for(i=0;i<N;i++) {
         vlist->vtx[i]=(ts_vertex *)calloc(1,sizeof(ts_vertex));
         vlist->vtx[i]->idx=i;
-
+    }
     /* initialize Ylm for spherical hamonics DONE in sh.c */
-    /* 
-    for(i=0;i<l;i++){
-        vlist->vtx[i]->Ylm[i]=(ts_double **)calloc(2*i+1,sizeof(ts_double *));
-        for(j=0;j<(2*i+1);j++){
-            clist->vtx[i]->Ylm[i][j]=(ts_double *)calloc(sizeof(ts_double));
-        }
-    }
-    */
-
-    }
+    
     vlist->n=N;
 	return vlist;
 }
@@ -305,7 +296,6 @@ ts_bool vtx_list_free(ts_vertex_list *vlist){
     for(i=0;i<vlist->n;i++){
 		if(vlist->vtx[i]!=NULL) vtx_free(vlist->vtx[i]);
     }
-    //free(*(vlist->vtx));
     free(vlist->vtx);
     free(vlist);
     return TS_SUCCESS;
@@ -491,6 +481,7 @@ ts_bool add_vtx_to_seen(ts_seen_vertex *seen_vtx, ts_vertex *vtx){
 /* ***** New vertex copy operations. Inherently they are slow.  ***** */
 /* ****************************************************************** */
 
+// copy all information except structure (neighbors, bonds, etc)
 ts_bool vtx_copy(ts_vertex *cvtx, ts_vertex *ovtx){
     memcpy((void *)cvtx,(void *)ovtx,sizeof(ts_vertex));
     cvtx->neigh=NULL;
@@ -522,7 +513,7 @@ ts_vertex_list *vertex_list_copy(ts_vertex_list *ovlist){
     ts_vertex **vtx=(ts_vertex **)malloc(vlist->n*sizeof(ts_vertex *));
     vlist->vtx=vtx;
     if(vlist->vtx==NULL)
-        fatal("Fatal error reserving memory space for vertex list! Could number of requsted vertices be too large?", 100);
+        fatal("Fatal error reserving memory space for vertex list! Could number of requested vertices be too large?", 100);
     for(i=0;i<vlist->n;i++) {
         vlist->vtx[i]=(ts_vertex *)calloc(1,sizeof(ts_vertex));
         vlist->vtx[i]->idx=i;
