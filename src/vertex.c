@@ -328,15 +328,6 @@ ts_bool vtx_set_global_values(ts_vesicle *vesicle){
     // (besides, if it's a real global value, it shouldn't be on the vertices anyway- in vesicle, depend on type)
     ts_idx i; 
 
-    for(i=0;i<vesicle->vlist->n;i++){
-        vesicle->vlist->vtx[i]->xk=vesicle->tape->xk0;
-    }
-
-
-    for(i=0;i<vesicle->vlist->n;i++){
-        vesicle->vlist->vtx[i]->xk2=vesicle->tape->xk2;
-    }
-
     // in case type and such lead to no curvature2, force, etc. being calculated
     for(i=0;i<vesicle->vlist->n;i++){
         vesicle->vlist->vtx[i]->mean_curvature=0;
@@ -357,7 +348,7 @@ ts_bool vtx_set_global_values(ts_vesicle *vesicle){
 		vesicle->vlist->vtx[i]->ad_w= vesicle->tape->adhesion_strength;
 		vesicle->vlist->vtx[i]->d=0;  // curvature deviator
 		vesicle->vlist->vtx[i]->xk = vesicle->tape->xk0;
-		vesicle->vlist->vtx[i]->xk2 = 0; // Gauss-Bonet: we only need excess compare to the regular membrane
+		vesicle->vlist->vtx[i]->xk2 = vesicle->tape->xk2; // Gauss-Bonet: we only need excess compare to the regular membrane
 		vesicle->vlist->vtx[i]->nx=0; //normal
 		vesicle->vlist->vtx[i]->ny=0;
 		vesicle->vlist->vtx[i]->nz=0;
@@ -786,7 +777,7 @@ ts_bool order_edge_vertex(ts_vertex* vtx){
          for (ri=li; ri<vtx->tristar_no; ri++){
             jt = vtx->tristar[ri];
             if (in_tri(jt,vl)){
-                swap_bonds(vtx, li, ri);
+                swap_triangles(vtx, li, ri);
                 break;
             }
         }

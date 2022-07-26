@@ -193,12 +193,8 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     // We can get the two triangles since everything is ordered: 
     // for edge v->i, the previous triangle lm={v,i-1,i} is in position i-1 and the next triangle lp={v,i,i+1} is in position i
     lp = vtx->tristar[jj];
-    if (jj==0){
-        lm = vtx->tristar[vtx->tristar_no-1];
-    }
-    else{
-        lm = vtx->tristar[jj-1];
-    } 
+    lm = vtx->tristar[prev_small(jj, vtx->tristar_no)];
+
     //Triangle normals are NORMALIZED!
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -370,7 +366,7 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
         // lambda2's eigenvector is second
         eigen_vec2d = -eigen_vec1t;
         eigen_vec2t = eigen_vec1d;
-        
+
         vtx->eig0[0] = eigen_vec1d*director_x + eigen_vec1t*tangent_x;
         vtx->eig0[1] = eigen_vec1d*director_y + eigen_vec1t*tangent_y;
         vtx->eig0[2] = eigen_vec1d*director_z + eigen_vec1t*tangent_z;
@@ -548,14 +544,14 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
         // atan2(|axb|,a*b) was recommended at mathwork forum (cosin has small angle problems, and still need a sqrt)
         // possibly more complicated but better one from linked pdf (kahan)
         if (do_angle_sum){
-        a_dot_b = (jm->x-vtx->x)*(j->x-vtx->x)+
-                  (jm->y-vtx->y)*(j->y-vtx->y)+
-                  (jm->z-vtx->z)*(j->z-vtx->z);
-        a_cross_b_x = (jm->y-vtx->y)*(j->z-vtx->z)-(jm->z-vtx->z)*(j->y-vtx->y);
-        a_cross_b_y = (jm->z-vtx->z)*(j->x-vtx->x)-(jm->x-vtx->x)*(j->z-vtx->z);
-        a_cross_b_z = (jm->x-vtx->x)*(j->y-vtx->y)-(jm->y-vtx->y)*(j->x-vtx->x);
-        mag_a_cross_b = sqrt(pow(a_cross_b_x,2)+pow(a_cross_b_y,2)+pow(a_cross_b_z,2));
-        angle_sum += atan2(mag_a_cross_b, a_dot_b);
+            a_dot_b = (jm->x-vtx->x)*(j->x-vtx->x)+
+                        (jm->y-vtx->y)*(j->y-vtx->y)+
+                        (jm->z-vtx->z)*(j->z-vtx->z);
+            a_cross_b_x = (jm->y-vtx->y)*(j->z-vtx->z)-(jm->z-vtx->z)*(j->y-vtx->y);
+            a_cross_b_y = (jm->z-vtx->z)*(j->x-vtx->x)-(jm->x-vtx->x)*(j->z-vtx->z);
+            a_cross_b_z = (jm->x-vtx->x)*(j->y-vtx->y)-(jm->y-vtx->y)*(j->x-vtx->x);
+            mag_a_cross_b = sqrt(pow(a_cross_b_x,2)+pow(a_cross_b_y,2)+pow(a_cross_b_z,2));
+            angle_sum += atan2(mag_a_cross_b, a_dot_b);
         }
 
     } // end for jj neighbors
@@ -665,7 +661,7 @@ inline ts_bool attraction_bond_energy(ts_vesicle *vesicle, ts_bond *bond){
     ts_double energy=0;
     ts_flag bond_model = vesicle->tape->type_of_bond_model;
     // 1 bit: bond by type
-    if((bond_model&is_bonding_type_specific) == 0){ 
+    if(!(bond_model&is_bonding_type_specific) ){ 
         // all bonding type bond together
         if((bond->vtx1->type&is_bonding_vtx && bond->vtx2->type&is_bonding_vtx)){
             energy=-0.5*(bond->vtx1->w+bond->vtx2->w);
@@ -686,6 +682,7 @@ inline ts_bool attraction_bond_energy(ts_vesicle *vesicle, ts_bond *bond){
     //2 bit: anisotropy
     if(bond_model&is_anisotropic_bonding_nematic){ 
         // bond by director with nematic order (arc-like proteins)
+        // bonding*= (d1*d2)^2
         if((bond->vtx1->type&is_anisotropic_vtx && bond->vtx2->type&is_anisotropic_vtx)){
             energy*=pow( bond->vtx1->dx*bond->vtx2->dx
                         +bond->vtx1->dy*bond->vtx2->dy

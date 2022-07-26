@@ -29,7 +29,7 @@ Modified by Yoav based on Rajkumar's cluster version of Samo and Miha's trisurf-
 > ```$trisurf --tape-options adhesion_model=2,nshell=5,random_seed=9,iterations=10,#added_this_comment_at_end```
 
 **Things that are not working:**
-- shape operator energy still has problems  
+- shape operator energy still has problems : we think it's the area, the bending constants in energy, and factors of 2.
 - spikiness still happens:  
     - probably because $\kappa$ is incorrect
 - constvol and constarea are almost certainly broken somehow, since they involve "side steps" which have not been updated
