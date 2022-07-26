@@ -28,10 +28,13 @@ Modified by Yoav based on Rajkumar's cluster version of Samo and Miha's trisurf-
 - commandline --tape-options (-c) now works for most things and is saved on the .vtu \<tape\> section: use in the form
 > ```$trisurf --tape-options adhesion_model=2,nshell=5,random_seed=9,iterations=10,#added_this_comment_at_end```
 
-**Things that are not working:**
+**Things to work on:**
 - shape operator energy still has problems : we think it's the area, the bending constants in energy, and factors of 2.
+    - do we want to add circumcenter to triangle and update with normal? triangle->circx
 - spikiness still happens:  
     - probably because $\kappa$ is incorrect
+- Add shear force
+- Cross products into functions?
 - constvol and constarea are almost certainly broken somehow, since they involve "side steps" which have not been updated
 - initial distribution need more work for adding more types (partway there)  
 - ghost (unmoving) and edge vertices are not working yet: energy doesn't work, bondflip is iffy, no initialization  
