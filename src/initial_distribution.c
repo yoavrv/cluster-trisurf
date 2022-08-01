@@ -141,8 +141,31 @@ ts_bool set_vesicle_values_from_tape(ts_vesicle *vesicle){
 
 }
 
-// modified by Yoav: initialize possibly heterogeneous vertices population
+/**
+ * @brief Initial heterogeneous population of vertices
+ * randomly assigned (n,m,...) vertices to be type (type1,type2,...)
+ * and the rest as "bare membrane" vtx (nonactive,nonbonding, vtx->c=0),
+ * and sweeps the energy
+ * 
+ * at the moment, randomly chooses tape->number_of_vertiecs_with_c0 vertices to be CMC
+ * active, bonding type, vtx->c=tape->c0
+ * and fill the rest with passive, not bonding bare membrane
+ * 
+ * @param vesicle
+ * @param tape
+ * @return ts_bool TS_SUCCESS
+ * */
 ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
+    // we have n total vertices (for example, 20)
+    // > step one: we generate an array of random indices 0:n, for example:
+    //   [ 4, 2, 13, 3, 18, 14, 19, 0, 11, 6, 12, 9, 15, 16, 8, 10, 5, 7, 1, 17]
+    //
+    // > step 2: we take chucks and assign to types: for example, have 8 of type1,5 of type2:
+    //
+    //   [ 4, 2, 13, 3, 18, 14, 19, 0 , 11,  6, 12, 9, 15, 16, 8, 10, 5, 7, 1, 17]
+    //    |     for i=0; i<j+8        |  for i=j; i<j+4  |       for i=j; i<n
+    //    j=0      type 1            j+=8    type 2     j+=4    type bare membrane
+    //
     ts_idx i, rndvtx, temp, n;
     ts_idx *indices;
     ts_idx j; // first idx of the next type of vertices to add
@@ -150,7 +173,9 @@ ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
     ts_double norml;
     n = vesicle->vlist->n;
     indices = (ts_idx*) malloc(n * sizeof(ts_idx));
-    // create an array fo indices; copied a bunch from wikipedia "Fisher-Yates shuffle"
+
+    // step 1
+    // create a random array of indices; copied a bunch from wikipedia "Fisher-Yates shuffle"
     for (i=0; i<n; i++){
         indices[i] = i;
     } // shuffle
@@ -160,6 +185,8 @@ ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
         indices[i] = indices[rndvtx];
         indices[rndvtx] = temp;
     }
+
+    // step 2:
     // now we have an array of random indices: we can use it to populate the vertices however we like
     j=0;
     
