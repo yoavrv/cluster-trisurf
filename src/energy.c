@@ -462,10 +462,12 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     ts_vertex *j; // current neighbor
     ts_vertex *jp;// next neighbor
     ts_vertex *jm;// prev neighbor
-    ts_triangle *jt; // triangle (vtx,j,jp)
+    ts_triangle *tm, *tp; // triangle (vtx,jm,j) and (vtx,j,jp)
     ts_double s=0.0; // area
     ts_double xh=0.0,yh=0.0,zh=0.0,txn=0.0,tyn=0.0,tzn=0.0;
-    ts_double x1,x2,x3,ctp,ctm,tot,xlen;
+    ts_double x1,x2,x3,ctm,ctp,tot,xlen;
+    ts_double lx, ly, lz, sigx, sigy, sigz, sigl, l_sqr;
+    ts_double ds, dxh, dyh, dzh;
     ts_double h,ht,norml;
     ts_double angle_sum=0;
     ts_double a_dot_b, a_cross_b_x, a_cross_b_y, a_cross_b_z, mag_a_cross_b;
@@ -501,16 +503,42 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
         j=vtx->neigh[jj];
         jp=vtx->neigh[jjp];
         jm=vtx->neigh[jjm];
+        ds = 0;
+        dxh = 0;
+        dyh = 0;
+        dzh = 0;
 
         // step 1.1 calculate the contribution to the vertex normal
         // txn normal points inwards!!
-        jt=vtx->tristar[jj]; 
-        txn+=jt->xnorm;
-        tyn+=jt->ynorm;
-        tzn+=jt->znorm;
+        tp=vtx->tristar[jj]; 
+        txn+=tp->xnorm;
+        tyn+=tp->ynorm;
+        tzn+=tp->znorm;
     
         // step 1.2 calculate cotangent of the edge, dual lattice edge triangles (vertex, edge middle, circumcenter-m), (vertex, edge middle, circumcenter-p)
         // These have the same angle as the opposing angle (half of a central angle = inscribed angle)
+        lx = (j->x-vtx->x);
+        ly = (j->y-vtx->y); // edge vector
+        lz = (j->z-vtx->z);
+        l_sqr = lx*lx + ly*ly + lz*lz; // half edge square
+        sigx = tm->xcirc - (j->x+vtx->x)/2;
+        sigy = tm->ycirc - (j->y+vtx->y)/2;
+        sigz = tm->zcirc - (j->z+vtx->z)/2;
+        sigl = lx*(sigy*tm->znorm - sigz*tm->ynorm) + ly*(sigz*tm->xnorm - sigx*tm->znorm) + lz*(sigx*tm->ynorm - sigy*tm->xnorm); // l*(sigxN)
+        sigl -= 1; // the jm section is left handed
+        ds += 0.25*sigl; // A = 1/2 (sigma * l/1) = 1/4 sigl
+        dxh += sigl*(lx)/l_sqr;
+        dyh += sigl*(ly)/l_sqr;
+        dzh += sigl*(lz)/l_sqr;
+        sigx = tp->xcirc - (j->x+vtx->x)/2;
+        sigy = tp->ycirc - (j->y+vtx->y)/2;
+        sigz = tp->zcirc - (j->z+vtx->z)/2;
+        sigl = lx*(sigy*tp->znorm - sigz*tp->ynorm) + ly*(sigz*tp->xnorm - sigx*tp->znorm) + lz*(sigx*tp->ynorm - sigy*tp->xnorm); // sigma * l
+        ds += 0.25*sigl; // A = 1/2 (sigma * l/1) = 1/4 sigl
+        dxh += sigl*(lx)/l_sqr;
+        dyh += sigl*(ly)/l_sqr;
+        dzh += sigl*(lz)/l_sqr;
+
         x1=vtx_distance_sq(vtx,jp);
         x2=vtx_distance_sq(j,jp);
         x3=(j->x-jp->x)*(vtx->x-jp->x)+
@@ -531,11 +559,22 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
         tot=ctp+ctm;
         tot=0.5*tot; // sigma = l*tot
         xlen=vtx_distance_sq(j,vtx); // l^2
-        s+=tot*xlen; // 4 (1/2 (l/2) * sigma) = 4xarea associated to this edge
+        s+=0.25*tot*xlen; // 4 (1/2 (l/2) * sigma) = 4xarea associated to this edge
     
         xh+=tot*(j->x - vtx->x);
         yh+=tot*(j->y - vtx->y); // sigma*(edge vector) contribution to the voodoo xh vector
         zh+=tot*(j->z - vtx->z);
+
+        if (ds!=0.25*tot*xlen){
+            ts_fprintf(stdout,"area of triangles is %f, normal %f is not correct", ds, 0.25*tot*xlen);
+            fatal("Bug written",300);
+        }
+        if (dxh!=tot*(j->x - vtx->x)){
+            ts_fprintf(stdout,"h of triangles is %f, %f, %f normal way is %f, %f, %f is not correct", dxh, dyh, dzh, tot*(j->x - vtx->x),tot*(j->y - vtx->y),tot*(j->z - vtx->z));
+            fatal("Bug written",300);
+        }
+
+
 
 
         // step 1.4 angle calculation for gaussian curvature
@@ -557,7 +596,6 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     } // end for jj neighbors
 
     // step 2 calculate the curvatures from the xh voodoo formula
-    s=s/4.0; // area was calculated with an extra factor of 4
     // xh voodoo magic vector has the mean curvature times area as the magnitude and a direction roughly(?) towards the center of curvature
     h=xh*xh + yh*yh + zh*zh; 
     ht=txn*xh + tyn*yh + tzn*zh; // direction of center of curvature with the normal i.e. convex or concave

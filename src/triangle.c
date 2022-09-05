@@ -209,36 +209,46 @@ ts_bool triangle_remove_neighbour(ts_triangle *tria, ts_triangle *ntria){
   *		
   */
 ts_bool triangle_normal_vector(ts_triangle *tria){
-    ts_double x21,x31,y21,y31,z21,z31,xden;
-    x21=tria->vertex[1]->x - tria->vertex[0]->x;
-    x31=tria->vertex[2]->x - tria->vertex[0]->x;
-    y21=tria->vertex[1]->y - tria->vertex[0]->y;
-    y31=tria->vertex[2]->y - tria->vertex[0]->y;
-    z21=tria->vertex[1]->z - tria->vertex[0]->z;
-    z31=tria->vertex[2]->z - tria->vertex[0]->z;
+    ts_double x1,x2,x3,y1,y2,y3,z1,z2,z3;
+    ts_double x21,x31,x32,y21,y31,y32,z21,z31,z32;
+    ts_double xcross, ycross, zcross, norm_sqr, norm;
+    ts_double alpha, beta, gamma;
+    x1 = tria->vertex[0]->x; y1 = tria->vertex[0]->y; z1 = tria->vertex[0]->z;
+    x2 = tria->vertex[1]->x; y2 = tria->vertex[1]->y; z2 = tria->vertex[1]->z;
+    x3 = tria->vertex[2]->x; y3 = tria->vertex[2]->y; z3 = tria->vertex[2]->z;
+    x21=x2-x1; x31=x3-x1; x32=x3-x2;
+    y21=y2-y1; y31=y3-y1; y32=y3-y2;
+    z21=z2-z1; z31=z3-z1; z32=z3-z2;
 
-    tria->xnorm=y21*z31 - z21*y31; // a=1-0, b=2-0: norm = axb
-    tria->ynorm=z21*x31 - x21*z31;
-    tria->znorm=x21*y31 - y21*x31;
-    xden=tria->xnorm*tria->xnorm +
-         tria->ynorm*tria->ynorm + 
-         tria->znorm*tria->znorm;
+    xcross=y21*z31 - z21*y31; // a=1-0, b=2-0: cross = axb
+    ycross=z21*x31 - x21*z31;
+    zcross=x21*y31 - y21*x31;
+    norm_sqr=xcross*xcross + ycross*ycross + zcross*zcross; // norm = |axb|
 
-    xden=sqrt(xden);
+    // formula for the circumcenter from wikipedia
+    alpha = ( (x32*x32 + y32*y32 + z32*z32)*( x31*x21 + y31*y21 + z31*z21) )/(2*norm_sqr);
+    beta  = ( (x31*x31 + y31*y31 + z31*z31)*(-x21*x32 - y21*y32 - z21*z32) )/(2*norm_sqr);
+    gamma = ( (x21*x21 + y21*y21 + z21*z21)*( x31*x32 + y31*y32 + z31*z32) )/(2*norm_sqr);
 
-    tria->xnorm=tria->xnorm/xden;
-    tria->ynorm=tria->ynorm/xden;
-    tria->znorm=tria->znorm/xden;	
+    norm=sqrt(norm_sqr);
+
+    tria->xcirc = x1*alpha + x2*beta + x3*gamma;
+    tria->ycirc = y1*alpha + y2*beta + y3*gamma;
+    tria->zcirc = z1*alpha + z2*beta + z3*gamma;
+
+    tria->xnorm=xcross/norm;
+    tria->ynorm=ycross/norm;
+    tria->znorm=zcross/norm;
 
     /*  Here it is an excellent point to recalculate volume of the triangle and
     *  store it into datastructure. Volume is required at least by constant volume
     *  calculation of vertex move and bondflip and spherical harmonics. */
-    tria->volume=(tria->vertex[0]->x+ tria->vertex[1]->x + tria->vertex[2]->x) * tria->xnorm + 
-                 (tria->vertex[0]->y+ tria->vertex[1]->y + tria->vertex[2]->y) * tria->ynorm + 
-                 (tria->vertex[0]->z+ tria->vertex[1]->z + tria->vertex[2]->z) * tria->znorm;
-    tria->volume=-xden*tria->volume/18.0;
+    tria->volume= -((x1 + x2 + x3) * xcross + 
+                    (y1 + y2 + y3) * ycross + 
+                    (z1 + z2 + z3) * zcross )/ 18.0;
+
     /*  Also, area can be calculated in each triangle */
-    tria->area=xden/2;
+    tria->area=norm/2;
 
 
     return TS_SUCCESS;
