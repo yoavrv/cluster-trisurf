@@ -511,6 +511,7 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
         // step 1.1 calculate the contribution to the vertex normal
         // txn normal points inwards!!
         tp=vtx->tristar[jj]; 
+        tm=vtx->tristar[jjm]; 
         txn+=tp->xnorm;
         tyn+=tp->ynorm;
         tzn+=tp->znorm;
@@ -525,7 +526,7 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
         sigy = tm->ycirc - (j->y+vtx->y)/2;
         sigz = tm->zcirc - (j->z+vtx->z)/2;
         sigl = lx*(sigy*tm->znorm - sigz*tm->ynorm) + ly*(sigz*tm->xnorm - sigx*tm->znorm) + lz*(sigx*tm->ynorm - sigy*tm->xnorm); // l*(sigxN)
-        sigl -= 1; // the jm section is left handed
+        sigl *= -1; // the jm section is left handed
         ds += 0.25*sigl; // A = 1/2 (sigma * l/1) = 1/4 sigl
         dxh += sigl*(lx)/l_sqr;
         dyh += sigl*(ly)/l_sqr;
@@ -539,12 +540,7 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
         dyh += sigl*(ly)/l_sqr;
         dzh += sigl*(lz)/l_sqr;
 
-        x1=vtx_distance_sq(vtx,jp);
-        x2=vtx_distance_sq(j,jp);
-        x3=(j->x-jp->x)*(vtx->x-jp->x)+
-           (j->y-jp->y)*(vtx->y-jp->y)+
-           (j->z-jp->z)*(vtx->z-jp->z);
-        ctp=x3/sqrt(x1*x2-x3*x3);
+
 
         x1=vtx_distance_sq(vtx,jm);
         x2=vtx_distance_sq(j,jm);
@@ -552,6 +548,13 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
            (j->y-jm->y)*(vtx->y-jm->y)+
            (j->z-jm->z)*(vtx->z-jm->z);
         ctm=x3/sqrt(x1*x2-x3*x3);
+
+        x1=vtx_distance_sq(vtx,jp);
+        x2=vtx_distance_sq(j,jp);
+        x3=(j->x-jp->x)*(vtx->x-jp->x)+
+           (j->y-jp->y)*(vtx->y-jp->y)+
+           (j->z-jp->z)*(vtx->z-jp->z);
+        ctp=x3/sqrt(x1*x2-x3*x3);
 
         // step 1.3 use the cotangents to calculate the dual lattice edge and area contribution
         // given l as the length of the i-j edge
@@ -565,12 +568,26 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
         yh+=tot*(j->y - vtx->y); // sigma*(edge vector) contribution to the voodoo xh vector
         zh+=tot*(j->z - vtx->z);
 
-        if (ds!=0.25*tot*xlen){
-            ts_fprintf(stdout,"area of triangles is %f, normal %f is not correct", ds, 0.25*tot*xlen);
+        if (fabs(ds-0.25*tot*xlen)>=0.00000000001){
+            ts_fprintf(stdout,"area of triangles in %d is %f, normal %f is not correct\n", vtx->idx, ds, 0.25*tot*xlen);
+            ts_fprintf(stdout,"diff: %.16f \n", 0.25*tot*xlen-ds);
+            fprintf(stdout,"all stuff:\n main vertex \t (%f,%f,%f)\n opposite j \t  (%f,%f,%f)\n", vtx->x, vtx->y, vtx->z, j->x, j->y, j->z);
+            fprintf(stdout,"jm vertex \t (%f,%f,%f)\njp vertex \t  (%f,%f,%f)\n", jm->x, jm->y, jm->z, jp->x, jp->y, jp->z);
+            fprintf(stdout,"circm \t (%f,%f,%f)\ncircp \t  (%f,%f,%f)\n", tm->xcirc, tm->ycirc, tm->zcirc, tp->xcirc, tp->ycirc, tp->zcirc);
+            fprintf(stdout,"l \t (%f %f %f)\nsigma \t (%f %f %f)\nl2: %f, sigma*l: %f\n", lx,ly,lz,sigx,sigy,sigz, l_sqr, sigl);
+            fprintf(stdout,"x1, x2, x3: %f %f %f \t xlen, %f, ctm, ctp: %f, %f\n", x1, x2,x3, xlen, ctm, ctp);
+            debug_triangle_normal_vector(tp);
+            fprintf(stdout,"circm \t (%f,%f,%f)\ncircp \t  (%f,%f,%f) hmmmm\n", tm->xcirc, tm->ycirc, tm->zcirc, tp->xcirc, tp->ycirc, tp->zcirc);
             fatal("Bug written",300);
         }
-        if (dxh!=tot*(j->x - vtx->x)){
-            ts_fprintf(stdout,"h of triangles is %f, %f, %f normal way is %f, %f, %f is not correct", dxh, dyh, dzh, tot*(j->x - vtx->x),tot*(j->y - vtx->y),tot*(j->z - vtx->z));
+        if (fabs(dxh-tot*(j->x - vtx->x))>=0.000000001){
+            ts_fprintf(stdout,"h of triangles is %f, %f, %f normal way is %f, %f, %f is not correct\n", dxh, dyh, dzh, tot*(j->x - vtx->x),tot*(j->y - vtx->y),tot*(j->z - vtx->z));
+            ts_fprintf(stdout,"diff: %.16f, %.16f, %.16f \n", tot*(j->x - vtx->x)-dxh,tot*(j->y - vtx->y)-dyh,tot*(j->z - vtx->z)-dzh);
+            fprintf(stdout,"all stuff:\n main vertex \t (%f,%f,%f)\n opposite j \t  (%f,%f,%f)", vtx->x, vtx->y, vtx->z, j->x, j->y, j->z);
+            fprintf(stdout,"j-1 vertex \t (%f,%f,%f) \t j+1 verterx \t  (%f,%f,%f)", jm->x, jm->y, jm->z, jp->x, jp->y, jp->z);
+            fprintf(stdout,"circm \t (%f,%f,%f) \t circp \t  (%f,%f,%f)", tm->xcirc, tm->ycirc, tm->zcirc, tp->xcirc, tp->ycirc, tp->zcirc);
+            fprintf(stdout,"l \t (%f %f %f)\nsigma \t (%f %f %f)\n l2: %f,sigma*l: %f\n", lx,ly,lz,sigx,sigy,sigz, l_sqr, sigl);
+            fprintf(stdout,"x1, x2, x3: %f %f %f \t xlen, %f, ctm, ctp: %f, %f\n", x1, x2,x3, xlen, ctm, ctp);
             fatal("Bug written",300);
         }
 

@@ -174,71 +174,71 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
 
 
     if(vesicle->tape->min_dihedral_angle_cosine>-1){
-    // vesicle_volume(vesicle);
-    // fprintf(stderr,"Volume in the beginning=%1.16e\n", vesicle->volume);
+        // vesicle_volume(vesicle);
+        // fprintf(stderr,"Volume in the beginning=%1.16e\n", vesicle->volume);
 
-    //update the normals of triangles that share bead i.
-    // combined with angle check!!!
-    // for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]);
-    // update the normals of the vertices is in the energy
-    // angle between triangles must be large to prevent spikiness, 
-    // which is small angle in the normals (provided they are oriented correctly)
-    // but only if the angle was not already too small
-    //
-    // structure:
-    // end, 0: save end,0 angle; saving 0's normal in txyz and updating 0
-    // loop i,j=(0:end-1,1:end) check (i*j>min,i*j>old angle); , saving j's old normal in txyz and updating j
-    // compare end:0 with old angle;
-    //
-    tri_angle_old_min=1;
-    tri_angle_new_min=1;
-    if( !(vtx->type & is_edge_vtx) && vtx->tristar_no>0){
-        // for nonedge vertices with triangles, save first and last old angle, update first
-        // at the end of the loop, the end will be updated too
-        t1 = vtx->tristar[vtx->tristar_no-1];
-        t2 = vtx->tristar[0];
+        //update the normals of triangles that share bead i.
+        // combined with angle check!!!
+        // for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]);
+        // update the normals of the vertices is in the energy
+        // angle between triangles must be large to prevent spikiness, 
+        // which is small angle in the normals (provided they are oriented correctly)
+        // but only if the angle was not already too small
+        //
+        // structure:
+        // end, 0: save end,0 angle; saving 0's normal in txyz and updating 0
+        // loop i,j=(0:end-1,1:end) check (i*j>min,i*j>old angle); , saving j's old normal in txyz and updating j
+        // compare end:0 with old angle;
+        //
+        tri_angle_old_min=1;
+        tri_angle_new_min=1;
+        if( !(vtx->type & is_edge_vtx) && vtx->tristar_no>0){
+            // for nonedge vertices with triangles, save first and last old angle, update first
+            // at the end of the loop, the end will be updated too
+            t1 = vtx->tristar[vtx->tristar_no-1];
+            t2 = vtx->tristar[0];
 
-        tri_angle_first_last_old = t1->xnorm * t2->xnorm + t1->ynorm * t2->ynorm + t1->znorm * t2->znorm;
-        tx_old = t2->xnorm; ty_old = t2->ynorm; tz_old = t2->znorm; // remember old t2 (t1 next step)
-        triangle_normal_vector(t2);
-        // tri_angle_new = ... t1 is not updated
-    }
-    for(i=1;i<vtx->tristar_no;i++){
-        t2 = vtx->tristar[i];   // unupdated
-        t1 = vtx->tristar[i-1]; // updated prev step
-
-        tri_angle_old = tx_old*t2->xnorm + ty_old*t2->ynorm + tz_old*t2->znorm;          // old t1 * unupdated t2
-        tx_old = t2->xnorm; ty_old = t2->ynorm; tz_old = t2->znorm;  // remember old t2 (t1 next step)
-        triangle_normal_vector(t2);
-        tri_angle_new = t1->xnorm*t2->xnorm + t1->ynorm*t2->ynorm + t1->znorm*t2->znorm; // t1 * updated t2
-        tri_angle_old_min = fmin(tri_angle_old_min, tri_angle_old);
-        tri_angle_new_min = fmin(tri_angle_new_min, tri_angle_new);
-        
-    }
-    if( !(vtx->type & is_edge_vtx) && vtx->tristar_no>0 ){
-        t1 = vtx->tristar[vtx->tristar_no-1];
-        t2 = vtx->tristar[0];
-        tri_angle_old = tri_angle_first_last_old;
-        // t1 already updated
-        tri_angle_new = t1->xnorm*t2->xnorm + t1->ynorm*t2->ynorm + t1->znorm*t2->znorm; // t1 * updated t2
-        tri_angle_old_min = fmin(tri_angle_old_min, tri_angle_old);
-        tri_angle_new_min = fmin(tri_angle_new_min, tri_angle_new);
-
-    }
-    if(  (tri_angle_new_min) < vesicle->tape->min_dihedral_angle_cosine && tri_angle_new_min < tri_angle_old_min) {
-            // failure! too spiky (and step is not de-spiking)
-            vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
-            for(i=0;i<vtx->neigh_no;i++){
-                vtx->neigh[i]=memcpy((void *)vtx->neigh[i],(void *)&backupvtx[i+1],sizeof(ts_vertex));
-            }
-            for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]); // we need to un-do normal updates on the triangles, since they aren't saved
-
-            return TS_FAIL;
+            tri_angle_first_last_old = t1->xnorm * t2->xnorm + t1->ynorm * t2->ynorm + t1->znorm * t2->znorm;
+            tx_old = t2->xnorm; ty_old = t2->ynorm; tz_old = t2->znorm; // remember old t2 (t1 next step)
+            triangle_normal_vector(t2);
+            // tri_angle_new = ... t1 is not updated
         }
-    }
+        for(i=1;i<vtx->tristar_no;i++){
+            t2 = vtx->tristar[i];   // unupdated
+            t1 = vtx->tristar[i-1]; // updated prev step
+
+            tri_angle_old = tx_old*t2->xnorm + ty_old*t2->ynorm + tz_old*t2->znorm;          // old t1 * unupdated t2
+            tx_old = t2->xnorm; ty_old = t2->ynorm; tz_old = t2->znorm;  // remember old t2 (t1 next step)
+            triangle_normal_vector(t2);
+            tri_angle_new = t1->xnorm*t2->xnorm + t1->ynorm*t2->ynorm + t1->znorm*t2->znorm; // t1 * updated t2
+            tri_angle_old_min = fmin(tri_angle_old_min, tri_angle_old);
+            tri_angle_new_min = fmin(tri_angle_new_min, tri_angle_new);
+            
+        }
+        if( !(vtx->type & is_edge_vtx) && vtx->tristar_no>0 ){
+            t1 = vtx->tristar[vtx->tristar_no-1];
+            t2 = vtx->tristar[0];
+            tri_angle_old = tri_angle_first_last_old;
+            // t1 already updated
+            tri_angle_new = t1->xnorm*t2->xnorm + t1->ynorm*t2->ynorm + t1->znorm*t2->znorm; // t1 * updated t2
+            tri_angle_old_min = fmin(tri_angle_old_min, tri_angle_old);
+            tri_angle_new_min = fmin(tri_angle_new_min, tri_angle_new);
+
+        }
+        if(  (tri_angle_new_min) < vesicle->tape->min_dihedral_angle_cosine && tri_angle_new_min < tri_angle_old_min) {
+                // failure! too spiky (and step is not de-spiking)
+                vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
+                for(i=0;i<vtx->neigh_no;i++){
+                    vtx->neigh[i]=memcpy((void *)vtx->neigh[i],(void *)&backupvtx[i+1],sizeof(ts_vertex));
+                }
+                for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]); // we need to un-do normal updates on the triangles, since they aren't saved
+
+                return TS_FAIL;
+            }
+        }
     else {
-       // normals are updated?
-       // for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]); 
+       // update normals
+       for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]); 
     }
 
     // rotate director
