@@ -150,6 +150,7 @@ ts_bool set_vesicle_values_from_tape(ts_vesicle *vesicle){
  * at the moment, randomly chooses tape->number_of_vertiecs_with_c0 vertices to be CMC
  * active, bonding type, vtx->c=tape->c0
  * and fill the rest with passive, not bonding bare membrane
+ * To add more, see first comment and large ### boxed ### comment below
  * 
  * @param vesicle
  * @param tape
@@ -189,8 +190,8 @@ ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
     // step 2:
     // now we have an array of random indices: we can use it to populate the vertices however we like
     j=0;
-    
     if (tape->number_of_vertices_with_c0>n) fatal("number of vertices with c0 larger than number of vertices!",100);
+    
     for(i=j;i<j+tape->number_of_vertices_with_c0;i++){
         vtx = vesicle->vlist->vtx[indices[i]];
         vtx->type=is_bonding_vtx + is_active_vtx + is_adhesive_vtx + is_anisotropic_vtx + is_vicsek_vtx; // bonds, active, adhesive, anisotropic
@@ -216,7 +217,12 @@ ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
         vtx->dz=vtx->dz/norml;
     }
     j=i;
+
+    // #####################################################################################
+    // #####################################################################################
     // add however many types with for(i=j, i<j+n_next_type; i++) {vtx->prop=type_prop} j=i;
+    // #####################################################################################
+    // #####################################################################################
 
     //finally, regular non-protein vertices
     for(i=j; i<n; i++){
