@@ -237,8 +237,8 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
         }
     }
     else {
-       // normals are updated?
-       // for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]); 
+       // update normals
+       for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]); 
     }
 
     // rotate director
