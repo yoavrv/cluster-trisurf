@@ -84,7 +84,7 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     //      step 3.3: get energy information from the 2x2 shape difference
 
     // we hardcoded 10 neighbor limit!
-    ts_small_idx jj, i;
+    ts_small_idx jj, i, ip;
     ts_double edge_vector_x[10]={0,0,0,0,0,0,0,0,0,0};
     ts_double edge_vector_y[10]={0,0,0,0,0,0,0,0,0,0};
     ts_double edge_vector_z[10]={0,0,0,0,0,0,0,0,0,0};
@@ -117,6 +117,9 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     ts_double tr, det, lambda1, lambda2, discrim_sqrt;
     ts_double eigen_vec1d, eigen_vec1t, eigen_vec2d, eigen_vec2t;
 
+    ts_triangle *t;
+    ts_double s, l_m_x,l_m_y,l_m_z,l_p_x,l_p_y,l_p_z, sigma_m_x, sigma_m_y,sigma_m_z, sigma_p_x, sigma_p_y,sigma_p_z;
+
 
     ts_double We;
     ts_double Av, We_Av;
@@ -129,10 +132,30 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     // #########################################################################
     Av=0;
     for(i=0; i<vtx->tristar_no; i++){
-        vertex_normal_x=(vertex_normal_x - vtx->tristar[i]->xnorm*vtx->tristar[i]->area);
-        vertex_normal_y=(vertex_normal_y - vtx->tristar[i]->ynorm*vtx->tristar[i]->area);
-        vertex_normal_z=(vertex_normal_z - vtx->tristar[i]->znorm*vtx->tristar[i]->area);
-        Av+=vtx->tristar[i]->area/3;
+        ip = next_small(i, vtx->tristar_no);
+        t = vtx->tristar[i];
+        l_m_x = (vtx->neigh[i]->x - vtx->x)/2;
+        l_m_y = (vtx->neigh[i]->y - vtx->y)/2;
+        l_m_z = (vtx->neigh[i]->z - vtx->z)/2;
+        l_p_x = (vtx->neigh[ip]->x - vtx->x)/2;
+        l_p_y = (vtx->neigh[ip]->y - vtx->y)/2;
+        l_p_z = (vtx->neigh[ip]->z - vtx->z)/2;
+        sigma_m_x = t->xcirc - (vtx->neigh[i]->x + vtx->x)/2;
+        sigma_m_y = t->ycirc - (vtx->neigh[i]->y + vtx->y)/2;
+        sigma_m_z = t->zcirc - (vtx->neigh[i]->z + vtx->z)/2;
+        sigma_p_x = t->xcirc - (vtx->neigh[ip]->x + vtx->x)/2;
+        sigma_p_y = t->ycirc - (vtx->neigh[ip]->y + vtx->y)/2;
+        sigma_p_z = t->zcirc - (vtx->neigh[ip]->z + vtx->z)/2;
+        // here we do N*(lxsigma) on the left and N*(lxsigma) on the right
+        // which is N*(lxsigma - lxsigma)
+        cross_x = -( l_p_y*sigma_p_z - l_p_z*sigma_p_y ) + ( l_m_y*sigma_m_z - l_m_z*sigma_m_y );
+        cross_y = -( l_p_z*sigma_p_x - l_p_x*sigma_p_z ) + ( l_m_z*sigma_m_x - l_m_x*sigma_m_z );
+        cross_z = -( l_p_x*sigma_p_y - l_p_y*sigma_p_x ) + ( l_m_x*sigma_m_y - l_m_y*sigma_m_x );
+        s = 0.5 * (t->xnorm*cross_x + t->ynorm*cross_y + t->znorm*cross_z);
+        vertex_normal_x -= t->xnorm*s;
+        vertex_normal_y -= t->ynorm*s;
+        vertex_normal_z -= t->znorm*s;
+        Av += s;
     }
     temp_length=sqrt(pow(vertex_normal_x,2)+pow(vertex_normal_y,2)+pow(vertex_normal_z,2));
     vertex_normal_x=vertex_normal_x/temp_length;
@@ -465,9 +488,7 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     ts_triangle *tm, *tp; // triangle (vtx,jm,j) and (vtx,j,jp)
     ts_double s=0.0; // area
     ts_double xh=0.0,yh=0.0,zh=0.0,txn=0.0,tyn=0.0,tzn=0.0;
-    ts_double x1,x2,x3,ctm,ctp,tot,xlen;
     ts_double lx, ly, lz, sigx, sigy, sigz, sigl, l_sqr;
-    ts_double ds, dxh, dyh, dzh;
     ts_double h,ht,norml;
     ts_double angle_sum=0;
     ts_double a_dot_b, a_cross_b_x, a_cross_b_y, a_cross_b_z, mag_a_cross_b;
@@ -503,10 +524,6 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
         j=vtx->neigh[jj];
         jp=vtx->neigh[jjp];
         jm=vtx->neigh[jjm];
-        ds = 0;
-        dxh = 0;
-        dyh = 0;
-        dzh = 0;
 
         // step 1.1 calculate the contribution to the vertex normal
         // txn normal points inwards!!
@@ -527,70 +544,18 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
         sigz = tm->zcirc - (j->z+vtx->z)/2;
         sigl = lx*(sigy*tm->znorm - sigz*tm->ynorm) + ly*(sigz*tm->xnorm - sigx*tm->znorm) + lz*(sigx*tm->ynorm - sigy*tm->xnorm); // l*(sigxN)
         sigl *= -1; // the jm section is left handed
-        ds += 0.25*sigl; // A = 1/2 (sigma * l/1) = 1/4 sigl
-        dxh += sigl*(lx)/l_sqr;
-        dyh += sigl*(ly)/l_sqr;
-        dzh += sigl*(lz)/l_sqr;
+        s += 0.25*sigl; // A = 1/2 (sigma * l/1) = 1/4 sigl
+        xh += sigl*(lx)/l_sqr;
+        yh += sigl*(ly)/l_sqr;
+        zh += sigl*(lz)/l_sqr;
         sigx = tp->xcirc - (j->x+vtx->x)/2;
         sigy = tp->ycirc - (j->y+vtx->y)/2;
         sigz = tp->zcirc - (j->z+vtx->z)/2;
         sigl = lx*(sigy*tp->znorm - sigz*tp->ynorm) + ly*(sigz*tp->xnorm - sigx*tp->znorm) + lz*(sigx*tp->ynorm - sigy*tp->xnorm); // sigma * l
-        ds += 0.25*sigl; // A = 1/2 (sigma * l/1) = 1/4 sigl
-        dxh += sigl*(lx)/l_sqr;
-        dyh += sigl*(ly)/l_sqr;
-        dzh += sigl*(lz)/l_sqr;
-
-
-
-        x1=vtx_distance_sq(vtx,jm);
-        x2=vtx_distance_sq(j,jm);
-        x3=(j->x-jm->x)*(vtx->x-jm->x)+
-           (j->y-jm->y)*(vtx->y-jm->y)+
-           (j->z-jm->z)*(vtx->z-jm->z);
-        ctm=x3/sqrt(x1*x2-x3*x3);
-
-        x1=vtx_distance_sq(vtx,jp);
-        x2=vtx_distance_sq(j,jp);
-        x3=(j->x-jp->x)*(vtx->x-jp->x)+
-           (j->y-jp->y)*(vtx->y-jp->y)+
-           (j->z-jp->z)*(vtx->z-jp->z);
-        ctp=x3/sqrt(x1*x2-x3*x3);
-
-        // step 1.3 use the cotangents to calculate the dual lattice edge and area contribution
-        // given l as the length of the i-j edge
-        // sigma = l/2 * ctm + l/2 * ctp
-        tot=ctp+ctm;
-        tot=0.5*tot; // sigma = l*tot
-        xlen=vtx_distance_sq(j,vtx); // l^2
-        s+=0.25*tot*xlen; // 4 (1/2 (l/2) * sigma) = 4xarea associated to this edge
-    
-        xh+=tot*(j->x - vtx->x);
-        yh+=tot*(j->y - vtx->y); // sigma*(edge vector) contribution to the voodoo xh vector
-        zh+=tot*(j->z - vtx->z);
-
-        if (fabs(ds-0.25*tot*xlen)>=0.00000000001){
-            ts_fprintf(stdout,"area of triangles in %d is %f, normal %f is not correct\n", vtx->idx, ds, 0.25*tot*xlen);
-            ts_fprintf(stdout,"diff: %.16f \n", 0.25*tot*xlen-ds);
-            fprintf(stdout,"all stuff:\n main vertex \t (%f,%f,%f)\n opposite j \t  (%f,%f,%f)\n", vtx->x, vtx->y, vtx->z, j->x, j->y, j->z);
-            fprintf(stdout,"jm vertex \t (%f,%f,%f)\njp vertex \t  (%f,%f,%f)\n", jm->x, jm->y, jm->z, jp->x, jp->y, jp->z);
-            fprintf(stdout,"circm \t (%f,%f,%f)\ncircp \t  (%f,%f,%f)\n", tm->xcirc, tm->ycirc, tm->zcirc, tp->xcirc, tp->ycirc, tp->zcirc);
-            fprintf(stdout,"l \t (%f %f %f)\nsigma \t (%f %f %f)\nl2: %f, sigma*l: %f\n", lx,ly,lz,sigx,sigy,sigz, l_sqr, sigl);
-            fprintf(stdout,"x1, x2, x3: %f %f %f \t xlen, %f, ctm, ctp: %f, %f\n", x1, x2,x3, xlen, ctm, ctp);
-            debug_triangle_normal_vector(tp);
-            fprintf(stdout,"circm \t (%f,%f,%f)\ncircp \t  (%f,%f,%f) hmmmm\n", tm->xcirc, tm->ycirc, tm->zcirc, tp->xcirc, tp->ycirc, tp->zcirc);
-            fatal("Bug written",300);
-        }
-        if (fabs(dxh-tot*(j->x - vtx->x))>=0.000000001){
-            ts_fprintf(stdout,"h of triangles is %f, %f, %f normal way is %f, %f, %f is not correct\n", dxh, dyh, dzh, tot*(j->x - vtx->x),tot*(j->y - vtx->y),tot*(j->z - vtx->z));
-            ts_fprintf(stdout,"diff: %.16f, %.16f, %.16f \n", tot*(j->x - vtx->x)-dxh,tot*(j->y - vtx->y)-dyh,tot*(j->z - vtx->z)-dzh);
-            fprintf(stdout,"all stuff:\n main vertex \t (%f,%f,%f)\n opposite j \t  (%f,%f,%f)", vtx->x, vtx->y, vtx->z, j->x, j->y, j->z);
-            fprintf(stdout,"j-1 vertex \t (%f,%f,%f) \t j+1 verterx \t  (%f,%f,%f)", jm->x, jm->y, jm->z, jp->x, jp->y, jp->z);
-            fprintf(stdout,"circm \t (%f,%f,%f) \t circp \t  (%f,%f,%f)", tm->xcirc, tm->ycirc, tm->zcirc, tp->xcirc, tp->ycirc, tp->zcirc);
-            fprintf(stdout,"l \t (%f %f %f)\nsigma \t (%f %f %f)\n l2: %f,sigma*l: %f\n", lx,ly,lz,sigx,sigy,sigz, l_sqr, sigl);
-            fprintf(stdout,"x1, x2, x3: %f %f %f \t xlen, %f, ctm, ctp: %f, %f\n", x1, x2,x3, xlen, ctm, ctp);
-            fatal("Bug written",300);
-        }
-
+        s += 0.25*sigl; // A = 1/2 (sigma * l/1) = 1/4 sigl
+        xh += sigl*(lx)/l_sqr;
+        yh += sigl*(ly)/l_sqr;
+        zh += sigl*(lz)/l_sqr;
 
 
 
@@ -599,6 +564,7 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
         // instead: get the angle m-vtx-j
         // atan2(|axb|,a*b) was recommended at mathwork forum (cosin has small angle problems, and still need a sqrt)
         // possibly more complicated but better one from linked pdf (kahan)
+        // TODO: sheck if there is a good formula using sigl/l^2  (maybe tan(a+b) = tan(a)+tan(b)/1-tan(a)tan(b), and we get tans from sigl1/l^2 sigl2*l2)
         if (do_angle_sum){
             a_dot_b = (jm->x-vtx->x)*(j->x-vtx->x)+
                         (jm->y-vtx->y)*(j->y-vtx->y)+
@@ -648,9 +614,9 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
 
 
         // step 3.3 save the curvatures using the gaussian and mean curvature
-        x1 = sqrt(pow(vtx->mean_curvature,2)-vtx->gaussian_curvature); // deltaC/2 in temp variable
-        vtx->new_c1 = vtx->mean_curvature + x1;
-        vtx->new_c2 = vtx->mean_curvature - x1;
+        h = sqrt(pow(vtx->mean_curvature,2)-vtx->gaussian_curvature); // deltaC/2 in temp variable
+        vtx->new_c1 = vtx->mean_curvature + h;
+        vtx->new_c2 = vtx->mean_curvature - h;
     }
 
     //step 4: calculate the bending energy
