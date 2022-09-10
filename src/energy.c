@@ -123,6 +123,7 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
 
     ts_double We;
     ts_double Av, We_Av;
+    // static int REMOVEMEDEBUG=0;
 
     ts_double he[10];
     ts_double Sv[3][3]={{0,0,0},{0,0,0},{0,0,0}};
@@ -156,6 +157,15 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
         vertex_normal_y -= t->ynorm*s;
         vertex_normal_z -= t->znorm*s;
         Av += s;
+        // if (REMOVEMEDEBUG++>20000) {
+        //     ts_fprintf(stdout,"a=%f,%f,%f\tb=%f,%f,%f\tc=%f,%f,%f\to=%f,%f,%f\n",vtx->x, vtx->y, vtx->z,
+        //                                                                          vtx->neigh[i]->x,vtx->neigh[i]->y,vtx->neigh[i]->z,
+        //                                                                          vtx->neigh[ip]->x,vtx->neigh[ip]->y,vtx->neigh[ip]->z,
+        //                                                                          t->xcirc, t->ycirc, t->zcirc);
+        //     ts_fprintf(stdout,"tria->%d,%d,%d, vtx->%d,%d,%d\n",t->vertex[0]->idx, t->vertex[1]->idx, t->vertex[2]->idx, vtx->idx, vtx->neigh[i]->idx, vtx->neigh[ip]->idx);
+        //     ts_fprintf(stdout,"A=%f,s=%f\n",t->area,s);
+        //     fatal("negative areas!", 900);
+        // }
     }
     temp_length=sqrt(pow(vertex_normal_x,2)+pow(vertex_normal_y,2)+pow(vertex_normal_z,2));
     vertex_normal_x=vertex_normal_x/temp_length;
@@ -319,7 +329,7 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     // first, the primary matrix invariants, the trace and determinant
     tr  = dSd + tSt;
     det = dSd*tSt - dSt*tSd;
-    vtx->mean_curvature2 = tr/2; // curvatures up to signs and factors of 2
+    vtx->mean_curvature2 = -tr; // curvatures up to signs and factors of 2
     vtx->gaussian_curvature2 = det;
     // eigenvalues: trace determinant formula. We have real symmetric matrix, so positive discriminant
     discrim_sqrt = sqrt(tr*tr - 4*det);
@@ -351,20 +361,14 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     if(lambda1==lambda2){
         eigen_vec1d = 1; // we pick the director and tangent vectors as the eigenvectors
         eigen_vec1t = 0;
-        //eigen_vec2d = 0;
-        //eigen_vec2t = 1;
     }
     else{
         // b. nondegenerate case
         if(dSd>=tSt){  // a>d
             eigen_vec1d = lambda1-tSt;  //tSd==0 -> lambda1=dSd, eigen_vec1d!=0
             eigen_vec1t = tSd;
-            //eigen_vec2d = -dSt;
-            //eigen_vec2t = -lambda2+dSd; //tSd==0 -> lambda2=tSt, eigen_vec2t!=0
         }
         else { // dSd<tSt, d<a
-            //eigen_vec2d = lambda2-tSt;  //tSd==0 -> lambda2=dSd, eigen_vec2d!=0
-            //eigen_vec2t = tSd;
             eigen_vec1d = dSt;
             eigen_vec1t = lambda1-dSd;; //tSd==0 -> lambda1=tSt, eigen_vec1t!=0
         }
@@ -372,9 +376,6 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
         temp_length = sqrt(eigen_vec1d*eigen_vec1d + eigen_vec1t*eigen_vec1t);
         eigen_vec1d/=temp_length;
         eigen_vec1t/=temp_length;
-        //temp_length = sqrt(eigen_vec2d*eigen_vec2d + eigen_vec2t*eigen_vec2t);
-        //eigen_vec2d/=temp_length;
-        //eigen_vec2t/=temp_length;
     }
 
     // ----------------------------------------------------------
@@ -390,31 +391,26 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
         eigen_vec2d = -eigen_vec1t;
         eigen_vec2t = eigen_vec1d;
 
-        vtx->eig0[0] = eigen_vec1d*director_x + eigen_vec1t*tangent_x;
-        vtx->eig0[1] = eigen_vec1d*director_y + eigen_vec1t*tangent_y;
-        vtx->eig0[2] = eigen_vec1d*director_z + eigen_vec1t*tangent_z;
-
-        vtx->eig1[0] = eigen_vec2d*director_x + eigen_vec2t*tangent_x;
-        vtx->eig1[1] = eigen_vec2d*director_y + eigen_vec2t*tangent_y;
-        vtx->eig1[2] = eigen_vec2d*director_z + eigen_vec2t*tangent_z;
     } else {
         vtx->eig_v0 = lambda2;
         vtx->eig_v1 = lambda1;
 
         // lambda2's eigenvector is first
-        eigen_vec2d = eigen_vec1t;
-        eigen_vec2t = -eigen_vec1d;
-        
-        vtx->eig0[0] = eigen_vec2d*director_x + eigen_vec2t*tangent_x;
-        vtx->eig0[1] = eigen_vec2d*director_y + eigen_vec2t*tangent_y;
-        vtx->eig0[2] = eigen_vec2d*director_z + eigen_vec2t*tangent_z;
+        eigen_vec2d = eigen_vec1d;
+        eigen_vec2t = eigen_vec1t;
+        eigen_vec1d = eigen_vec2t;
+        eigen_vec1t = -eigen_vec2d;
 
-        vtx->eig1[0] = eigen_vec1d*director_x + eigen_vec1t*tangent_x;
-        vtx->eig1[1] = eigen_vec1d*director_y + eigen_vec1t*tangent_y;
-        vtx->eig1[2] = eigen_vec1d*director_z + eigen_vec1t*tangent_z;
     }
-    vtx->eig_v2 = 0; // we annihilate the shape operator in the normal direction
+    vtx->eig0[0] = eigen_vec1d*director_x + eigen_vec1t*tangent_x;
+    vtx->eig0[1] = eigen_vec1d*director_y + eigen_vec1t*tangent_y;
+    vtx->eig0[2] = eigen_vec1d*director_z + eigen_vec1t*tangent_z;
 
+    vtx->eig1[0] = eigen_vec2d*director_x + eigen_vec2t*tangent_x;
+    vtx->eig1[1] = eigen_vec2d*director_y + eigen_vec2t*tangent_y;
+    vtx->eig1[2] = eigen_vec2d*director_z + eigen_vec2t*tangent_z;
+
+    vtx->eig_v2 = 0; // we annihilate the shape operator in the normal direction
     
     vtx->eig2[0] = vertex_normal_x;
     vtx->eig2[1] = vertex_normal_y;
@@ -481,9 +477,8 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
 inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     
     ts_small_idx jj;
-    ts_small_idx jjp,jjm; // next (p) and prev (m) neighbor idx
+    ts_small_idx jjm; // next (p) and prev (m) neighbor idx
     ts_vertex *j; // current neighbor
-    ts_vertex *jp;// next neighbor
     ts_vertex *jm;// prev neighbor
     ts_triangle *tm, *tp; // triangle (vtx,jm,j) and (vtx,j,jp)
     ts_double s=0.0; // area
@@ -519,10 +514,8 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     // - calculate the dual lattice edge contribution to the curvature xh voodoo magic vector
     // - calculate the angle sum for the gaussian curvature
     for(jj=0; jj<vtx->neigh_no;jj++){
-        jjp=next_small(jj, vtx->neigh_no);
         jjm=prev_small(jj, vtx->neigh_no);
         j=vtx->neigh[jj];
-        jp=vtx->neigh[jjp];
         jm=vtx->neigh[jjm];
 
         // step 1.1 calculate the contribution to the vertex normal
