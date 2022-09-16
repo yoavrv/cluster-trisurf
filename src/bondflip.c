@@ -212,9 +212,9 @@ c
     // minimal angle constraint 
     if(vesicle->tape->min_dihedral_angle_cosine>-1){
     tri_normals_angle_cosine_old_min=triangle_dot_normals(lm,lp);
-    if (lp1!=NULL) tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lm,lp1));
-    if (lm1!=NULL) tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lm,lm1));
-    if (lm2!=NULL) tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lp,lm2));
+    if (lp1!=NULL) tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lm,lm1));
+    if (lm1!=NULL) tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lm,lm2));
+    if (lm2!=NULL) tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lp,lp1));
     if (lp2!=NULL) tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lp,lp2));
     }
 
@@ -775,13 +775,13 @@ c
     fprintf(stderr,"Volume in the beginning=%1.16e\n", vesicle->volume);
     */
    
-   if(vesicle->tape->min_dihedral_angle_cosine>-1){
-    tri_normals_angle_cosine_old_min=triangle_dot_normals(lm,lp);
-    tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lm,lp1));
-    tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lm,lm1));
-    tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lp,lm2));
-    tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lp,lp2));
-   }
+    if(vesicle->tape->min_dihedral_angle_cosine>-1){
+        tri_normals_angle_cosine_old_min=triangle_dot_normals(lm,lp);
+        tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lm,lm1));
+        tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lm,lm2));
+        tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lp,lp1));
+        tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lp,lp2));
+    }
 
 
 
@@ -794,31 +794,31 @@ c
 
     // make sure the angle between triangle is ok!
     if(vesicle->tape->min_dihedral_angle_cosine>-1){
-    tri_normals_angle_cosine_new_min=triangle_dot_normals(lm,lp);
-    tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lm,lp1));
-    tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lm,lm1));
-    tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lp,lm2));
-    tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lp,lp2));
-    if( tri_normals_angle_cosine_new_min<vesicle->tape->min_dihedral_angle_cosine && tri_normals_angle_cosine_new_min < tri_normals_angle_cosine_old_min){
-        //restore old state.
-        for(i=0;i<4;i++){
-            free(orig_vtx[i]->neigh);
-            free(orig_vtx[i]->tristar);
-            free(orig_vtx[i]->bond);
-            free(orig_tria[i]->neigh);
-            memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
-            memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
-            /* level 2 pointers are redirected*/
-            }
-            memcpy(bond,bck_bond,sizeof(ts_bond));
+        tri_normals_angle_cosine_new_min=triangle_dot_normals(lm,lp);
+        tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lm,lp1));
+        tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lm,lm1));
+        tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lp,lm2));
+        tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lp,lp2));
+        if( tri_normals_angle_cosine_new_min<vesicle->tape->min_dihedral_angle_cosine && tri_normals_angle_cosine_new_min < tri_normals_angle_cosine_old_min){
+            //restore old state.
             for(i=0;i<4;i++){
-                free(bck_vtx[i]);
-                free(bck_tria[i]);
-            }
-            free(bck_bond);
-        return TS_FAIL;
+                free(orig_vtx[i]->neigh);
+                free(orig_vtx[i]->tristar);
+                free(orig_vtx[i]->bond);
+                free(orig_tria[i]->neigh);
+                memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
+                memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
+                /* level 2 pointers are redirected*/
+                }
+                memcpy(bond,bck_bond,sizeof(ts_bond));
+                for(i=0;i<4;i++){
+                    free(bck_vtx[i]);
+                    free(bck_tria[i]);
+                }
+                free(bck_bond);
+            return TS_FAIL;
 
-	}
+        }
     }
 
 
