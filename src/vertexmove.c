@@ -202,6 +202,9 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
         tx_old = t2->xnorm; ty_old = t2->ynorm; tz_old = t2->znorm; // remember old t2 (t1 next step)
         triangle_normal_vector(t2);
         // tri_angle_new = ... t1 is not updated
+    } else {
+        tri_angle_first_last_old = 1;
+        tx_old = vtx->tristar[0]->xnorm; ty_old = vtx->tristar[0]->ynorm; tz_old = vtx->tristar[0]->znorm;
     }
     for(i=1;i<vtx->tristar_no;i++){
         t2 = vtx->tristar[i];   // unupdated

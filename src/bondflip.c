@@ -33,7 +33,7 @@ c
     ts_small_idx nei,neip,neim;
     ts_small_idx i,j;
     ts_double oldenergy, delta_energy, dvol=0.0, darea=0.0;
-    ts_double tri_normals_angle_cosine_old_min,tri_normals_angle_cosine_new_min;
+    ts_double tri_normals_angle_cosine_old_min=1,tri_normals_angle_cosine_new_min=1;
     ts_triangle *lm=NULL,*lp=NULL, *lp1=NULL, *lm2=NULL;
     ts_triangle *lm1=NULL, *lp2=NULL;
 
@@ -626,7 +626,7 @@ c
     ts_small_idx nei_k_at_km, nei_kp_at_k, nei_it_at_kp; // nei_km_at_it == neim
     ts_small_idx i;
     ts_double oldenergy, delta_energy, dvol=0.0, darea=0.0;
-    ts_double tri_normals_angle_cosine_old_min, tri_normals_angle_cosine_new_min;
+    ts_double tri_normals_angle_cosine_old_min=1, tri_normals_angle_cosine_new_min=1;
     ts_triangle *lm=NULL,*lp=NULL, *lp1=NULL, *lm2=NULL;
     ts_triangle *lm1=NULL,*lp2=NULL;
 
