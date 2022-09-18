@@ -727,8 +727,8 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
     //stupid loop variables don't go in stupid for loop due to stupid C89 compiler
     ts_idx i, j, curr_dist;
     
-    // estimated mallocation size for the cluster: roughly ~pi*r^2
-    ts_idx max_vtx_seen=3*(( (int) vicsek_radius)+1)*(( (int) vicsek_radius)+1);
+    // Initial allocation size for seen_vertex.
+    ts_idx size_vtx_seen=64;
     // allocate the struct for the "seen vertex" (defined in general.h, functions in vertex.c)
     ts_seen_vertex *seen_vtx; //initalize in vicsek
 
@@ -751,7 +751,7 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
         viznorm=vtx->nz;
 
         //initialize seen_vtx
-        seen_vtx = init_seen_vertex(max_vtx_seen);
+        seen_vtx = init_seen_vertex(size_vtx_seen);
         // we have now seen the prime vertex
         add_vtx_to_seen(seen_vtx, vtx);
 
