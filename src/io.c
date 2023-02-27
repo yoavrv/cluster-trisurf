@@ -1395,7 +1395,7 @@ ts_tape *parsetapebuffer(char *buffer){
     };
     cfg_t *cfg;    
     ts_uint retval; // not int?
-    cfg = cfg_init(opts, CFGF_IGNORE_UNKNOWN); //consider using CFGF_IGNORE_UNKNOWN
+    cfg = cfg_init(opts, 256); //consider using CFGF_IGNORE_UNKNOWN
     retval = cfg_parse_buf(cfg, buffer);
     tape->nshell = cfg_getint(cfg,"nshell");
     tape->npoly = cfg_getint(cfg,"npoly");
