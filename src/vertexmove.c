@@ -183,51 +183,36 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
         // update the normals of the vertices is in the energy
         // angle between triangles must be large to prevent spikiness, 
         // which is small angle in the normals (provided they are oriented correctly)
-        // but only if the angle was not already too small
-        //
-        // structure:
-        // end, 0: save end,0 angle; saving 0's normal in txyz and updating 0
-        // loop i,j=(0:end-1,1:end) check (i*j>min,i*j>old angle); , saving j's old normal in txyz and updating j
-        // compare end:0 with old angle;
+        // but only if the angle was not already too small (fix existing bad angles)
         //
         tri_angle_old_min=1;
         tri_angle_new_min=1;
-        if( !(vtx->type & is_edge_vtx) && vtx->tristar_no>0){
-            // for nonedge vertices with triangles, save first and last old angle, update first
-            // at the end of the loop, the end will be updated too
-            t1 = vtx->tristar[vtx->tristar_no-1];
-            t2 = vtx->tristar[0];
-
-            tri_angle_first_last_old = t1->xnorm * t2->xnorm + t1->ynorm * t2->ynorm + t1->znorm * t2->znorm;
-            tx_old = t2->xnorm; ty_old = t2->ynorm; tz_old = t2->znorm; // remember old t2 (t1 next step)
-            triangle_normal_vector(t2);
-            // tri_angle_new = ... t1 is not updated
-        }else{
-            tri_angle_first_last_old=1;
-            tx_old = vtx->tristar[0]->xnorm; ty_old = vtx->tristar[0]->ynorm; tz_old = vtx->tristar[0]->znorm;
-        }
+        // min old angles
         for(i=1;i<vtx->tristar_no;i++){
-            t2 = vtx->tristar[i];   // unupdated
-            t1 = vtx->tristar[i-1]; // updated prev step
-
-            tri_angle_old = tx_old*t2->xnorm + ty_old*t2->ynorm + tz_old*t2->znorm;          // old t1 * unupdated t2
-            tx_old = t2->xnorm; ty_old = t2->ynorm; tz_old = t2->znorm;  // remember old t2 (t1 next step)
-            triangle_normal_vector(t2);
-            tri_angle_new = t1->xnorm*t2->xnorm + t1->ynorm*t2->ynorm + t1->znorm*t2->znorm; // t1 * updated t2
-            tri_angle_old_min = fmin(tri_angle_old_min, tri_angle_old);
-            tri_angle_new_min = fmin(tri_angle_new_min, tri_angle_new);
-            
+            t1 = vtx->tristar[i];   
+            for(j=0; j<t1->neigh_no;j++){
+                // technically we are double checking some angle, but hopefully it is easier and more parallel than checking
+                t2 = t1->neigh[j];
+                tri_angle_old = t1->xnorm*t2->xnorm + t1->ynorm*t2->ynorm + t1->znorm*t2->znorm; 
+                tri_angle_old_min = fmin(tri_angle_old_min, tri_angle_old);
+            }
         }
-        if( !(vtx->type & is_edge_vtx) && vtx->tristar_no>0 ){
-            t1 = vtx->tristar[vtx->tristar_no-1];
-            t2 = vtx->tristar[0];
-            tri_angle_old = tri_angle_first_last_old;
-            // t1 already updated
-            tri_angle_new = t1->xnorm*t2->xnorm + t1->ynorm*t2->ynorm + t1->znorm*t2->znorm; // t1 * updated t2
-            tri_angle_old_min = fmin(tri_angle_old_min, tri_angle_old);
-            tri_angle_new_min = fmin(tri_angle_new_min, tri_angle_new);
-
+        // update normals
+         for(i=1;i<vtx->tristar_no;i++){
+            t1 = vtx->tristar[i];  
+            triangle_normal_vector(t1);   
         }
+        // min new angles
+        for(i=1;i<vtx->tristar_no;i++){
+            t1 = vtx->tristar[i];   
+            for(j=0; j<t1->neigh_no;j++){
+                t2 = t1->neigh[j];
+                tri_angle_new = t1->xnorm*t2->xnorm + t1->ynorm*t2->ynorm + t1->znorm*t2->znorm; 
+                tri_angle_new_min = fmin(tri_angle_new_min, tri_angle_new);
+            }
+        }
+
+        //accept or reject
         if(  (tri_angle_new_min) < vesicle->tape->min_dihedral_angle_cosine && tri_angle_new_min < tri_angle_old_min) {
                 // failure! too spiky (and step is not de-spiking)
                 vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));

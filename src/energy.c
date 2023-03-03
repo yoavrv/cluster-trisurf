@@ -488,10 +488,20 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     ts_double angle_sum=0;
     ts_double a_dot_b, a_cross_b_x, a_cross_b_y, a_cross_b_z, mag_a_cross_b;
     ts_flag model=vesicle->tape->type_of_curvature_model; // control how and what model we use to calculate energy: see enum curvature_model_type in general.h
-    ts_bool do_angle_sum=0;
+    ts_bool do_angle_sum=0, do_calculate_shape_op=0, do_use_shape_op_e=0;
     do_angle_sum=(model&to_calculate_sum_angle && 
                     (!(model&to_use_sum_angle_for_kx2_only) || (model&to_use_sum_angle_for_kx2_only && vtx->xk2!=0))
                     );
+    do_calculate_shape_op = model&to_calculate_shape_operator 
+                            || (model&to_use_shape_for_anisotropy_only 
+                                && (vtx->type & is_anisotropic_vtx));
+    do_use_shape_op_e = (model&to_use_shape_operator_energy 
+                            && !(model&to_use_shape_for_anisotropy_only))
+                        || (model&to_use_shape_operator_energy 
+                            && (model&to_use_shape_for_anisotropy_only  
+                            && (vtx->type & is_anisotropic_vtx)));    
+    // model has to use the shape operator energy
+    // if the model is for anisotropy only, also make sure the vertex type is anisotropic
 
     // we have 4 steps:
     // ?: at some point, use the new shape-operator based method (depends on model)
@@ -589,16 +599,21 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     // step 3.1 project the director to the tangent plane
     if (model&to_update_director_shapeless){
         // t = t - (t.n)n   (or -nx(nxt)
+        // ts_fprintf(stdout,"0 director: %f,%f,%f\n",vtx->dx,vtx->dy,vtx->dz);
         a_dot_b = (vtx->dx*vtx->nx)+(vtx->dy*vtx->ny)+(vtx->dz*vtx->nz); // temporarily used as the dot product
         vtx->dx = vtx->dx - a_dot_b*vtx->nx;
         vtx->dy = vtx->dy - a_dot_b*vtx->ny;
         vtx->dz = vtx->dz - a_dot_b*vtx->nz;
+        // ts_fprintf(stdout,"1 normal: %f,%f,%f\n",vtx->nx,vtx->ny,vtx->nz);
+        // ts_fprintf(stdout,"1 director: %f,%f,%f\n",vtx->dx,vtx->dy,vtx->dz);
         // this operation exclusively lowers |t|: if we do manage to avoid using the size (always taking t*A*(nxt)/t^2) we can avoid the normalization
         // and just periodically make sure the size is large enough if (t^2<0.5) t=2t
         norml=sqrt((vtx->dx*vtx->dx)+(vtx->dy*vtx->dy)+(vtx->dz*vtx->dz)); // should be the same as sqrt(1-*(n.t)^2)
         vtx->dx=vtx->dx/norml;
         vtx->dy=vtx->dy/norml;
         vtx->dz=vtx->dz/norml;
+        // ts_fprintf(stdout,"2 director: %f,%f,%f\n",vtx->dx,vtx->dy,vtx->dz);
+        // fatal("debug director",333);
     }
 
     // step 3.2 calculate gaussian curvature using sum angle formula
@@ -621,17 +636,14 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     vtx->energy = vtx->mean_energy + vtx->gaussian_energy;
 
     // step ?? calculate the energy using the curvature tensor model instead
-    if (model&to_calculate_shape_operator || (model&to_use_shape_for_anisotropy_only && (vtx->type & is_anisotropic_vtx))) {
+    if (do_calculate_shape_op) {
         curvature_tensor_energy_vertex(vesicle, vtx);
     }
     
     // step ??.2  use the new energy 
     // model has to use the shape operator energy
     // if the model is for anisotropy only, also make sure the vertex type is anisotropic
-    if (model&to_use_shape_operator_energy && !(model&to_use_shape_for_anisotropy_only)){
-        vtx->energy = vtx->mean_energy2 + vtx->gaussian_energy2;
-    }
-    if (model&to_use_shape_operator_energy && (model&to_use_shape_for_anisotropy_only  && (vtx->type & is_anisotropic_vtx))){
+    if (do_use_shape_op_e){
         vtx->energy = vtx->mean_energy2 + vtx->gaussian_energy2;
     }
 
