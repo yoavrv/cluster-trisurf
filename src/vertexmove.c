@@ -23,7 +23,7 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
     ts_uint cellidx; 
     ts_double delta_energy, delta_energy_cv,oenergy,dvol=0.0, darea=0.0, dstretchenergy=0.0;
     ts_double costheta,sintheta,phi,cosphi,sinphi,r, omega, cosomega, sinomega;
-    ts_double tri_angle_first_last_old, tri_angle_old, tri_angle_new, tx_old, ty_old, tz_old, tri_angle_old_min, tri_angle_new_min;
+    ts_double tri_angle, tri_angle_old_min, tri_angle_new_min;
     //This will hold all the information of vtx and its neighbours
     ts_vertex backupvtx[20], *constvol_vtx_moved=NULL, *constvol_vtx_backup=NULL;
     ts_triangle *t1, *t2;
@@ -188,27 +188,27 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
         tri_angle_old_min=1;
         tri_angle_new_min=1;
         // min old angles
-        for(i=1;i<vtx->tristar_no;i++){
+        for(i=0; i<vtx->tristar_no;i++){
             t1 = vtx->tristar[i];   
             for(j=0; j<t1->neigh_no;j++){
                 // technically we are double checking some angle, but hopefully it is easier and more parallel than checking
                 t2 = t1->neigh[j];
-                tri_angle_old = t1->xnorm*t2->xnorm + t1->ynorm*t2->ynorm + t1->znorm*t2->znorm; 
-                tri_angle_old_min = fmin(tri_angle_old_min, tri_angle_old);
+                tri_angle = t1->xnorm*t2->xnorm + t1->ynorm*t2->ynorm + t1->znorm*t2->znorm; 
+                tri_angle_old_min = fmin(tri_angle_old_min, tri_angle);
             }
         }
         // update normals
-         for(i=1;i<vtx->tristar_no;i++){
+        for(i=0;i<vtx->tristar_no;i++){
             t1 = vtx->tristar[i];  
             triangle_normal_vector(t1);   
         }
         // min new angles
-        for(i=1;i<vtx->tristar_no;i++){
+        for(i=0;i<vtx->tristar_no;i++){
             t1 = vtx->tristar[i];   
             for(j=0; j<t1->neigh_no;j++){
                 t2 = t1->neigh[j];
-                tri_angle_new = t1->xnorm*t2->xnorm + t1->ynorm*t2->ynorm + t1->znorm*t2->znorm; 
-                tri_angle_new_min = fmin(tri_angle_new_min, tri_angle_new);
+                tri_angle = t1->xnorm*t2->xnorm + t1->ynorm*t2->ynorm + t1->znorm*t2->znorm; 
+                tri_angle_new_min = fmin(tri_angle_new_min, tri_angle);
             }
         }
 
