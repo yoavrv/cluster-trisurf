@@ -401,7 +401,7 @@ typedef struct {
     ts_double xkA0;
     ts_double constvolprecision;
     ts_double xk0; // bending modulus
-    ts_double xk2; // second bending modulus (Gaussian/ deviatoric?): should be excess (Gauss-Bonet)
+    ts_double xk2; // second bending modulus (Gaussian/ deviatoric?)
     ts_double dmax;
     ts_double dmin_interspecies;
     ts_double stepsize;
@@ -420,6 +420,7 @@ typedef struct {
     ts_double z_adhesion;
     ts_double adhesion_radius;
     ts_double min_dihedral_angle_cosine; // Prevent spikiness of triangles by imposing a minimum dihedral angle
+    ts_double d0; // spontaneous deviator
     //  long int brezveze0;
     //	long int brezveze1;
     //	long int brezveze2;

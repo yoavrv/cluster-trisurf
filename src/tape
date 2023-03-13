@@ -34,12 +34,15 @@ quiet=false
 # bending rigidity of the membrane (in units kT)
 xk0=20
 # xk2: Gaussian bending modulus
-xk2=0 
+xk2=-10
 
 # number of vertices with spontaneous curvature (integer)
 number_of_vertices_with_c0=50
 # c0/2 is spontaneous curvature. c0 is used as (c1+c1-c0)^2 in energy term (float)
 c0=0.5
+# d0/2 is spontaneous deviator. d0 is used in shape tensor only (float)
+# Mismatch = Curvature - C0/2*I - d0/2 eps
+d0=0.5
 # curvature model (bool)
 # and 0x1  : calculate angle-sum gaussian curvature,  and 0x2  : calculate shape operator, 
 # and 0x4  : update director even in the old method.  and 0x8  : use shape operator energy rather than just save it
@@ -47,9 +50,9 @@ c0=0.5
 # and 0x40 : disable old method (use shape op only)   and 0x80 : calculate angle sum only if kx2!-9
 # example of important models: 
 # 0: old method. 7: debug, save everything but use energy from old method. 35: parallel transport of directors only
-curvature_model=7
+curvature_model=15
 # limit sharp edges by having a dihedral angle cosine limit cos(phi_ab)>x. defaults to -1 (no limit)
-min_dihedral_angle_cosine = -1
+min_dihedral_angle_cosine = 0.1
 
 #energy of attraction of vertices with spontaneous curvature (float, positive value for attraction)
 w=1.0

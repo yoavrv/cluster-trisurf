@@ -199,7 +199,7 @@ ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
         vtx->c=tape->c0;
         vtx->f=tape->F;
         vtx->ad_w=tape->adhesion_strength;
-        vtx->d=0;  // curvature deviator
+        vtx->d=tape->d0;  // curvature deviator
         vtx->xk = tape->xk0;
         vtx->xk2 = tape->xk2;
         vtx->nx=0; //normal
@@ -234,7 +234,7 @@ ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
         vtx->ad_w=tape->adhesion_strength;
         vtx->d=0;  // curvature deviator
         vtx->xk = tape->xk0;
-        vtx->xk2 = 0; // Gauss-Bonet: we only need excess compare to the regular membrane
+        vtx->xk2 = tape->xk2;
         vtx->nx=0; //normal
         vtx->ny=0;
         vtx->nz=0;
