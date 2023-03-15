@@ -280,11 +280,15 @@ enum force_model_type{
     model_vicsek_1overR=17, // use vicsek model with 1/R weights
 
 };
-enum adhesion_model_type{
-  model_step_potential=1,
-  model_parabolic_potential=2,
-  model_spherical_step_potential=3,
-  model_cylindrical_step_potential=4,
+enum adhesion_type{
+  adhesion_step_potential=1,
+  adhesion_parabolic_potential=2,
+
+};
+enum adhesion_geometry_type{
+  model_plane_potential=1,
+  model_spherical_potential=2,
+  model_cylindrical_potential=3,
 
 };
 
@@ -448,7 +452,7 @@ typedef struct {
     ts_flag type_of_adhesion_model;
     ts_bool allow_xy_plane_movement;
     ts_bool force_balance_along_z_axis;
-    ts_bool adhesion_switch;
+    ts_flag adhesion_model;
     ts_flag type_of_bond_model;
     ts_flag type_of_curvature_model;
     ts_flag type_of_force_model;

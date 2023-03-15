@@ -35,17 +35,20 @@ ts_bool centermass(ts_vesicle *vesicle){
 	}
 
 	//center mass for z component does not  change when adhesion is switched on
-	if(vesicle->tape->adhesion_switch){
+	if(vesicle->tape->type_of_adhesion_model==model_plane_potential){
 		temp_z_cm=vesicle->cm[2];
 		vesicle->cm[2]=0;
 	}
-	//center mass for x component does not  change for cylyndrical substrate
-	if(vesicle->tape->type_of_adhesion_model==model_cylindrical_step_potential){
+	//center mass for x and z component does not  change for cylyndrical substrate
+	else if(vesicle->tape->type_of_adhesion_model==model_cylindrical_potential){
+		temp_z_cm=vesicle->cm[2];
+		vesicle->cm[2]=0;
 		vesicle->cm[0]=0;
-	}
-
-	//center mass for x and y component does not  change for spherical substrate
-	if(vesicle->tape->type_of_adhesion_model==model_spherical_step_potential){
+	} 
+	//center mass for x y, and z component does not  change for spherical substrate
+	else if(vesicle->tape->type_of_adhesion_model==model_spherical_potential){
+		temp_z_cm=vesicle->cm[2];
+		vesicle->cm[2]=0;
 		vesicle->cm[0]=0;
 		vesicle->cm[1]=0;
 	}

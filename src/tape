@@ -80,13 +80,14 @@ vicsek_radius=4.0
 ###### Adhesion to surface #######
 ######---------------------#######
 
-# Adhesion switch (bool)
-adhesion_switch=0
+# Adhesion model (flag)
+# 1: step potential ad_w*(dx<dx0), 
+# 2: parabolic ad_w*(1-(dx/dx0)^2)
+adhesion_model=0
 # type of adhesion model do you want (integer)
 # 1: step_potential 
-# 2: parabolic potential
-# 3: spherical surface with step potential 
-# 4: cylindrical surface with step potential
+# 2: spherical surface with step potential 
+# 3: cylindrical surface with step potential
 type_of_adhesion_model=0
 # potential range (float in lmin)
 adhesion_cuttoff=1

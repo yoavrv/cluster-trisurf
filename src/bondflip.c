@@ -305,7 +305,7 @@ c
     if(vesicle->tape->constareaswitch==2){
         darea=darea+lm->area+lp->area; 
 /*check whether the dvol is gt than epsvol */
-		if(fabs(vesicle->area+darea-A0)>epsarea){
+		if((fabs(vesicle->area+darea-A0)>epsarea) && (fabs(vesicle->area+darea-A0)>fabs(vesicle->area-A0))){
 			//restore old state.
 			/* restoration procedure copied from few lines below */
 			    for(i=0;i<4;i++){
@@ -338,7 +338,7 @@ c
 
 	if(vesicle->tape->constvolswitch == 2){
 		/*check whether the dvol is gt than epsvol */
-		if(fabs(vesicle->volume+dvol-V0)>epsvol){
+		if((fabs(vesicle->volume+dvol-V0)>epsvol) && (fabs(vesicle->volume+dvol-V0)>fabs(vesicle->volume-V0))){
 			//restore old state.
 			/* restoration procedure copied from few lines below */
 			    for(i=0;i<4;i++){
@@ -847,7 +847,7 @@ c
     if(vesicle->tape->constareaswitch==2){
         darea=darea+lm->area+lp->area; 
 /*check whether the dvol is gt than epsvol */
-		if(fabs(vesicle->area+darea-A0)>epsarea){
+		if((fabs(vesicle->area+darea-A0)>epsarea) && (fabs(vesicle->area+darea-A0)>fabs(vesicle->area-A0))){
 			//restore old state.
 			/* restoration procedure copied from few lines below */
 			    for(i=0;i<4;i++){
@@ -880,7 +880,7 @@ c
 
 	if(vesicle->tape->constvolswitch == 2){
 		/*check whether the dvol is gt than epsvol */
-		if(fabs(vesicle->volume+dvol-V0)>epsvol){
+		if((fabs(vesicle->volume+dvol-V0)>epsvol) && (fabs(vesicle->volume+dvol-V0)>fabs(vesicle->volume-V0))){
 			//restore old state.
 			/* restoration procedure copied from few lines below */
 			    for(i=0;i<4;i++){

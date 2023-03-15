@@ -118,25 +118,15 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
     }
 
     // adhesion check whether the new position of vertex will be out of bounds
-    if(vesicle->tape->adhesion_switch){
-        if (vesicle->tape->type_of_adhesion_model==model_step_potential || vesicle->tape->type_of_adhesion_model==model_parabolic_potential){
-            if(vtx->z<vesicle->tape->z_adhesion){
+    // z > z0-dz
+    // parabolic potential will push things out instead
+    if(vesicle->tape->adhesion_model==adhesion_step_potential){
+        if( adhesion_geometry_distance(vtx)<vesicle->tape->adhesion_cuttoff 
+        && adhesion_geometry_distance(vtx)<adhesion_geometry_distance(backupvtx) ){
             vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
             return TS_FAIL;
-            }
         }
-        if (vesicle->tape->type_of_adhesion_model==model_spherical_step_potential){
-            if((pow(vesicle->adhesion_center - vtx->z,2) + pow(vtx->x,2) + pow(vtx->y,2)) < pow(vesicle->tape->adhesion_radius,2)){
-            vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
-            return TS_FAIL;
-            }
-        }
-        if (vesicle->tape->type_of_adhesion_model==model_cylindrical_step_potential){
-            if((pow(vesicle->adhesion_center - vtx->z,2) + pow(vtx->x,2)) < pow(vesicle->tape->adhesion_radius,2)){
-            vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
-            return TS_FAIL;
-            }
-        }
+
     }
 
     //#undef SQ
@@ -279,7 +269,7 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
     if(vesicle->tape->constareaswitch==2){
         /* check whether the darea is gt epsarea */
         for(i=0;i<vtx->tristar_no;i++) darea+=vtx->tristar[i]->area;
-        if(fabs(vesicle->area+darea-A0)>epsarea){
+        if((fabs(vesicle->area+darea-A0)>epsarea) && (fabs(vesicle->area+darea-A0)>fabs(vesicle->area-A0))){
             //restore old state.
              vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
             for(i=0;i<vtx->neigh_no;i++){
@@ -300,7 +290,7 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
     }
     if(vesicle->tape->constvolswitch==2){
         /*check whether the dvol is gt than epsvol */
-        if(fabs(vesicle->volume+dvol-V0)>epsvol){
+        if( (fabs(vesicle->volume+dvol-V0)>epsvol) && (fabs(vesicle->volume+dvol-V0)>fabs(vesicle->volume-V0))){
             //restore old state.
             vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
             for(i=0;i<vtx->neigh_no;i++){

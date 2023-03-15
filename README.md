@@ -7,7 +7,7 @@ Modified by Yoav based on Rajkumar's cluster version of Samo and Miha's trisurf-
 - vicsek interaction: setting vicsek_model=1, the force direction is average of normals in connected cluster, up to vicsek_radius, with weight vicsek_strength
 - adhesion from Raj: step, parabolic, spherical and cylindrical
 - added random_seed option to the tape: default (0) to this moment (linux epoch)
-- gaussian curvature with angle sum formula $\frac{1}{A}\left( 2\pi-\sum\theta_i\right)$
+- gaussian curvature with angle sum formula $\frac{1}{A}\left( 2\pi-\sum\theta_i\right)$. Note gaussian modulus is negative!
 - anisotropy (in progress): director $\hat{d}$ and shape operator energy $E(\hat{S})$
 - option to have angle limits between triangles (to prevent spikiness) - optional to tape (default to -1 i.e. no effect, to use add e.g. "min_dihedral_angle_cosine=0.5")
 - more vertex data is individualized as well as outputted to the .vtu 
@@ -18,7 +18,7 @@ Modified by Yoav based on Rajkumar's cluster version of Samo and Miha's trisurf-
     - curvatures...
 - added -flto=auto flag to configure.ac (link time optimization)
 - thrown away multiprocessing options
-- did some changes to spherical harmonics (some sort of refactoring out of ts_vtx?)
+- did some changes to spherical harmonic, mainly refactored out of ts_vtx
 - did some changes to polymers (some sort of refactoring but can't even remember what)
 - lots of unaccounted changed to bonds in order to make sure vertices and bonds and triangles remain ordered.  
     - vtx->neigh = [0, 1, 2, 3, 4, 5]  
@@ -31,8 +31,6 @@ Modified by Yoav based on Rajkumar's cluster version of Samo and Miha's trisurf-
 **Things to work on:**
 - shape operator energy still has problems : we think it's the area, the bending constants in energy, and factors of 2.
     - do we want to add circumcenter to triangle and update with normal? triangle->circx
-- spikiness still happens:  
-    - probably because $\kappa$ is incorrect
 - Add shear force
 - Cross products into functions?
 - constvol and constarea are almost certainly broken somehow, since they involve "side steps" which have not been updated

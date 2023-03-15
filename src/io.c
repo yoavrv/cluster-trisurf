@@ -1376,7 +1376,7 @@ ts_tape *parsetapebuffer(char *buffer){
         CFG_FLOAT("plane_d", 15, CFGF_NONE),
         CFG_FLOAT("plane_F", 1000, CFGF_NONE),
         /* Variables related to adhesion */
-        CFG_INT("adhesion_switch", 0, CFGF_NONE),
+        CFG_INT("adhesion_model", 0, CFGF_NONE),
         CFG_FLOAT("adhesion_cuttoff", 15, CFGF_NONE),
         CFG_FLOAT("adhesion_strength", 1000, CFGF_NONE),
         CFG_FLOAT("adhesion_radius", 1000, CFGF_NONE),
@@ -1444,7 +1444,7 @@ ts_tape *parsetapebuffer(char *buffer){
     tape->type_of_force_model = cfg_getint(cfg, "force_model");
     tape->vicsek_strength = cfg_getfloat(cfg, "vicsek_strength");
     tape->vicsek_radius = cfg_getfloat(cfg, "vicsek_radius");
-    tape->adhesion_switch = cfg_getint(cfg, "adhesion_switch");
+    tape->adhesion_model = cfg_getint(cfg, "adhesion_model");
     tape->adhesion_cuttoff = cfg_getfloat(cfg, "adhesion_cuttoff");
     tape->adhesion_strength = cfg_getfloat(cfg, "adhesion_strength");
     tape->adhesion_radius = cfg_getfloat(cfg, "adhesion_radius");

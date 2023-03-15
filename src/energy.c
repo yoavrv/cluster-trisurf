@@ -1003,58 +1003,53 @@ inline ts_double total_force_on_vesicle(ts_vesicle *vesicle){
 */
 ts_double adhesion_energy_diff(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_old){
     ts_double delta_energy=0;
-    ts_double z=vtx->z;
-    ts_double z_old=vtx_old->z;
-    ts_double z0=vesicle->tape->z_adhesion;
+    ts_double delta=0,delta_old=0;
     ts_double dz=vesicle->tape->adhesion_cuttoff;
-    ts_double c0=vesicle->adhesion_center;
-    ts_double r=vesicle->tape->adhesion_radius;
-    ts_flag model = vesicle->tape->type_of_adhesion_model;
+    ts_flag model = vesicle->tape->adhesion_model;
 
-    //1 for step potential
-    if(model==model_step_potential){
+    delta = adhesion_geometry_distance(vesicle, vtx);
+    delta_old = adhesion_geometry_distance(vesicle, vtx_old);
 
-        if( (vtx->type&is_adhesive_vtx) && (abs(z-z0)<dz) ){
+    if( (vtx->type&is_adhesive_vtx) && (delta<=dz) ){
+            if (model==adhesion_step_potential) {
                 delta_energy-=vtx->ad_w;
-        }
-        if( (vtx_old->type&is_adhesive_vtx) &&(abs(z_old-z0)<dz) ){
+            } else if (model==adhesion_parabolic_potential){
+                delta_energy-=vtx->ad_w*(1-pow(delta,2)/pow(dz,2));;
+            }
+    }
+    if( (vtx_old->type&is_adhesive_vtx) && (delta_old<=dz) ){
+            if (model==adhesion_step_potential) {
                 delta_energy+=vtx_old->ad_w;
-        }
+            } else if (model==adhesion_parabolic_potential){
+                delta_energy+=vtx_old->ad_w*(1-pow(delta_old,2)/pow(dz,2));;
+            }
     }
 
-    //2 for parabolic potential
-    else if(model==model_parabolic_potential){
-
-        // can't combine them well: each has (theoretically) different adhesion
-        if( (vtx->type&is_adhesive_vtx) && ((z-z0)<=dz )){
-                delta_energy-=(vtx->ad_w/pow(dz,2))*pow(z - dz,2);
-        }
-        if( (vtx_old->type&is_adhesive_vtx) && ((z_old-z0)>dz) ){
-                delta_energy+=(vtx_old->ad_w/pow(dz,2))*pow(z_old - dz,2);
-        }
-    }
-
-    //3 for sphrerical adhesion substrate with constant potential
-    else if(model==model_spherical_step_potential){
-        if( (vtx->type&is_adhesive_vtx) && (pow(pow(c0-z,2) + pow(vtx->x,2) + pow(vtx->y,2),0.5) - r < dz)){
-            delta_energy-=vtx->ad_w;
-        }
-        if( (vtx_old->type&is_adhesive_vtx) && (pow(pow(c0-z_old,2) + pow(vtx_old->x,2) + pow(vtx_old->y,2),0.5) - r < dz)){
-            delta_energy+=vtx_old->ad_w;
-        }
-    }
-    
-    //4 for cylindrical adhesive substrate with constant potential
-    else if(model==model_cylindrical_step_potential){
-        if( (vtx->type&is_adhesive_vtx) && (pow(pow(c0 -z,2) + pow(vtx->x,2),0.5) - r < dz)){
-            delta_energy-=vtx->ad_w;
-        }
-        if( (vtx_old->type&is_adhesive_vtx) && (pow(pow(c0 - z_old,2) + pow(vtx_old->x,2),0.5) - r < dz)){
-            delta_energy+=vtx_old->ad_w;
-        }
-    }
 
     return delta_energy;
+}
+
+ts_double adhesion_geometry_distance(ts_vesicle *vesicle, ts_vertex *vtx){
+    ts_double z=vtx->z;
+    ts_double z0=vesicle->tape->z_adhesion;
+    ts_double c0=vesicle->adhesion_center;
+    ts_double r=vesicle->tape->adhesion_radius;
+    ts_flag geometry = vesicle->tape->type_of_adhesion_model;
+
+    //1 for plane potential
+    if(geometry==model_plane_potential){
+        return z-z0;
+    }
+    //2 for spherical potential
+    else if(geometry==model_spherical_potential){
+        return pow(pow(c0-z,2) + pow(vtx->x,2) + pow(vtx->y,2),0.5)- r;
+    }
+    //3 for cylindrical adhesive substrate
+    else if(geometry==model_cylindrical_potential){
+        return pow(pow(c0-z,2) + pow(vtx->x,2),0.5)- r;
+    }
+
+    return 0;
 }
 
 void stretchenergy(ts_vesicle *vesicle, ts_triangle *triangle){

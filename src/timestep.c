@@ -29,7 +29,6 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_massive_idx mcsweeps, ts_idx init
     ts_double l1,l2,l3,vmsr,bfsr, vmsrt, bfsrt; //gyration eigenvalues, statistics succsess rate
     ts_ulong epochtime;
     ts_double max_z;
-    ts_flag adhesion_model = vesicle->tape->type_of_adhesion_model;
     FILE *fd3=NULL;
      char filename[10000];
     //struct stat st;
@@ -109,9 +108,9 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_massive_idx mcsweeps, ts_idx init
         //end plane confinement
 
         //adhesion
-        if(adhesion_model==model_spherical_step_potential || adhesion_model==model_cylindrical_step_potential){	
-            vesicle->adhesion_center = vesicle->tape->z_adhesion - vesicle->tape->adhesion_radius;
-        }
+        // z center for spherical or cylindrical wall
+        vesicle->adhesion_center = vesicle->tape->z_adhesion - vesicle->tape->adhesion_radius;
+
         //end of adhesion
 
 
