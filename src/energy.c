@@ -1014,14 +1014,14 @@ ts_double adhesion_energy_diff(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *v
             if (model==adhesion_step_potential) {
                 delta_energy-=vtx->ad_w;
             } else if (model==adhesion_parabolic_potential){
-                delta_energy-=vtx->ad_w*(1-pow(delta,2)/pow(dz,2));;
+                delta_energy-=vtx->ad_w*(1-pow(delta,2)/pow(dz,2));
             }
     }
     if( (vtx_old->type&is_adhesive_vtx) && (delta_old<=dz) ){
             if (model==adhesion_step_potential) {
                 delta_energy+=vtx_old->ad_w;
             } else if (model==adhesion_parabolic_potential){
-                delta_energy+=vtx_old->ad_w*(1-pow(delta_old,2)/pow(dz,2));;
+                delta_energy+=vtx_old->ad_w*(1-pow(delta_old,2)/pow(dz,2));
             }
     }
 
@@ -1029,12 +1029,13 @@ ts_double adhesion_energy_diff(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *v
     return delta_energy;
 }
 
+// Distance of vertex from the geometry: negative "inside" wall/cylinder/sphere
 ts_double adhesion_geometry_distance(ts_vesicle *vesicle, ts_vertex *vtx){
     ts_double z=vtx->z;
     ts_double z0=vesicle->tape->z_adhesion;
     ts_double c0=vesicle->adhesion_center;
     ts_double r=vesicle->tape->adhesion_radius;
-    ts_flag geometry = vesicle->tape->type_of_adhesion_model;
+    ts_flag geometry = vesicle->tape->adhesion_geometry;
 
     //1 for plane potential
     if(geometry==model_plane_potential){

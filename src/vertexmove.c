@@ -118,11 +118,10 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
     }
 
     // adhesion check whether the new position of vertex will be out of bounds
-    // z > z0-dz
     // parabolic potential will push things out instead
     if(vesicle->tape->adhesion_model==adhesion_step_potential){
-        if( adhesion_geometry_distance(vtx)<vesicle->tape->adhesion_cuttoff 
-        && adhesion_geometry_distance(vtx)<adhesion_geometry_distance(backupvtx) ){
+        if( (adhesion_geometry_distance(vesicle, vtx) < 0) 
+        && (adhesion_geometry_distance(vesicle, vtx)<adhesion_geometry_distance(vesicle, backupvtx)) ){
             vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
             return TS_FAIL;
         }

@@ -449,7 +449,7 @@ typedef struct {
     ts_bool stretchswitch;
     ts_bool quiet;
     ts_bool plane_confinement_switch;
-    ts_flag type_of_adhesion_model;
+    ts_flag adhesion_geometry;
     ts_bool allow_xy_plane_movement;
     ts_bool force_balance_along_z_axis;
     ts_flag adhesion_model;

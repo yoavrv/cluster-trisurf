@@ -84,11 +84,11 @@ vicsek_radius=4.0
 # 1: step potential ad_w*(dx<dx0), 
 # 2: parabolic ad_w*(1-(dx/dx0)^2)
 adhesion_model=0
-# type of adhesion model do you want (integer)
+# type of adhesion geometry do you want (flag)
 # 1: step_potential 
 # 2: spherical surface with step potential 
 # 3: cylindrical surface with step potential
-type_of_adhesion_model=0
+adhesion_geometry=0
 # potential range (float in lmin)
 adhesion_cuttoff=1
 # adhesion energy per unit area or per vertex

@@ -1365,7 +1365,7 @@ ts_tape *parsetapebuffer(char *buffer){
         //CFG_SIMPLE_INT("distributed_processes",&tape->brezveze2),
         CFG_INT("spherical_harmonics_coefficients", 0, CFGF_NONE),
         CFG_INT("number_of_vertices_with_c0", 50, CFGF_NONE),
-        CFG_INT("type_of_adhesion_model", 1, CFGF_NONE),
+        CFG_INT("adhesion_geometry", 1, CFGF_NONE),
         CFG_INT("allow_xy_plane_movement", 0, CFGF_NONE),
         CFG_INT("force_balance_along_z_axis", 0, CFGF_NONE),
         CFG_FLOAT("c0", 0.5, CFGF_NONE),
@@ -1432,7 +1432,7 @@ ts_tape *parsetapebuffer(char *buffer){
     tape->quiet = cfg_getbool(cfg,"quiet"); 
     tape->shc = cfg_getint(cfg,"spherical_harmonics_coefficients");
     tape->number_of_vertices_with_c0 = cfg_getint(cfg,"number_of_vertices_with_c0");
-    tape->type_of_adhesion_model = cfg_getint(cfg,"type_of_adhesion_model");
+    tape->adhesion_geometry = cfg_getint(cfg,"adhesion_geometry");
     tape->allow_xy_plane_movement = cfg_getint(cfg,"allow_xy_plane_movement");
     tape->force_balance_along_z_axis = cfg_getint(cfg,"force_balance_along_z_axis");
     tape->c0 = cfg_getfloat(cfg,"c0");
