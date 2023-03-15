@@ -81,7 +81,7 @@ vicsek_radius=4.0
 ######---------------------#######
 
 # Adhesion model (flag)
-# 1: step potential ad_w*(dx<dx0), 
+# 1: step potential ad_w*(dx/dx0), 
 # 2: parabolic ad_w*(1-(dx/dx0)^2)
 adhesion_model=0
 # type of adhesion geometry do you want (flag)
