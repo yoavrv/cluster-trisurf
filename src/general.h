@@ -443,7 +443,7 @@ typedef struct {
     ts_idx nfil;
     ts_idx nfono;
     ts_uint shc; // related to max l of the spherical harmonics
-    ts_bool pswitch;
+    ts_bool pressure_switch;
     ts_bool constvolswitch;
     ts_bool constareaswitch;
     ts_bool stretchswitch;
@@ -489,7 +489,6 @@ typedef struct {
     ts_cell_list *clist;
     ts_confinement_plane confinement_plane;
     ts_uint nshell;
-    ts_bool pswitch;
 } ts_vesicle;
 
 

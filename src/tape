@@ -97,7 +97,7 @@ adhesion_strength=1.0
 adhesion_radius=5.0
 # position of the adhesive surface
 # bipyramid topmost is approx. z_max = 0.630877*nshell, so -z_max is a good guess
-z_adhesion= -15.771934
+z_adhesion=-5
 
 #do you want to see any crawling motion on x-y plane, then choose 1, 0 otherwise; only for flat and cylindrical substrate 
 allow_xy_plane_movement=0
@@ -110,7 +110,7 @@ force_balance_along_z_axis=0
 ######-------------------------------------------#######
 
 # (pswitch=1: calc. p*dV energy contribution)
-pswitch = 0
+pressure_switch = 0
 # pressure difference: p_inside - p_outside (in units kT/l_min^3):
 pressure=0.1
 

@@ -203,7 +203,7 @@ c
     oldenergy+=bond->energy; /* attraction with neighboring vertices, that have spontaneous curvature */
     //Neigbours of k, it, km, kp don't change its energy.
 
-	if(vesicle->pswitch == 1 || vesicle->tape->constvolswitch>0){dvol = -lm->volume - lp->volume;}
+	if(vesicle->tape->pressure_switch == 1 || vesicle->tape->constvolswitch>0){dvol = -lm->volume - lp->volume;}
     if(vesicle->tape->constareaswitch==2){darea=-lm->area-lp->area;} 
     /*    vesicle_volume(vesicle);
     fprintf(stderr,"Volume in the beginning=%1.16e\n", vesicle->volume);
@@ -266,9 +266,9 @@ c
 	}
 
     delta_energy-=oldenergy;
-	if(vesicle->pswitch == 1 || vesicle->tape->constvolswitch>0){
+	if(vesicle->tape->pressure_switch == 1 || vesicle->tape->constvolswitch>0){
 		dvol = dvol + lm->volume + lp->volume;
-		if(vesicle->pswitch==1) delta_energy-= vesicle->pressure*dvol;
+		if(vesicle->tape->pressure_switch==1) delta_energy-= vesicle->pressure*dvol;
 	}
 
     
@@ -769,7 +769,7 @@ c
     oldenergy+=bond->energy; /* attraction with neighboring vertices, that have spontaneous curvature */
     //Neigbours of k, it, km, kp don't change its energy.
 
-	if(vesicle->pswitch == 1 || vesicle->tape->constvolswitch>0){dvol = -lm->volume - lp->volume;}
+	if(vesicle->tape->pressure_switch == 1 || vesicle->tape->constvolswitch>0){dvol = -lm->volume - lp->volume;}
     if(vesicle->tape->constareaswitch==2){darea=-lm->area-lp->area;} 
     /*    vesicle_volume(vesicle);
     fprintf(stderr,"Volume in the beginning=%1.16e\n", vesicle->volume);
@@ -838,9 +838,9 @@ c
 	}
 
     delta_energy-=oldenergy;
-	if(vesicle->pswitch == 1 || vesicle->tape->constvolswitch>0){
+	if(vesicle->tape->pressure_switch == 1 || vesicle->tape->constvolswitch>0){
 		dvol = dvol + lm->volume + lp->volume;
-		if(vesicle->pswitch==1) delta_energy-= vesicle->pressure*dvol;
+		if(vesicle->tape->pressure_switch==1) delta_energy-= vesicle->pressure*dvol;
 	}
 
 

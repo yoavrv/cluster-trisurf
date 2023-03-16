@@ -1342,7 +1342,7 @@ ts_tape *parsetapebuffer(char *buffer){
         CFG_FLOAT("dmin_interspecies", 1.2, CFGF_NONE),
         CFG_FLOAT("xk0", 20, CFGF_NONE),
         CFG_FLOAT("xk2", 0, CFGF_NONE),
-        CFG_INT("pswitch", 0, CFGF_NONE),
+        CFG_INT("pressure_switch", 0, CFGF_NONE),
         CFG_INT("constvolswitch", 0, CFGF_NONE),
         CFG_INT("constareaswitch", 0, CFGF_NONE),
         CFG_FLOAT("constvolprecision", 0, CFGF_NONE),
@@ -1413,7 +1413,7 @@ ts_tape *parsetapebuffer(char *buffer){
     tape->dmin_interspecies = cfg_getfloat(cfg,"dmin_interspecies");
     tape->xk0 = cfg_getfloat(cfg,"xk0");
     tape->xk2 = cfg_getfloat(cfg,"xk2");
-    tape->pswitch = cfg_getint(cfg,"pswitch");
+    tape->pressure_switch = cfg_getint(cfg,"pressure_switch");
     tape->constvolswitch = cfg_getint(cfg,"constvolswitch");
     tape->constareaswitch = cfg_getint(cfg,"constareaswitch");
     tape->constvolprecision = cfg_getfloat(cfg,"constvolprecision");

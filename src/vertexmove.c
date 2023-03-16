@@ -147,7 +147,7 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
 
 
     // remove current vtx values (for future update) (vesicle->prop -= vtx->prop; update(vtx), vesicle->prop += vtx->prop)
-    if(vesicle->pswitch == 1 || vesicle->tape->constvolswitch>0){
+    if(vesicle->tape->pressure_switch == 1 || vesicle->tape->constvolswitch>0){
         for(i=0;i<vtx->tristar_no;i++) dvol-=vtx->tristar[i]->volume;
     }
 
@@ -260,9 +260,9 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
 
 
 
-    if(vesicle->pswitch == 1 || vesicle->tape->constvolswitch >0){
+    if(vesicle->tape->pressure_switch == 1 || vesicle->tape->constvolswitch >0){
         for(i=0;i<vtx->tristar_no;i++) dvol+=vtx->tristar[i]->volume;
-        if(vesicle->pswitch==1) delta_energy-=vesicle->pressure*dvol;
+        if(vesicle->tape->pressure_switch==1) delta_energy-=vesicle->pressure*dvol;
     };
 
     if(vesicle->tape->constareaswitch==2){

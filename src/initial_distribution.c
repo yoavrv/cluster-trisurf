@@ -120,7 +120,6 @@ ts_bool set_vesicle_values_from_tape(ts_vesicle *vesicle){
     vesicle->nshell=tape->nshell;
     vesicle->dmax=tape->dmax*tape->dmax; /* dmax^2 in the vesicle dmax variable */
     vesicle->pressure= tape->pressure;
-    vesicle->pswitch=tape->pswitch;
     vtx_set_global_values(vesicle); /* make xk0 xk2 default value for every vertex  */ 
     // ts_fprintf(stdout, "Tape setting: xk0=%e\n",tape->xk0);
     vesicle->stepsize=tape->stepsize;

@@ -85,7 +85,6 @@ int main(int argv, char *argc[]){
         // nove vrednosti iz tapea...
         vesicle->tape=tape;
         //vtx_set_global_values(vesicle); // xks are set for each vertex rather than globally
-        vesicle->pswitch =tape->pswitch;
         vesicle->pressure=tape->pressure;
         vesicle->dmax=tape->dmax*tape->dmax;
         poly_assign_filament_xi(vesicle,tape);
