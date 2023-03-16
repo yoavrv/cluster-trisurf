@@ -110,7 +110,7 @@ force_balance_along_z_axis=0
 ######-------------------------------------------#######
 
 # (pswitch=1: calc. p*dV energy contribution)
-pressure_switch = 0
+pressure_switch=0
 # pressure difference: p_inside - p_outside (in units kT/l_min^3):
 pressure=0.1
 
