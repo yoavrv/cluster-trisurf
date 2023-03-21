@@ -24,6 +24,7 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
     ts_double delta_energy, delta_energy_cv,oenergy,dvol=0.0, darea=0.0, dstretchenergy=0.0;
     ts_double costheta,sintheta,phi,cosphi,sinphi,r, omega, cosomega, sinomega;
     ts_double tri_angle, tri_angle_old_min, tri_angle_new_min;
+    ts_double v_sph=0.0,v_sph_old=0.0;
     //This will hold all the information of vtx and its neighbours
     ts_vertex backupvtx[20], *constvol_vtx_moved=NULL, *constvol_vtx_backup=NULL;
     ts_triangle *t1, *t2;
@@ -151,7 +152,7 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
         for(i=0;i<vtx->tristar_no;i++) dvol-=vtx->tristar[i]->volume;
     }
 
-    if(vesicle->tape->constareaswitch==2){
+    if(vesicle->tape->constareaswitch==2 || vesicle->tape->constvolswitch==4 ){
         for(i=0;i<vtx->tristar_no;i++) darea-=vtx->tristar[i]->area;
     
     }
@@ -264,10 +265,12 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
         for(i=0;i<vtx->tristar_no;i++) dvol+=vtx->tristar[i]->volume;
         if(vesicle->tape->pressure_switch==1) delta_energy-=vesicle->pressure*dvol;
     };
+    if(vesicle->tape->constareaswitch==2 || vesicle->tape->constvolswitch == 4){
+        for(i=0;i<vtx->tristar_no;i++) darea+=vtx->tristar[i]->area;
+    }
 
     if(vesicle->tape->constareaswitch==2){
         /* check whether the darea is gt epsarea */
-        for(i=0;i<vtx->tristar_no;i++) darea+=vtx->tristar[i]->area;
         if((fabs(vesicle->area+darea-A0)>epsarea) && (fabs(vesicle->area+darea-A0)>fabs(vesicle->area-A0))){
             //restore old state.
              vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
@@ -304,10 +307,16 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
                     attraction_bond_energy(vesicle, vtx->neigh[i]->bond[j]);
                 }
             }
-
             return TS_FAIL;
         }
-
+    } else if(vesicle->tape->constvolswitch==3){
+        /*energy difference */
+        delta_energy += 0.5*vesicle->tape->xkV0*(pow(vesicle->volume+dvol-V0,2) - pow(vesicle->volume-V0,2))/pow(vesicle->vlist->n,2);
+    } else if(vesicle->tape->constvolswitch==4){
+        /*energy difference */
+        v_sph=sqrt(pow(vesicle->area+darea,3)/M_PI)/6;
+        v_sph_old=sqrt(pow(vesicle->area,3)/M_PI)/6;
+        delta_energy += 0.5*vesicle->tape->xkV0*(pow(vesicle->tape->Vfraction-((vesicle->volume+dvol)/v_sph),2) - pow(vesicle->tape->Vfraction-(vesicle->volume/v_sph_old),2));
     } else
     // vesicle_volume(vesicle);
     // fprintf(stderr,"Volume before=%1.16e\n", vesicle->volume);
@@ -435,14 +444,14 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
         
     }
 
-    if(vesicle->tape->constvolswitch == 2){
+    if(vesicle->tape->constvolswitch > 1 ){
         vesicle->volume+=dvol;
     } 
     else if(vesicle->tape->constvolswitch == 1){
         constvolumeaccept(vesicle,constvol_vtx_moved,constvol_vtx_backup);
     }
 
-    if(vesicle->tape->constareaswitch==2){
+    if(vesicle->tape->constareaswitch==2 || vesicle->tape->constvolswitch == 4){
         vesicle->area+=darea;
     }
     // if(oldcellidx);

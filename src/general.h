@@ -402,7 +402,11 @@ typedef struct {
     ts_double R_nucleusX;
     ts_double R_nucleusY;
     ts_double R_nucleusZ;
-    ts_double xkA0;
+    ts_double xkA0; // area change modulus
+    ts_double xkV0; // volume change modulus
+    ts_double V0;
+    ts_double A0;
+    ts_double Vfraction; // equilibrium_reduced_volume
     ts_double constvolprecision;
     ts_double xk0; // bending modulus
     ts_double xk2; // second bending modulus (Gaussian/ deviatoric?)
@@ -423,7 +427,7 @@ typedef struct {
     ts_double adhesion_strength;
     ts_double z_adhesion;
     ts_double adhesion_radius;
-    ts_double min_dihedral_angle_cosine; // Prevent spikiness of triangles by imposing a minimum dihedral angle
+    ts_double min_dihedral_angle_cosine; // prevent spikiness of triangles by imposing a minimum dihedral angle
     ts_double d0; // spontaneous deviator
     //  long int brezveze0;
     //	long int brezveze1;
@@ -449,10 +453,10 @@ typedef struct {
     ts_bool stretchswitch;
     ts_bool quiet;
     ts_bool plane_confinement_switch;
-    ts_flag adhesion_geometry;
     ts_bool allow_xy_plane_movement;
     ts_bool force_balance_along_z_axis;
-    ts_flag adhesion_model;
+    ts_flag adhesion_geometry; // geometry of adhesion (none, plane, sphere, cylinder)
+    ts_flag adhesion_model; // adhesion (none, step potential, parabolic potential)
     ts_flag type_of_bond_model;
     ts_flag type_of_curvature_model;
     ts_flag type_of_force_model;

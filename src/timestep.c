@@ -66,6 +66,14 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_massive_idx mcsweeps, ts_idx init
     cell_occupation(vesicle);
     vesicle_volume(vesicle); //needed for constant volume at this moment
     vesicle_area(vesicle); //needed for constant area at this moment
+    if (vesicle->tape->V0>1){
+        // override equilibrium/constraint volume by tape
+        V0=vesicle->tape->V0;
+    }
+    if (vesicle->tape->A0>1){
+        // override equilibrium/constraint volume by tape
+        A0=vesicle->tape->A0;
+    }
     if(V0<0.000001) {
         V0=vesicle->volume; 
     }

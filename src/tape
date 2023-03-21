@@ -52,7 +52,7 @@ d0=0.5
 # 0: old method. 7: debug, save everything but use energy from old method. 35: parallel transport of directors only
 curvature_model=15
 # limit sharp edges by having a dihedral angle cosine limit cos(phi_ab)>x. defaults to -1 (no limit)
-min_dihedral_angle_cosine = 0.1
+min_dihedral_angle_cosine=0.1
 
 #energy of attraction of vertices with spontaneous curvature (float, positive value for attraction)
 w=1.0
@@ -118,13 +118,22 @@ pressure=0.1
 # 0: disable constant volume
 # 1: enable with additional vertex move {broken}
 # 2: enable with epsvol range
+# 3: enable parabolic potential ( xkV0/2 (V-V0 / N)^2)
+# 4: enable reduced volume parabolic potential (xkV0/2 (V_red_eq-V/Vsph)^2)
 constvolswitch=0
 constvolprecision=1e-14
+# V0 less than 1 to determine volume from initial conditions
+V0=0
+xkV0=1.0
+# reduce volume of equilibrium (between 0 and 1)
+equilibrium_reduced_volume=1.0
 
 # Constant area constraint 
 # 0: disable constant area, 
 # 2: enable constant area with epsarea
 constareaswitch=0
+# A0 less than 1 to determine area from initial conditions
+A0=0
 
 # Stretching
 stretchswitch=0
