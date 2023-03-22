@@ -143,7 +143,7 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_massive_idx mcsweeps, ts_idx init
         if(vesicle->tape->volume_switch==0){
             V0=vesicle->volume;
         }
-        if(vesicle->tape->constareaswitch==0){
+        if(vesicle->tape->area_switch<=1){
             A0=vesicle->area;
         }
 

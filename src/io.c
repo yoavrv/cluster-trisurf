@@ -1139,7 +1139,7 @@ ts_bool write_vertex_xml_file(ts_vesicle *vesicle, ts_idx timestepno, ts_cluster
         }
         fprintf(fh,"</DataArray>\n");
 
-    if(vesicle->tape->stretchswitch==1){
+    if(vesicle->tape->area_switch==1){
         fprintf(fh,"<DataArray type=\"Float64\" Name=\"stretching_energy\" format=\"ascii\">");
         for(i=0;i<blist->n;i++){
             fprintf(fh, "0.0 ");
@@ -1344,9 +1344,8 @@ ts_tape *parsetapebuffer(char *buffer){
         CFG_FLOAT("xk2", 0, CFGF_NONE),
         CFG_INT("pressure_switch", 0, CFGF_NONE),
         CFG_INT("volume_switch", 0, CFGF_NONE),
-        CFG_INT("constareaswitch", 0, CFGF_NONE),
+        CFG_INT("area_switch", 0, CFGF_NONE),
         CFG_FLOAT("constvolprecision", 0, CFGF_NONE),
-        CFG_INT("stretchswitch", 0, CFGF_NONE),
         CFG_FLOAT("xkA0", 1.0, CFGF_NONE),
         CFG_FLOAT("xkV0", 1.0, CFGF_NONE),
         CFG_FLOAT("V0", 0.0, CFGF_NONE),
@@ -1419,9 +1418,8 @@ ts_tape *parsetapebuffer(char *buffer){
     tape->xk2 = cfg_getfloat(cfg,"xk2");
     tape->pressure_switch = cfg_getint(cfg,"pressure_switch");
     tape->volume_switch = cfg_getint(cfg,"volume_switch");
-    tape->constareaswitch = cfg_getint(cfg,"constareaswitch");
+    tape->area_switch = cfg_getint(cfg,"area_switch");
     tape->constvolprecision = cfg_getfloat(cfg,"constvolprecision");
-    tape->stretchswitch = cfg_getint(cfg,"stretchswitch");
     tape->xkA0 = cfg_getfloat(cfg,"xkA0");
     tape->xkV0 = cfg_getfloat(cfg,"xkV0");
     tape->V0 = cfg_getfloat(cfg,"V0");

@@ -449,8 +449,7 @@ typedef struct {
     ts_uint shc; // related to max l of the spherical harmonics
     ts_bool pressure_switch;
     ts_bool volume_switch;
-    ts_bool constareaswitch;
-    ts_bool stretchswitch;
+    ts_bool area_switch;
     ts_bool quiet;
     ts_bool plane_confinement_switch;
     ts_bool allow_xy_plane_movement;

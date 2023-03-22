@@ -152,12 +152,12 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
         for(i=0;i<vtx->tristar_no;i++) dvol-=vtx->tristar[i]->volume;
     }
 
-    if(vesicle->tape->constareaswitch==2 || vesicle->tape->volume_switch==4 ){
+    if(vesicle->tape->area_switch==2 || vesicle->tape->volume_switch==4 ){
         for(i=0;i<vtx->tristar_no;i++) darea-=vtx->tristar[i]->area;
     
     }
     //stretching energy 1 of 3
-    if(vesicle->tape->stretchswitch==1){
+    if(vesicle->tape->area_switch==1){
         for(i=0;i<vtx->tristar_no;i++) dstretchenergy-=vtx->tristar[i]->energy;
     }
     delta_energy=0;
@@ -265,11 +265,11 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
         for(i=0;i<vtx->tristar_no;i++) dvol+=vtx->tristar[i]->volume;
         if(vesicle->tape->pressure_switch==1) delta_energy-=vesicle->pressure*dvol;
     };
-    if(vesicle->tape->constareaswitch==2 || vesicle->tape->volume_switch == 4){
+    if(vesicle->tape->area_switch==2 || vesicle->tape->volume_switch == 4){
         for(i=0;i<vtx->tristar_no;i++) darea+=vtx->tristar[i]->area;
     }
 
-    if(vesicle->tape->constareaswitch==2){
+    if(vesicle->tape->area_switch==2){
         /* check whether the darea is gt epsarea */
         if((fabs(vesicle->area+darea-A0)>epsarea) && (fabs(vesicle->area+darea-A0)>fabs(vesicle->area-A0))){
             //restore old state.
@@ -362,7 +362,7 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
     
 
     //stretching energy 2 of 3
-    if(vesicle->tape->stretchswitch==1){
+    if(vesicle->tape->area_switch==1){
         for(i=0;i<vtx->tristar_no;i++){ 
             stretchenergy(vesicle, vtx->tristar[i]);
             dstretchenergy+=vtx->tristar[i]->energy;
@@ -419,7 +419,7 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
             }
 
             //stretching energy 3 of 3
-            if(vesicle->tape->stretchswitch==1){
+            if(vesicle->tape->area_switch==1){
                 for(i=0;i<vtx->tristar_no;i++){ 
                     stretchenergy(vesicle,vtx->tristar[i]);
                 }
@@ -451,7 +451,7 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
         constvolumeaccept(vesicle,constvol_vtx_moved,constvol_vtx_backup);
     }
 
-    if(vesicle->tape->constareaswitch==2 || vesicle->tape->volume_switch == 4){
+    if(vesicle->tape->area_switch==2 || vesicle->tape->volume_switch == 4){
         vesicle->area+=darea;
     }
     // if(oldcellidx);

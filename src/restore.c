@@ -179,7 +179,7 @@ ts_vesicle *parseDump(char *dumpfname) {
     }
     mean_curvature_and_energy(vesicle);
     sweep_attraction_bond_energy(vesicle);
-    if(vesicle->tape->stretchswitch==1){
+    if(vesicle->tape->area_switch==1){
         vesicle->tlist->a0=sqrt(3)/4.0*pow((vesicle->tape->dmax+1.0)/2.0,2);  
         for(i=0;i<vesicle->tlist->n;i++){
             stretchenergy(vesicle, vesicle->tlist->tria[i]);

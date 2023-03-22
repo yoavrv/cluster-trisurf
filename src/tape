@@ -109,12 +109,12 @@ force_balance_along_z_axis=0
 ###### Pressure/volume/area/tension calculations #######
 ######-------------------------------------------#######
 
-# (pswitch=1: calc. p*dV energy contribution)
+# (pressure_switch=1: calculate p*dV energy contribution)
 pressure_switch=0
 # pressure difference: p_inside - p_outside (in units kT/l_min^3):
 pressure=0.1
 
-# volume constraint 
+# Volume constraint 
 # 0: disable constant volume
 # 1: enable with additional vertex move {broken}
 # 2: enable with epsvol range
@@ -128,10 +128,11 @@ xkV0=1.0
 # reduce volume of equilibrium (between 0 and 1)
 equilibrium_reduced_volume=1.0
 
-# Constant area constraint 
+# Area constraint 
 # 0: disable constant area, 
+# 1: stretching
 # 2: enable constant area with epsarea
-constareaswitch=0
+area_switch=0
 # A0 less than 1 to determine area from initial conditions
 A0=0
 

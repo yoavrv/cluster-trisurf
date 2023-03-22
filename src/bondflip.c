@@ -205,7 +205,7 @@ c
     //Neigbours of k, it, km, kp don't change its energy.
 
 	if(vesicle->tape->pressure_switch == 1 || vesicle->tape->volume_switch>0){dvol = -lm->volume - lp->volume;}
-    if(vesicle->tape->constareaswitch==2 || vesicle->tape->volume_switch==4){darea=-lm->area-lp->area;} 
+    if(vesicle->tape->area_switch==2 || vesicle->tape->volume_switch==4){darea=-lm->area-lp->area;} 
     /*    vesicle_volume(vesicle);
     fprintf(stderr,"Volume in the beginning=%1.16e\n", vesicle->volume);
     */
@@ -259,7 +259,7 @@ c
     delta_energy+=it->energy;
     delta_energy+=bond->energy; /* attraction with neighboring vertices, that have spontaneous curvature */
   //Neigbours of k, it, km, kp don't change its energy.
-	if(vesicle->tape->stretchswitch==1){
+	if(vesicle->tape->area_switch==1){
 		oldenergy+=lm->energy+lp->energy;
 		stretchenergy(vesicle,lm);
 		stretchenergy(vesicle,lp);
@@ -303,11 +303,11 @@ c
  //   }
 
 
-    if(vesicle->tape->constareaswitch==2 || vesicle->tape->volume_switch==4){
+    if(vesicle->tape->area_switch==2 || vesicle->tape->volume_switch==4){
         darea=darea+lm->area+lp->area; 
     } 
     
-    if(vesicle->tape->constareaswitch==2) {
+    if(vesicle->tape->area_switch==2) {
 /*check whether the dvol is gt than epsvol */
 		if((fabs(vesicle->area+darea-A0)>epsarea) && (fabs(vesicle->area+darea-A0)>fabs(vesicle->area-A0))){
 			//restore old state.
@@ -443,7 +443,7 @@ c
         // fprintf(stderr,"Restoration complete!!!\n");
         // vesicle_volume(vesicle);
         // fprintf(stderr,"Volume after fail=%1.16e\n", vesicle->volume);
-	    if(vesicle->tape->stretchswitch==1){
+	    if(vesicle->tape->area_switch==1){
 		    stretchenergy(vesicle,lm);
 		    stretchenergy(vesicle,lp);
 	    }
@@ -459,7 +459,7 @@ c
     } else if(vesicle->tape->volume_switch == 1){
         constvolumeaccept(vesicle,constvol_vtx_moved,constvol_vtx_backup);
     }
-    if(vesicle->tape->constareaswitch==2 || vesicle->tape->volume_switch==4){
+    if(vesicle->tape->area_switch==2 || vesicle->tape->volume_switch==4){
         vesicle->area+=darea;
     }
 	// delete all backups
@@ -782,7 +782,7 @@ c
     //Neigbours of k, it, km, kp don't change its energy.
 
 	if(vesicle->tape->pressure_switch == 1 || vesicle->tape->volume_switch>0){dvol = -lm->volume - lp->volume;}
-    if(vesicle->tape->constareaswitch==2 || vesicle->tape->volume_switch==4){darea=-lm->area-lp->area;} 
+    if(vesicle->tape->area_switch==2 || vesicle->tape->volume_switch==4){darea=-lm->area-lp->area;} 
     /*    vesicle_volume(vesicle);
     fprintf(stderr,"Volume in the beginning=%1.16e\n", vesicle->volume);
     */
@@ -842,7 +842,7 @@ c
     delta_energy+=it->energy;
     delta_energy+=bond->energy; /* attraction with neighboring vertices, that have spontaneous curvature */
     //Neigbours of k, it, km, kp don't change its energy.
-	if(vesicle->tape->stretchswitch==1){
+	if(vesicle->tape->area_switch==1){
 		oldenergy+=lm->energy+lp->energy;
 		stretchenergy(vesicle,lm);
 		stretchenergy(vesicle,lp);
@@ -856,9 +856,9 @@ c
 	}
 
 
-    if(vesicle->tape->constareaswitch==2 || vesicle->tape->volume_switch==4){
+    if(vesicle->tape->area_switch==2 || vesicle->tape->volume_switch==4){
         darea=darea+lm->area+lp->area; 
-    } if (vesicle->tape->constareaswitch==2){
+    } if (vesicle->tape->area_switch==2){
 /*check whether the dvol is gt than epsvol */
 		if((fabs(vesicle->area+darea-A0)>epsarea) && (fabs(vesicle->area+darea-A0)>fabs(vesicle->area-A0))){
 			//restore old state.
@@ -993,7 +993,7 @@ c
 //		fprintf(stderr,"Restoration complete!!!\n");
 //    vesicle_volume(vesicle);
 //    fprintf(stderr,"Volume after fail=%1.16e\n", vesicle->volume);
-	if(vesicle->tape->stretchswitch==1){
+	if(vesicle->tape->area_switch==1){
 		stretchenergy(vesicle,lm);
 		stretchenergy(vesicle,lp);
 	}
@@ -1009,7 +1009,7 @@ c
     } else if(vesicle->tape->volume_switch == 1){
         constvolumeaccept(vesicle,constvol_vtx_moved,constvol_vtx_backup);
     }
-    if(vesicle->tape->constareaswitch==2 || vesicle->tape->volume_switch==4){
+    if(vesicle->tape->area_switch==2 || vesicle->tape->volume_switch==4){
         vesicle->area+=darea;
     }
 	// delete all backups
