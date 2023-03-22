@@ -140,7 +140,7 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_massive_idx mcsweeps, ts_idx init
         dump_state(vesicle,i);
         vesicle_volume(vesicle); //calculates just volume. 
         vesicle_area(vesicle); //calculates area.
-        if(vesicle->tape->constvolswitch==0){
+        if(vesicle->tape->volume_switch==0){
             V0=vesicle->volume;
         }
         if(vesicle->tape->constareaswitch==0){

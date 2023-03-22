@@ -148,11 +148,11 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
 
 
     // remove current vtx values (for future update) (vesicle->prop -= vtx->prop; update(vtx), vesicle->prop += vtx->prop)
-    if(vesicle->tape->pressure_switch == 1 || vesicle->tape->constvolswitch>0){
+    if(vesicle->tape->pressure_switch == 1 || vesicle->tape->volume_switch>0){
         for(i=0;i<vtx->tristar_no;i++) dvol-=vtx->tristar[i]->volume;
     }
 
-    if(vesicle->tape->constareaswitch==2 || vesicle->tape->constvolswitch==4 ){
+    if(vesicle->tape->constareaswitch==2 || vesicle->tape->volume_switch==4 ){
         for(i=0;i<vtx->tristar_no;i++) darea-=vtx->tristar[i]->area;
     
     }
@@ -261,11 +261,11 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
 
 
 
-    if(vesicle->tape->pressure_switch == 1 || vesicle->tape->constvolswitch >0){
+    if(vesicle->tape->pressure_switch == 1 || vesicle->tape->volume_switch >0){
         for(i=0;i<vtx->tristar_no;i++) dvol+=vtx->tristar[i]->volume;
         if(vesicle->tape->pressure_switch==1) delta_energy-=vesicle->pressure*dvol;
     };
-    if(vesicle->tape->constareaswitch==2 || vesicle->tape->constvolswitch == 4){
+    if(vesicle->tape->constareaswitch==2 || vesicle->tape->volume_switch == 4){
         for(i=0;i<vtx->tristar_no;i++) darea+=vtx->tristar[i]->area;
     }
 
@@ -290,7 +290,7 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
             return TS_FAIL;
         }
     }
-    if(vesicle->tape->constvolswitch==2){
+    if(vesicle->tape->volume_switch==2){
         /*check whether the dvol is gt than epsvol */
         if( (fabs(vesicle->volume+dvol-V0)>epsvol) && (fabs(vesicle->volume+dvol-V0)>fabs(vesicle->volume-V0))){
             //restore old state.
@@ -309,10 +309,10 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
             }
             return TS_FAIL;
         }
-    } else if(vesicle->tape->constvolswitch==3){
+    } else if(vesicle->tape->volume_switch==3){
         /*energy difference */
         delta_energy += 0.5*vesicle->tape->xkV0*(pow(vesicle->volume+dvol-V0,2) - pow(vesicle->volume-V0,2))/pow(vesicle->vlist->n,2);
-    } else if(vesicle->tape->constvolswitch==4){
+    } else if(vesicle->tape->volume_switch==4){
         /*energy difference */
         v_sph=sqrt(pow(vesicle->area+darea,3)/M_PI)/6;
         v_sph_old=sqrt(pow(vesicle->area,3)/M_PI)/6;
@@ -322,7 +322,7 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
     // fprintf(stderr,"Volume before=%1.16e\n", vesicle->volume);
 
     // TODO: wrong! need to update the new vertex moves
-    if(vesicle->tape->constvolswitch == 1){
+    if(vesicle->tape->volume_switch == 1){
         retval=constvolume(vesicle, vtx, -dvol, &delta_energy_cv, &constvol_vtx_moved,&constvol_vtx_backup);
         if(retval==TS_FAIL){ // if we couldn't move the vertex to assure constant volume
             vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
@@ -426,7 +426,7 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
             }
 
             // fprintf(stderr, "before vtx(x,y,z)=%e,%e,%e\n",constvol_vtx_moved->x, constvol_vtx_moved->y, constvol_vtx_moved->z);
-            if(vesicle->tape->constvolswitch == 1){
+            if(vesicle->tape->volume_switch == 1){
                 constvolumerestore(vesicle, constvol_vtx_moved,constvol_vtx_backup);
             }
 
@@ -444,14 +444,14 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
         
     }
 
-    if(vesicle->tape->constvolswitch > 1 ){
+    if(vesicle->tape->volume_switch > 1 ){
         vesicle->volume+=dvol;
     } 
-    else if(vesicle->tape->constvolswitch == 1){
+    else if(vesicle->tape->volume_switch == 1){
         constvolumeaccept(vesicle,constvol_vtx_moved,constvol_vtx_backup);
     }
 
-    if(vesicle->tape->constareaswitch==2 || vesicle->tape->constvolswitch == 4){
+    if(vesicle->tape->constareaswitch==2 || vesicle->tape->volume_switch == 4){
         vesicle->area+=darea;
     }
     // if(oldcellidx);

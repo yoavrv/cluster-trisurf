@@ -448,7 +448,7 @@ typedef struct {
     ts_idx nfono;
     ts_uint shc; // related to max l of the spherical harmonics
     ts_bool pressure_switch;
-    ts_bool constvolswitch;
+    ts_bool volume_switch;
     ts_bool constareaswitch;
     ts_bool stretchswitch;
     ts_bool quiet;

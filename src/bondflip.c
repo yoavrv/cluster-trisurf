@@ -204,8 +204,8 @@ c
     oldenergy+=bond->energy; /* attraction with neighboring vertices, that have spontaneous curvature */
     //Neigbours of k, it, km, kp don't change its energy.
 
-	if(vesicle->tape->pressure_switch == 1 || vesicle->tape->constvolswitch>0){dvol = -lm->volume - lp->volume;}
-    if(vesicle->tape->constareaswitch==2 || vesicle->tape->constvolswitch==4){darea=-lm->area-lp->area;} 
+	if(vesicle->tape->pressure_switch == 1 || vesicle->tape->volume_switch>0){dvol = -lm->volume - lp->volume;}
+    if(vesicle->tape->constareaswitch==2 || vesicle->tape->volume_switch==4){darea=-lm->area-lp->area;} 
     /*    vesicle_volume(vesicle);
     fprintf(stderr,"Volume in the beginning=%1.16e\n", vesicle->volume);
     */
@@ -267,7 +267,7 @@ c
 	}
 
     delta_energy-=oldenergy;
-	if(vesicle->tape->pressure_switch == 1 || vesicle->tape->constvolswitch>0){
+	if(vesicle->tape->pressure_switch == 1 || vesicle->tape->volume_switch>0){
 		dvol = dvol + lm->volume + lp->volume;
 		if(vesicle->tape->pressure_switch==1) delta_energy-= vesicle->pressure*dvol;
 	}
@@ -303,7 +303,7 @@ c
  //   }
 
 
-    if(vesicle->tape->constareaswitch==2 || vesicle->tape->constvolswitch==4){
+    if(vesicle->tape->constareaswitch==2 || vesicle->tape->volume_switch==4){
         darea=darea+lm->area+lp->area; 
     } 
     
@@ -340,7 +340,7 @@ c
 
 
 
-	if(vesicle->tape->constvolswitch == 2){
+	if(vesicle->tape->volume_switch == 2){
 		/*check whether the dvol is gt than epsvol */
 		if((fabs(vesicle->volume+dvol-V0)>epsvol) && (fabs(vesicle->volume+dvol-V0)>fabs(vesicle->volume-V0))){
 			//restore old state.
@@ -369,15 +369,15 @@ c
 
 		}
 
-	} else if(vesicle->tape->constvolswitch==3){
+	} else if(vesicle->tape->volume_switch==3){
         /*energy difference */
         delta_energy += 0.5*vesicle->tape->xkV0*(pow(vesicle->volume+dvol-V0,2) - pow(vesicle->volume-V0,2))/pow(vesicle->vlist->n,2);
-    } else if(vesicle->tape->constvolswitch==4){
+    } else if(vesicle->tape->volume_switch==4){
         /*energy difference */
         v_sph=sqrt(pow(vesicle->area+darea,3)/M_PI)/6;
         v_sph_old=sqrt(pow(vesicle->area,3)/M_PI)/6;
         delta_energy += 0.5*vesicle->tape->xkV0*(pow(vesicle->tape->Vfraction-((vesicle->volume+dvol)/v_sph),2) - pow(vesicle->tape->Vfraction-(vesicle->volume/v_sph_old),2));
-    } else if(vesicle->tape->constvolswitch == 1){
+    } else if(vesicle->tape->volume_switch == 1){
         retval=constvolume(vesicle, it, -dvol, &delta_energy_cv, &constvol_vtx_moved,&constvol_vtx_backup);
         if(retval==TS_FAIL){
 /* restoration procedure copied from few lines below */
@@ -413,7 +413,7 @@ c
         //not accepted, reverting changes
 	    //restore all backups
         //fprintf(stderr,"Restoring!!!\n");
-        if(vesicle->tape->constvolswitch == 1){
+        if(vesicle->tape->volume_switch == 1){
             constvolumerestore(vesicle, constvol_vtx_moved,constvol_vtx_backup);
         }
 
@@ -454,12 +454,12 @@ c
      /* IF BONDFLIP ACCEPTED, THEN RETURN SUCCESS! */
     // fprintf(stderr,"SUCCESS!!!\n");
 
-    if(vesicle->tape->constvolswitch > 1){
+    if(vesicle->tape->volume_switch > 1){
 	    vesicle->volume+=dvol;
-    } else if(vesicle->tape->constvolswitch == 1){
+    } else if(vesicle->tape->volume_switch == 1){
         constvolumeaccept(vesicle,constvol_vtx_moved,constvol_vtx_backup);
     }
-    if(vesicle->tape->constareaswitch==2 || vesicle->tape->constvolswitch==4){
+    if(vesicle->tape->constareaswitch==2 || vesicle->tape->volume_switch==4){
         vesicle->area+=darea;
     }
 	// delete all backups
@@ -781,8 +781,8 @@ c
     oldenergy+=bond->energy; /* attraction with neighboring vertices, that have spontaneous curvature */
     //Neigbours of k, it, km, kp don't change its energy.
 
-	if(vesicle->tape->pressure_switch == 1 || vesicle->tape->constvolswitch>0){dvol = -lm->volume - lp->volume;}
-    if(vesicle->tape->constareaswitch==2 || vesicle->tape->constvolswitch==4){darea=-lm->area-lp->area;} 
+	if(vesicle->tape->pressure_switch == 1 || vesicle->tape->volume_switch>0){dvol = -lm->volume - lp->volume;}
+    if(vesicle->tape->constareaswitch==2 || vesicle->tape->volume_switch==4){darea=-lm->area-lp->area;} 
     /*    vesicle_volume(vesicle);
     fprintf(stderr,"Volume in the beginning=%1.16e\n", vesicle->volume);
     */
@@ -850,13 +850,13 @@ c
 	}
 
     delta_energy-=oldenergy;
-	if(vesicle->tape->pressure_switch == 1 || vesicle->tape->constvolswitch>0){
+	if(vesicle->tape->pressure_switch == 1 || vesicle->tape->volume_switch>0){
 		dvol = dvol + lm->volume + lp->volume;
 		if(vesicle->tape->pressure_switch==1) delta_energy-= vesicle->pressure*dvol;
 	}
 
 
-    if(vesicle->tape->constareaswitch==2 || vesicle->tape->constvolswitch==4){
+    if(vesicle->tape->constareaswitch==2 || vesicle->tape->volume_switch==4){
         darea=darea+lm->area+lp->area; 
     } if (vesicle->tape->constareaswitch==2){
 /*check whether the dvol is gt than epsvol */
@@ -891,7 +891,7 @@ c
 
 
 
-	if(vesicle->tape->constvolswitch == 2){
+	if(vesicle->tape->volume_switch == 2){
 		/*check whether the dvol is gt than epsvol */
 		if((fabs(vesicle->volume+dvol-V0)>epsvol) && (fabs(vesicle->volume+dvol-V0)>fabs(vesicle->volume-V0))){
 			//restore old state.
@@ -919,15 +919,15 @@ c
 			    return TS_FAIL;
 
 		}
-	} else if(vesicle->tape->constvolswitch==3){
+	} else if(vesicle->tape->volume_switch==3){
         /*energy difference */
         delta_energy += 0.5*vesicle->tape->xkV0*(pow(vesicle->volume+dvol-V0,2) - pow(vesicle->volume-V0,2))/pow(vesicle->vlist->n,2);
-    } else if(vesicle->tape->constvolswitch==4){
+    } else if(vesicle->tape->volume_switch==4){
         /*energy difference */
         v_sph=sqrt(pow(vesicle->area+darea,3)/M_PI)/6;
         v_sph_old=sqrt(pow(vesicle->area,3)/M_PI)/6;
         delta_energy += 0.5*vesicle->tape->xkV0*(pow(vesicle->tape->Vfraction-((vesicle->volume+dvol)/v_sph),2) - pow(vesicle->tape->Vfraction-(vesicle->volume/v_sph_old),2));
-    } else if(vesicle->tape->constvolswitch == 1){
+    } else if(vesicle->tape->volume_switch == 1){
         retval=constvolume(vesicle, it, -dvol, &delta_energy_cv, &constvol_vtx_moved,&constvol_vtx_backup);
         if(retval==TS_FAIL){
 /* restoration procedure copied from few lines below */
@@ -963,7 +963,7 @@ c
             //not accepted, reverting changes
 	        //restore all backups
             // fprintf(stderr,"Restoring!!!\n");
-            if(vesicle->tape->constvolswitch == 1){
+            if(vesicle->tape->volume_switch == 1){
                 constvolumerestore(vesicle, constvol_vtx_moved,constvol_vtx_backup);
             }
 
@@ -1004,12 +1004,12 @@ c
      /* IF BONDFLIP ACCEPTED, THEN RETURN SUCCESS! */
 //            fprintf(stderr,"SUCCESS!!!\n");
 
-    if(vesicle->tape->constvolswitch > 1){
+    if(vesicle->tape->volume_switch > 1){
 	    vesicle->volume+=dvol;
-    } else if(vesicle->tape->constvolswitch == 1){
+    } else if(vesicle->tape->volume_switch == 1){
         constvolumeaccept(vesicle,constvol_vtx_moved,constvol_vtx_backup);
     }
-    if(vesicle->tape->constareaswitch==2 || vesicle->tape->constvolswitch==4){
+    if(vesicle->tape->constareaswitch==2 || vesicle->tape->volume_switch==4){
         vesicle->area+=darea;
     }
 	// delete all backups
