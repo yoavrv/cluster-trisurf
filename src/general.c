@@ -138,6 +138,12 @@ char *libVersion(){
     return TS_VERSION;
 }
 
+ts_bool quiet=0;
+ts_double V0=0;
+ts_double A0=0;
+ts_double epsvol=0;
+ts_double epsarea=0;
+
 // next index after i in cyclic vector i==max? 0, i. fatal if i>max or i<0
 ts_small_idx next_small(ts_small_idx i, ts_small_idx max){
     if (i>=max || i<0) fatal("index out of bounds",3);
