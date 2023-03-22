@@ -135,9 +135,7 @@ equilibrium_reduced_volume=1.0
 area_switch=0
 # A0 less than 1 to determine area from initial conditions
 A0=0
-
 # Stretching
-stretchswitch=0
 xkA0=1.0
 
 
