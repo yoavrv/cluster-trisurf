@@ -41,13 +41,13 @@ number_of_vertices_with_c0=50
 # c0/2 is spontaneous curvature. c0 is used as (c1+c1-c0)^2 in energy term (float)
 c0=0.5
 # d0/2 is spontaneous deviator. d0 is used in shape tensor only (float)
-# Mismatch = Curvature - C0/2*I - d0/2 eps
+# Mismatch = Curvature - c0/2*I - d0/2 sigma_z (i.e. the 1st and 2nd intrinsic curvatures are half the sum and half the difference )
 d0=0.5
 # curvature model (bool)
 # and 0x1  : calculate angle-sum gaussian curvature,  and 0x2  : calculate shape operator, 
 # and 0x4  : update director even in the old method.  and 0x8  : use shape operator energy rather than just save it
 # and 0x10 : use shape, but only for anisotropic.     and 0x20 : do not rotate director as a MC step
-# and 0x40 : disable old method (use shape op only)   and 0x80 : calculate angle sum only if kx2!-9
+# and 0x40 : disable old method (use shape op only)   and 0x80 : calculate angle sum only if kx2!=0
 # example of important models: 
 # 0: old method. 7: debug, save everything but use energy from old method. 35: parallel transport of directors only
 curvature_model=15
@@ -124,6 +124,8 @@ volume_switch=0
 constvolprecision=1e-14
 # V0 less than 1 to determine volume from initial conditions
 V0=0
+# modulus needs some work: reasonable value depends on N vertices!
+# current conjecture: parabolic potential (with the V/N) is N scaling and reduced volume is between 1/(N Sqrt(N)) and 1/N
 xkV0=1.0
 # reduce volume of equilibrium (between 0 and 1)
 equilibrium_reduced_volume=1.0
