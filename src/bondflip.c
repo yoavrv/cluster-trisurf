@@ -41,7 +41,7 @@ c
 
     // ts_double delta_energy_cv;
     // ts_vertex *constvol_vtx_moved, *constvol_vtx_backup;
-    // ts_bool retval;
+    ts_bool retval;
 
     if (it->type==is_ghost_vtx && k->type==is_ghost_vtx) return TS_FAIL;
 
@@ -281,7 +281,8 @@ c
     } 
     
     // volume area pressure energy and constraints
-    if (volume_pressure_area_energy_constraints(vesicle,&delta_energy,dvol,darea) == TS_FAIL){
+    retval = volume_pressure_area_energy_constraints(vesicle,&delta_energy,dvol,darea);
+    if (retval == TS_FAIL){
         //restore old state.
         /* restoration procedure copied from few lines below */
         for(i=0;i<4;i++){
@@ -766,7 +767,8 @@ c
     } 
     
     // volume area pressure energy and constraints
-    if (volume_pressure_area_energy_constraints(vesicle,&delta_energy,dvol,darea) == TS_FAIL){
+    retval = volume_pressure_area_energy_constraints(vesicle,&delta_energy,dvol,darea);
+    if (retval == TS_FAIL){
         //restore old state.
         /* restoration procedure copied from few lines below */
         for(i=0;i<4;i++){

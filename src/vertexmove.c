@@ -270,7 +270,8 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
 
 
     // volume area pressure energy and constraints
-    if (volume_pressure_area_energy_constraints(vesicle,&delta_energy,dvol,darea) == TS_FAIL){
+    retval = volume_pressure_area_energy_constraints(vesicle,&delta_energy,dvol,darea);
+    if (retval == TS_FAIL){
         //restore old state.
         vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
         for(i=0;i<vtx->neigh_no;i++){
