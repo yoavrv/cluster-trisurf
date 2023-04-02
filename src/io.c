@@ -1350,7 +1350,7 @@ ts_tape *parsetapebuffer(char *buffer){
         CFG_FLOAT("xkV0", 1.0, CFGF_NONE),
         CFG_FLOAT("V0", 0.0, CFGF_NONE),
         CFG_FLOAT("A0", 0.0, CFGF_NONE),
-        CFG_FLOAT("equilibrium_reduced_volume", 1.0, CFGF_NONE),
+        CFG_FLOAT("Vr", 1.0, CFGF_NONE),
         CFG_FLOAT("pressure", 0, CFGF_NONE),
         CFG_FLOAT("k_spring", 800, CFGF_NONE),
         CFG_FLOAT("xi", 100, CFGF_NONE),
@@ -1424,7 +1424,7 @@ ts_tape *parsetapebuffer(char *buffer){
     tape->xkV0 = cfg_getfloat(cfg,"xkV0");
     tape->V0 = cfg_getfloat(cfg,"V0");
     tape->A0 = cfg_getfloat(cfg,"A0");
-    tape->Vfraction = cfg_getfloat(cfg,"equilibrium_reduced_volume");
+    tape->Vfraction = cfg_getfloat(cfg,"Vr");
     tape->pressure = cfg_getfloat(cfg,"pressure");
     tape->kspring = cfg_getfloat(cfg,"k_spring");
     tape->xi = cfg_getfloat(cfg,"xi");
