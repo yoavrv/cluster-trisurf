@@ -144,7 +144,7 @@ ts_bool constvolume(ts_vesicle *vesicle, ts_vertex *vtx_avoid, ts_double Vol, ts
 ts_bool constvolConstraintCheck(ts_vesicle *vesicle, ts_vertex *vtx){ 
         ts_idx i;
         ts_double dist;
-        ts_uint cellidx;
+        ts_cell_idx cellidx;
         //distance with neighbours check
         for(i=0;i<vtx->neigh_no;i++){
             dist=vtx_distance_sq(vtx,vtx->neigh[i]);
@@ -188,7 +188,7 @@ ts_bool constvolumerestore(ts_vesicle *vesicle, ts_vertex *vtx_moved,ts_vertex *
 
 ts_bool constvolumeaccept(ts_vesicle *vesicle,ts_vertex *vtx_moved, ts_vertex *vtx_backup){
     ts_bool retval;
-    ts_uint cellidx=vertex_self_avoidance(vesicle, vtx_moved);
+    ts_cell_idx cellidx=vertex_self_avoidance(vesicle, vtx_moved);
     if(vtx_moved->cell!=vesicle->clist->cell[cellidx]){
         retval=cell_add_vertex(vesicle->clist->cell[cellidx],vtx_moved);
         if(retval==TS_SUCCESS) cell_remove_vertex(vtx_backup[0].cell,vtx_moved);

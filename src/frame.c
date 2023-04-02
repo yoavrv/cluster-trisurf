@@ -97,7 +97,7 @@ ts_bool centermass(ts_vesicle *vesicle){
 // update cell occupation (? which is not done each vertex move)
 ts_bool cell_occupation(ts_vesicle *vesicle){
 	ts_idx i, j, n=vesicle->vlist->n;
-    ts_uint cellidx;
+    ts_cell_idx cellidx;
 	ts_cell_list *clist=vesicle->clist; //aliases for less wide code
 	ts_vertex_list *vlist;
 	ts_poly_list *poly_list=vesicle->poly_list;
@@ -143,9 +143,9 @@ ts_bool cell_occupation(ts_vesicle *vesicle){
 // overfilling a single cell with too many {x=0,y=0,z=0} vertices
 ts_bool initialization_cell_occupation(ts_vesicle *vesicle){
 	ts_bool is_initialized=0;
-	ts_uint rolling = 0;
+	ts_cell_idx rolling = 0;
 	ts_idx i, j, n=vesicle->vlist->n;
-    ts_uint cellidx;
+    ts_cell_idx cellidx;
 	ts_cell_list *clist=vesicle->clist; //aliases for less wide code
 	ts_vertex_list *vlist;
 	ts_poly_list *poly_list=vesicle->poly_list;

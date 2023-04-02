@@ -125,10 +125,16 @@ out of bound might be simpler: it's always i greater than vec->max
 typedef signed char ts_small_idx; // for tiny indices <<64, mostly short circular neighbor vectors
 typedef signed int ts_idx; // for big indices
 typedef signed long ts_massive_idx; //for mcsweeps
+
+// small index functions
 extern inline ts_small_idx next_small(ts_small_idx i, ts_small_idx max);
 extern inline ts_idx next_idx(ts_idx i, ts_idx max);
 extern inline ts_small_idx prev_small(ts_small_idx i, ts_small_idx max);
 extern inline ts_idx prev_idx(ts_idx i, ts_idx max);
+
+// yoav: I'm going to bravely denote the cell indices with their own typedef
+typedef unsigned int ts_cell_idx; // index of a cell
+
 // for the many flags: ts_flag to distinguish from ts_bool
 // with the idea that ts_bool is only 0/1 like TS_SUCCESS or TS_FAIL
 typedef char ts_flag;
@@ -344,17 +350,17 @@ typedef struct ts_triangle_list ts_triangle_list;
 
 typedef struct ts_cell {
     ts_vertex **vertex;
-    ts_uint idx;
+    ts_cell_idx idx;
     ts_small_idx nvertex;
 } ts_cell; 
 
 typedef struct ts_cell_list{
-    ts_double dcell;
-    ts_double shift;
+    ts_double dcell;    // density (1/size) of each cell. vtx->x*dcell+shift(+-1?) is the vtx cell coordinate
+    ts_double shift[3]; // shift of x,y,z to the center
     ts_double dmin_interspecies; // ? minimum distance between non-connected vertices squared ?
     ts_cell **cell;
-    ts_uint ncmax[3]; // no idea what kind of indexing goes on here
-    ts_uint cellno;
+    ts_cell_idx ncmax[3]; // no idea what kind of indexing goes on here
+    ts_cell_idx cellno;
     ts_small_idx max_occupancy;
 } ts_cell_list;
 

@@ -13,9 +13,9 @@
 ts_vesicle *vtk2vesicle(char *filename, ts_tape *tape){
 
     ts_uint nshell=tape->nshell;
-    ts_uint ncmax1=tape->ncxmax;
-    ts_uint ncmax2=tape->ncymax;
-    ts_uint ncmax3=tape->nczmax;
+    ts_cell_idx ncmax1=tape->ncxmax;
+    ts_cell_idx ncmax2=tape->ncymax;
+    ts_cell_idx ncmax3=tape->nczmax;
     ts_double stepsize=tape->stepsize;
 
     ts_idx no_vertices=(ts_idx) 5*nshell*nshell+2; // unnecessary casting

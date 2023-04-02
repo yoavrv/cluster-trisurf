@@ -54,7 +54,7 @@ int main(){
     ts_vesicle *vesicle;
     ts_char *i,*j;
     ts_uint tstep,n;
-        ts_char *number;
+    ts_char *number;
     struct dirent **list;
     int count;
     count=scandir(".",&list,0,alphasort);

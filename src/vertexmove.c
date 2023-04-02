@@ -20,7 +20,7 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
     ts_small_idx i,j;
     ts_double dist;
     ts_bool retval; 
-    ts_uint cellidx; 
+    ts_cell_idx cellidx; 
     ts_double delta_energy, delta_energy_cv,oenergy,dvol=0.0, darea=0.0, dstretchenergy=0.0;
     ts_double costheta,sintheta,phi,cosphi,sinphi,r, omega, cosomega, sinomega;
     ts_double tri_angle, tri_angle_old_min, tri_angle_new_min;
@@ -464,9 +464,9 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
 
 
 ts_bool single_poly_vertex_move(ts_vesicle *vesicle,ts_poly *poly,ts_vertex *vtx,ts_double *rn){
-    ts_uint i;
+    ts_idx i;
     ts_bool retval; 
-    ts_uint cellidx; 
+    ts_cell_idx cellidx; 
     // ts_double delta_energy;
     ts_double costheta,sintheta,phi,r;
     ts_double dist;
@@ -571,9 +571,9 @@ ts_bool single_poly_vertex_move(ts_vesicle *vesicle,ts_poly *poly,ts_vertex *vtx
 
 
 ts_bool single_filament_vertex_move(ts_vesicle *vesicle,ts_poly *poly,ts_vertex *vtx,ts_double *rn){
-    ts_uint i;
+    ts_idx i;
     ts_bool retval; 
-    ts_uint cellidx; 
+    ts_cell_idx cellidx; 
     ts_double delta_energy;
     ts_double costheta,sintheta,phi,r;
     ts_double dist[2];

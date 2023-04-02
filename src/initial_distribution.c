@@ -15,7 +15,7 @@
 #include "sh.h"
 #include "shcomplex.h"
 
-ts_vesicle *initial_distribution_dipyramid(ts_uint nshell, ts_uint ncmax1, ts_uint ncmax2, ts_uint ncmax3, ts_double stepsize){
+ts_vesicle *initial_distribution_dipyramid(ts_uint nshell, ts_cell_idx ncmax1, ts_cell_idx ncmax2, ts_cell_idx ncmax3, ts_double stepsize){
     ts_fprintf(stdout,"Starting initial_distribution on vesicle with %u shells!...\n",nshell);
     ts_bool retval;
     ts_idx no_vertices=(ts_idx) 5*nshell*nshell+2;	//unneccesary, ideological cast

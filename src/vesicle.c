@@ -10,7 +10,7 @@
 #include "sh.h"
 #include "shcomplex.h"
 
-ts_vesicle *init_vesicle(ts_idx N, ts_uint ncmax1, ts_uint ncmax2, ts_uint ncmax3, ts_double stepsize){
+ts_vesicle *init_vesicle(ts_idx N, ts_cell_idx ncmax1, ts_cell_idx ncmax2, ts_cell_idx ncmax3, ts_double stepsize){
     ts_vesicle *vesicle=(ts_vesicle *)calloc(1,sizeof(ts_vesicle));
     vesicle->vlist=init_vertex_list(N);
     vesicle->blist=init_bond_list();
