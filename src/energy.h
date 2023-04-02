@@ -14,6 +14,8 @@ inline ts_double total_force_on_vesicle(ts_vesicle *vesicle);
 ts_double adhesion_energy_diff(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_old);
 ts_double adhesion_geometry_distance(ts_vesicle *vesicle,ts_vertex *vtx);
 ts_bool adhesion_geometry_side(ts_vesicle *vesicle,ts_vertex *vtx);
+
+ts_bool volume_pressure_area_energy_constraints(ts_vesicle *vesicle, ts_double *delta_energy, ts_double dvol, ts_double darea);
 void stretchenergy(ts_vesicle *vesicle, ts_triangle *triangle);
 
 #endif

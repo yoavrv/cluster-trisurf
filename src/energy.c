@@ -1059,9 +1059,7 @@ ts_double adhesion_geometry_distance(ts_vesicle *vesicle, ts_vertex *vtx){
 // Check if vertex normal is oriented towards the geometry
 ts_bool adhesion_geometry_side(ts_vesicle *vesicle, ts_vertex *vtx){
     ts_double z=vtx->z;
-    ts_double z0=vesicle->tape->z_adhesion;
     ts_double c0=vesicle->adhesion_center;
-    ts_double r=vesicle->tape->adhesion_radius;
     ts_flag geometry = vesicle->tape->adhesion_geometry;
 
     //1 for plane potential, surface facing the -z direction way
@@ -1072,11 +1070,61 @@ ts_bool adhesion_geometry_side(ts_vesicle *vesicle, ts_vertex *vtx){
     else if(geometry==model_spherical_potential){
         return (vtx->nx*vtx->x + vtx->ny*vtx->y + vtx->nz*(z+c0)<0); 
     }
-    //3 for cylindrical adhesive substrate, surface facing the (-x,-y,0) way
+    //3 for cylindrical adhesive substrate, surface facing the (-x,0,-(z+c0)) way
     else if(geometry==model_cylindrical_potential){
         return (vtx->nx*vtx->x + vtx->nz*(z+c0)<0) ;
     }
     return 1;
+}
+
+// Except triangle stretch, calculate all volume/pressure/area energy and constraints: 
+// add the energy difference *energy+=delta_energy,
+// return TS_SUCCESS if no constraint was violated.
+// does not calculate triangle stretch energy!
+ts_bool volume_pressure_area_energy_constraints(ts_vesicle *vesicle, ts_double *energy, ts_double dvol, ts_double darea){
+    ts_double v_sph, v_sph_old;
+    ts_double delta_energy=0;
+
+    // area
+    if (vesicle->tape->area_switch==1){
+        // nothing: stretch energy is per triangle so it can't be wraped neatly in the function
+    } else if(vesicle->tape->area_switch==2){
+        /* check whether the darea is gt epsarea */
+        if((fabs(vesicle->area+darea-A0)>epsarea) && (fabs(vesicle->area+darea-A0)>fabs(vesicle->area-A0))){
+            return TS_FAIL;
+        }
+    } else if(vesicle->tape->area_switch==3){
+        delta_energy += 0.5*vesicle->tape->xkA0*(pow(vesicle->area+darea-A0,2) - pow(vesicle->area-A0,2))/A0;
+    }
+
+
+    // pressure energy
+    if(vesicle->tape->pressure_switch==1){
+         delta_energy-=vesicle->pressure*dvol;
+    }
+
+    //volume
+    if(vesicle->tape->volume_switch == 1){
+        //retval=constvolume(vesicle, vtx, -dvol, &delta_energy_cv, &constvol_vtx_moved,&constvol_vtx_backup);
+        return TS_FAIL;
+    } else if(vesicle->tape->volume_switch==2){
+        /*check whether the dvol is gt than epsvol */
+        if( (fabs(vesicle->volume+dvol-V0)>epsvol) && (fabs(vesicle->volume+dvol-V0)>fabs(vesicle->volume-V0))){
+            return TS_FAIL;
+        }
+    } else if(vesicle->tape->volume_switch==3){
+        /*energy difference */
+        delta_energy += 0.5*vesicle->tape->xkV0*(pow(vesicle->volume+dvol-V0,2) - pow(vesicle->volume-V0,2))/V0;
+    } else if(vesicle->tape->volume_switch==4){
+        /*energy difference */
+        v_sph=sqrt(pow(vesicle->area+darea,3)/M_PI)/6;
+        v_sph_old=sqrt(pow(vesicle->area,3)/M_PI)/6;
+        delta_energy += 0.5*vesicle->tape->xkV0*(pow(vesicle->tape->Vfraction-((vesicle->volume+dvol)/v_sph),2) - pow(vesicle->tape->Vfraction-(vesicle->volume/v_sph_old),2));
+    }
+
+    // update energy
+    *energy+=delta_energy;
+    return TS_SUCCESS;
 }
 
 void stretchenergy(ts_vesicle *vesicle, ts_triangle *triangle){

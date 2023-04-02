@@ -204,51 +204,57 @@ c
     oldenergy+=bond->energy; /* attraction with neighboring vertices, that have spontaneous curvature */
     //Neigbours of k, it, km, kp don't change its energy.
 
-	if(vesicle->tape->pressure_switch == 1 || vesicle->tape->volume_switch>0){dvol = -lm->volume - lp->volume;}
-    if(vesicle->tape->area_switch==2 || vesicle->tape->volume_switch==4){darea=-lm->area-lp->area;} 
-    /*    vesicle_volume(vesicle);
-    fprintf(stderr,"Volume in the beginning=%1.16e\n", vesicle->volume);
-    */
-
-    // minimal angle constraint 
+	// part 1 of 3 of volume area update
+	if(vesicle->tape->pressure_switch == 1 || vesicle->tape->volume_switch>0){
+        dvol = -lm->volume - lp->volume;
+    }
+    if(vesicle->tape->area_switch==2 || vesicle->tape->volume_switch==4){
+        darea=-lm->area-lp->area;
+    
+    } 
+    
+    // part 1 of 2 of dihedral angle constraintt 
     if(vesicle->tape->min_dihedral_angle_cosine>-1){
     tri_normals_angle_cosine_old_min=triangle_dot_normals(lm,lp);
-    if (lp1!=NULL) tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lm,lm1));
-    if (lm1!=NULL) tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lm,lm2));
-    if (lm2!=NULL) tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lp,lp1));
-    if (lp2!=NULL) tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lp,lp2));
+        if (lp1!=NULL) tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lm,lm1));
+        if (lm1!=NULL) tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lm,lm2));
+        if (lm2!=NULL) tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lp,lp1));
+        if (lp2!=NULL) tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lp,lp2));
     }
 
+    // ####################################//
     /* fix data structure for flipped bond */
+    // ####################################//
     ts_flip_bond(vesicle, k,it,km,kp, bond,lm, lp, lm2, lp1);
 
-    // minimal angle constraint 
-    if(vesicle->tape->min_dihedral_angle_cosine>-1){
-    tri_normals_angle_cosine_new_min=triangle_dot_normals(lm,lp);
-    if (lp1!=NULL) tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lm,lp1));
-    if (lm1!=NULL) tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lm,lm1));
-    if (lm2!=NULL) tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lp,lm2));
-    if (lp2!=NULL) tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lp,lp2));
-    if( tri_normals_angle_cosine_new_min<vesicle->tape->min_dihedral_angle_cosine && tri_normals_angle_cosine_new_min < tri_normals_angle_cosine_old_min){
-        //restore old state.
-        for(i=0;i<4;i++){
-            free(orig_vtx[i]->neigh);
-            free(orig_vtx[i]->tristar);
-            free(orig_vtx[i]->bond);
-            if (orig_tria[i]!=NULL) free(orig_tria[i]->neigh);
-            memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
-            if (orig_tria[i]!=NULL) memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
-            /* level 2 pointers are redirected*/
-        }
-        memcpy(bond,bck_bond,sizeof(ts_bond));
-        for(i=0;i<4;i++){
-            free(bck_vtx[i]);
-            if (orig_tria[i]!=NULL) free(bck_tria[i]);
-        }
-        free(bck_bond);
-        return TS_FAIL;
 
-	}
+    // part 2 of 2 of dihedral angle constraint
+    if(vesicle->tape->min_dihedral_angle_cosine>-1){
+        tri_normals_angle_cosine_new_min=triangle_dot_normals(lm,lp);
+        if (lp1!=NULL) tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lm,lp1));
+        if (lm1!=NULL) tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lm,lm1));
+        if (lm2!=NULL) tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lp,lm2));
+        if (lp2!=NULL) tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lp,lp2));
+        if( tri_normals_angle_cosine_new_min<vesicle->tape->min_dihedral_angle_cosine && tri_normals_angle_cosine_new_min < tri_normals_angle_cosine_old_min){
+            //restore old state.
+            for(i=0;i<4;i++){
+                free(orig_vtx[i]->neigh);
+                free(orig_vtx[i]->tristar);
+                free(orig_vtx[i]->bond);
+                if (orig_tria[i]!=NULL) free(orig_tria[i]->neigh);
+                memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
+                if (orig_tria[i]!=NULL) memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
+                /* level 2 pointers are redirected*/
+            }
+            memcpy(bond,bck_bond,sizeof(ts_bond));
+            for(i=0;i<4;i++){
+                free(bck_vtx[i]);
+                if (orig_tria[i]!=NULL) free(bck_tria[i]);
+            }
+            free(bck_bond);
+            return TS_FAIL;
+
+        }
     }
 
     /* Calculating the new energy */
@@ -258,220 +264,122 @@ c
     delta_energy+=km->energy;
     delta_energy+=it->energy;
     delta_energy+=bond->energy; /* attraction with neighboring vertices, that have spontaneous curvature */
-  //Neigbours of k, it, km, kp don't change its energy.
+    //Neigbours of k, it, km, kp don't change its energy.
 	if(vesicle->tape->area_switch==1){
 		oldenergy+=lm->energy+lp->energy;
 		stretchenergy(vesicle,lm);
 		stretchenergy(vesicle,lp);
 		delta_energy+=lm->energy+lp->energy;
 	}
-
     delta_energy-=oldenergy;
+	
+    // part 2 of 3 of volume area update
 	if(vesicle->tape->pressure_switch == 1 || vesicle->tape->volume_switch>0){
 		dvol = dvol + lm->volume + lp->volume;
-		if(vesicle->tape->pressure_switch==1) delta_energy-= vesicle->pressure*dvol;
 	}
-
-    
- //   if(k->neigh_no<4 || kp->neigh_no<4 || km->neigh_no<4 || it->neigh_no<4){
-//
-//			//restore old state.
-//			/* restoration procedure copied from few lines below */
-//			    for(i=0;i<4;i++){
-//			//			fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
-//				free(orig_vtx[i]->neigh);
-//				free(orig_vtx[i]->tristar);
-//				free(orig_vtx[i]->bond);
-//				free(orig_tria[i]->neigh);
-//				memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
-//				memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
-//			//			fprintf(stderr,"Restored vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
-//				/* level 2 pointers are redirected*/
-//			    }
-//			    memcpy(bond,bck_bond,sizeof(ts_bond));
-//			    for(i=0;i<4;i++){
-//				free(bck_vtx[i]);
-//				free(bck_tria[i]);
-//			/*			fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d =",i, orig_vtx[i]->neigh_no );
-//				for(j=0;j<orig_vtx[i]->neigh_no;j++) fprintf(stderr," %d", orig_vtx[i]->neigh[j]->idx);
-//				fprintf(stderr,"\n"); */
-//			    }
-//			    free(bck_bond);
-//			    return TS_FAIL;
-//
-//		
- //   }
-
-
     if(vesicle->tape->area_switch==2 || vesicle->tape->volume_switch==4){
-        darea=darea+lm->area+lp->area; 
+        darea = darea+lm->area+lp->area; 
     } 
     
-    if(vesicle->tape->area_switch==2) {
-/*check whether the dvol is gt than epsvol */
-		if((fabs(vesicle->area+darea-A0)>epsarea) && (fabs(vesicle->area+darea-A0)>fabs(vesicle->area-A0))){
-			//restore old state.
-			/* restoration procedure copied from few lines below */
-			    for(i=0;i<4;i++){
-			//			fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
-				free(orig_vtx[i]->neigh);
-				free(orig_vtx[i]->tristar);
-				free(orig_vtx[i]->bond);
-				if (orig_tria[i]!=NULL) free(orig_tria[i]->neigh);
-				memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
-				if (orig_tria[i]!=NULL) memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
-			//			fprintf(stderr,"Restored vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
-				/* level 2 pointers are redirected*/
-			    }
-			    memcpy(bond,bck_bond,sizeof(ts_bond));
-			    for(i=0;i<4;i++){
-				    free(bck_vtx[i]);
-				    if (orig_tria[i]!=NULL) free(bck_tria[i]);
-			/*			fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d =",i, orig_vtx[i]->neigh_no );
-				for(j=0;j<orig_vtx[i]->neigh_no;j++) fprintf(stderr," %d", orig_vtx[i]->neigh[j]->idx);
-				fprintf(stderr,"\n"); */
-			    }
-			    free(bck_bond);
-			    return TS_FAIL;
+    // volume area pressure energy and constraints
+    if (volume_pressure_area_energy_constraints(vesicle,&delta_energy,dvol,darea) == TS_FAIL){
+        //restore old state.
+        /* restoration procedure copied from few lines below */
+        for(i=0;i<4;i++){
+        // fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
+            free(orig_vtx[i]->neigh);
+            free(orig_vtx[i]->tristar);
+            free(orig_vtx[i]->bond);
+            free(orig_tria[i]->neigh);
+            memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
+            memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
+            // fprintf(stderr,"Restored vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
+            /* level 2 pointers are redirected*/
+            }
+            memcpy(bond,bck_bond,sizeof(ts_bond));
+            for(i=0;i<4;i++){
+            free(bck_vtx[i]);
+            free(bck_tria[i]);
+            /* fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d =",i, orig_vtx[i]->neigh_no );
+            for(j=0;j<orig_vtx[i]->neigh_no;j++) fprintf(stderr," %d", orig_vtx[i]->neigh[j]->idx);
+            fprintf(stderr,"\n"); */
+            }
+            free(bck_bond);
+            return TS_FAIL;
 
-		}
     }
 
 
+    /* MONTE CARLO */
+    if(delta_energy>=0){
+        if(exp(-delta_energy)< drand48()) {
+            //not accepted, reverting changes
+            //restore all backups
+            //fprintf(stderr,"Restoring!!!\n");
 
+            // if(vesicle->tape->volume_switch == 1){
+            //     constvolumerestore(vesicle, constvol_vtx_moved,constvol_vtx_backup);
+            // }
 
-	if(vesicle->tape->volume_switch == 2){
-		/*check whether the dvol is gt than epsvol */
-		if((fabs(vesicle->volume+dvol-V0)>epsvol) && (fabs(vesicle->volume+dvol-V0)>fabs(vesicle->volume-V0))){
-			//restore old state.
-			/* restoration procedure copied from few lines below */
-			    for(i=0;i<4;i++){
-			//			fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
-				free(orig_vtx[i]->neigh);
-				free(orig_vtx[i]->tristar);
-				free(orig_vtx[i]->bond);
-				if (orig_tria[i]!=NULL) free(orig_tria[i]->neigh);
-				memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
-				if (orig_tria[i]!=NULL) memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
-			//			fprintf(stderr,"Restored vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
-				/* level 2 pointers are redirected*/
-			    }
-			    memcpy(bond,bck_bond,sizeof(ts_bond));
-			    for(i=0;i<4;i++){
-				    free(bck_vtx[i]);
-				    if (orig_tria[i]!=NULL) free(bck_tria[i]);
-			/*			fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d =",i, orig_vtx[i]->neigh_no );
-				for(j=0;j<orig_vtx[i]->neigh_no;j++) fprintf(stderr," %d", orig_vtx[i]->neigh[j]->idx);
-				fprintf(stderr,"\n"); */
-			    }
-			    free(bck_bond);
-			    return TS_FAIL;
-
-		}
-
-	} else if(vesicle->tape->volume_switch==3){
-        /*energy difference */
-        delta_energy += 0.5*vesicle->tape->xkV0*(pow(vesicle->volume+dvol-V0,2) - pow(vesicle->volume-V0,2))/pow(vesicle->vlist->n,2);
-    } else if(vesicle->tape->volume_switch==4){
-        /*energy difference */
-        v_sph=sqrt(pow(vesicle->area+darea,3)/M_PI)/6;
-        v_sph_old=sqrt(pow(vesicle->area,3)/M_PI)/6;
-        delta_energy += 0.5*vesicle->tape->xkV0*(pow(vesicle->tape->Vfraction-((vesicle->volume+dvol)/v_sph),2) - pow(vesicle->tape->Vfraction-(vesicle->volume/v_sph_old),2));
-    } else if(vesicle->tape->volume_switch == 1){
-        retval=constvolume(vesicle, it, -dvol, &delta_energy_cv, &constvol_vtx_moved,&constvol_vtx_backup);
-        if(retval==TS_FAIL){
-/* restoration procedure copied from few lines below */
             for(i=0;i<4;i++){
-    //			fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
+            // fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
                 free(orig_vtx[i]->neigh);
                 free(orig_vtx[i]->tristar);
                 free(orig_vtx[i]->bond);
                 if (orig_tria[i]!=NULL) free(orig_tria[i]->neigh);
                 memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
                 if (orig_tria[i]!=NULL) memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
-    //			fprintf(stderr,"Restored vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
+                // fprintf(stderr,"Restored vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
                 /* level 2 pointers are redirected*/
             }
             memcpy(bond,bck_bond,sizeof(ts_bond));
+
             for(i=0;i<4;i++){
                 free(bck_vtx[i]);
                 if (orig_tria[i]!=NULL) free(bck_tria[i]);
-    /*			fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d =",i, orig_vtx[i]->neigh_no );
+                /* fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d =",i, orig_vtx[i]->neigh_no );
                 for(j=0;j<orig_vtx[i]->neigh_no;j++) fprintf(stderr," %d", orig_vtx[i]->neigh[j]->idx);
                 fprintf(stderr,"\n"); */
             }
+
             free(bck_bond);
+
+            // fprintf(stderr,"Restoration complete!!!\n");
+            // vesicle_volume(vesicle);
+            // fprintf(stderr,"Volume after fail=%1.16e\n", vesicle->volume);
+            if(vesicle->tape->area_switch==1){
+                stretchenergy(vesicle,lm);
+                stretchenergy(vesicle,lp);
+            }
+
             return TS_FAIL;
         }
-        delta_energy+=delta_energy_cv;
     }
 
-
-/* MONTE CARLO */
-    if(delta_energy>=0){
-        if(exp(-delta_energy)< drand48()) {
-        //not accepted, reverting changes
-	    //restore all backups
-        //fprintf(stderr,"Restoring!!!\n");
-        if(vesicle->tape->volume_switch == 1){
-            constvolumerestore(vesicle, constvol_vtx_moved,constvol_vtx_backup);
-        }
-
-		for(i=0;i<4;i++){
-        // fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
-			free(orig_vtx[i]->neigh);
-			free(orig_vtx[i]->tristar);
-			free(orig_vtx[i]->bond);
-			if (orig_tria[i]!=NULL) free(orig_tria[i]->neigh);
-			memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
-			if (orig_tria[i]!=NULL) memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
-        // fprintf(stderr,"Restored vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
-			/* level 2 pointers are redirected*/
-		}
-		memcpy(bond,bck_bond,sizeof(ts_bond));
-
-		for(i=0;i<4;i++){
-			free(bck_vtx[i]);
-			if (orig_tria[i]!=NULL) free(bck_tria[i]);
-            /* fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d =",i, orig_vtx[i]->neigh_no );
-			for(j=0;j<orig_vtx[i]->neigh_no;j++) fprintf(stderr," %d", orig_vtx[i]->neigh[j]->idx);
-			fprintf(stderr,"\n"); */
-		}
-
-		free(bck_bond);
-
-        // fprintf(stderr,"Restoration complete!!!\n");
-        // vesicle_volume(vesicle);
-        // fprintf(stderr,"Volume after fail=%1.16e\n", vesicle->volume);
-	    if(vesicle->tape->area_switch==1){
-		    stretchenergy(vesicle,lm);
-		    stretchenergy(vesicle,lp);
-	    }
-
-		return TS_FAIL;
-        }
-    }
-     /* IF BONDFLIP ACCEPTED, THEN RETURN SUCCESS! */
+    /* IF BONDFLIP ACCEPTED, THEN RETURN SUCCESS! */
     // fprintf(stderr,"SUCCESS!!!\n");
 
-    if(vesicle->tape->volume_switch > 1){
+    // part 3 of 3 of volume area update
+    if(vesicle->tape->pressure_switch == 1 || vesicle->tape->volume_switch>0){
 	    vesicle->volume+=dvol;
-    } else if(vesicle->tape->volume_switch == 1){
-        constvolumeaccept(vesicle,constvol_vtx_moved,constvol_vtx_backup);
     }
     if(vesicle->tape->area_switch==2 || vesicle->tape->volume_switch==4){
         vesicle->area+=darea;
     }
-	// delete all backups
-	for(i=0;i<4;i++){
-	    free(bck_vtx[i]->neigh);
-	    free(bck_vtx[i]->bond);
+    // if(vesicle->tape->volume_switch == 1){
+    //     constvolumeaccept(vesicle,constvol_vtx_moved,constvol_vtx_backup);
+    // }
+
+    // delete all backups
+    for(i=0;i<4;i++){
+        free(bck_vtx[i]->neigh);
+        free(bck_vtx[i]->bond);
         free(bck_vtx[i]->tristar);
-	    free(bck_vtx[i]);
- 	    if (orig_tria[i]!=NULL) free(bck_tria[i]->neigh);
+        free(bck_vtx[i]);
+        if (orig_tria[i]!=NULL) free(bck_tria[i]->neigh);
         if (orig_tria[i]!=NULL) free(bck_tria[i]);
-	}
-	free(bck_bond);
+    }
+    free(bck_bond);
 
     // vesicle_volume(vesicle);
     // fprintf(stderr,"Volume after success=%1.16e\n", vesicle->volume);
@@ -744,30 +652,30 @@ c
     ts_triangle *orig_tria[]={lm,lp,lm2,lp1};
 
     //fprintf(stderr,"Backuping!!!\n");
-	bck_bond=(ts_bond *)malloc(sizeof(ts_bond));
+    bck_bond=(ts_bond *)malloc(sizeof(ts_bond));
     for(i=0;i<4;i++){
     /*	fprintf(stderr,"vtx neigh[%d]=",i);
-	    for(j=0;j<orig_vtx[i]->neigh_no;j++) fprintf(stderr," %d", orig_vtx[i]->neigh[j]->idx);
-	    fprintf(stderr,"\n");
+        for(j=0;j<orig_vtx[i]->neigh_no;j++) fprintf(stderr," %d", orig_vtx[i]->neigh[j]->idx);
+        fprintf(stderr,"\n");
     */
-	    bck_vtx[i]=(ts_vertex *)malloc(sizeof(ts_vertex));
-	    bck_tria[i]=(ts_triangle *)malloc(sizeof(ts_triangle));
-    	memcpy((void *)bck_vtx[i],(void *)orig_vtx[i],sizeof(ts_vertex));
-    	memcpy((void *)bck_tria[i],(void *)orig_tria[i],sizeof(ts_triangle));
-	    /* level 2 pointers */
+        bck_vtx[i]=(ts_vertex *)malloc(sizeof(ts_vertex));
+        bck_tria[i]=(ts_triangle *)malloc(sizeof(ts_triangle));
+        memcpy((void *)bck_vtx[i],(void *)orig_vtx[i],sizeof(ts_vertex));
+        memcpy((void *)bck_tria[i],(void *)orig_tria[i],sizeof(ts_triangle));
+        /* level 2 pointers */
 
-    	bck_vtx[i]->neigh=(ts_vertex **)malloc(orig_vtx[i]->neigh_no*sizeof(ts_vertex *));
-    	bck_vtx[i]->tristar=(ts_triangle **)malloc(orig_vtx[i]->tristar_no*sizeof(ts_triangle *));
-    	bck_vtx[i]->bond=(ts_bond **)malloc(orig_vtx[i]->bond_no*sizeof(ts_bond *));
-    	bck_tria[i]->neigh=(ts_triangle **)malloc(orig_tria[i]->neigh_no*sizeof(ts_triangle *));
+        bck_vtx[i]->neigh=(ts_vertex **)malloc(orig_vtx[i]->neigh_no*sizeof(ts_vertex *));
+        bck_vtx[i]->tristar=(ts_triangle **)malloc(orig_vtx[i]->tristar_no*sizeof(ts_triangle *));
+        bck_vtx[i]->bond=(ts_bond **)malloc(orig_vtx[i]->bond_no*sizeof(ts_bond *));
+        bck_tria[i]->neigh=(ts_triangle **)malloc(orig_tria[i]->neigh_no*sizeof(ts_triangle *));
 
-    	memcpy((void *)bck_vtx[i]->neigh,(void *)orig_vtx[i]->neigh,orig_vtx[i]->neigh_no*sizeof(ts_vertex *));
-    	memcpy((void *)bck_vtx[i]->tristar,(void *)orig_vtx[i]->tristar,orig_vtx[i]->tristar_no*sizeof(ts_triangle *));
-    	memcpy((void *)bck_vtx[i]->bond,(void *)orig_vtx[i]->bond,orig_vtx[i]->bond_no*sizeof(ts_bond *));
+        memcpy((void *)bck_vtx[i]->neigh,(void *)orig_vtx[i]->neigh,orig_vtx[i]->neigh_no*sizeof(ts_vertex *));
+        memcpy((void *)bck_vtx[i]->tristar,(void *)orig_vtx[i]->tristar,orig_vtx[i]->tristar_no*sizeof(ts_triangle *));
+        memcpy((void *)bck_vtx[i]->bond,(void *)orig_vtx[i]->bond,orig_vtx[i]->bond_no*sizeof(ts_bond *));
     
-    	memcpy((void *)bck_tria[i]->neigh,(void *)orig_tria[i]->neigh,orig_tria[i]->neigh_no*sizeof(ts_triangle *));	
+        memcpy((void *)bck_tria[i]->neigh,(void *)orig_tria[i]->neigh,orig_tria[i]->neigh_no*sizeof(ts_triangle *));	
     }
-	memcpy(bck_bond,bond,sizeof(ts_bond));
+    memcpy(bck_bond,bond,sizeof(ts_bond));
     //fprintf(stderr,"Backup complete!!!\n");
     /* end backup vertex */
 
@@ -781,12 +689,16 @@ c
     oldenergy+=bond->energy; /* attraction with neighboring vertices, that have spontaneous curvature */
     //Neigbours of k, it, km, kp don't change its energy.
 
-	if(vesicle->tape->pressure_switch == 1 || vesicle->tape->volume_switch>0){dvol = -lm->volume - lp->volume;}
-    if(vesicle->tape->area_switch==2 || vesicle->tape->volume_switch==4){darea=-lm->area-lp->area;} 
-    /*    vesicle_volume(vesicle);
-    fprintf(stderr,"Volume in the beginning=%1.16e\n", vesicle->volume);
-    */
-   
+    // part 1 of 3 of volume area update
+    if(vesicle->tape->pressure_switch == 1 || vesicle->tape->volume_switch>0){
+        dvol = -lm->volume - lp->volume;
+    }
+    if(vesicle->tape->area_switch==2 || vesicle->tape->volume_switch==4){
+        darea=-lm->area-lp->area;
+    
+    } 
+    
+    // part 1 of 2 of dihedral angle constraint
     if(vesicle->tape->min_dihedral_angle_cosine>-1){
         tri_normals_angle_cosine_old_min=triangle_dot_normals(lm,lp);
         tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lm,lm1));
@@ -795,16 +707,13 @@ c
         tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lp,lp2));
     }
 
-
-
     // ####################################//
     /* fix data structure for flipped bond */
     // ####################################//
     ts_flip_bond_ordered(vesicle, bond, it, neim, km, nei_k_at_km, 
                          k, nei_kp_at_k, kp, nei_it_at_kp, lm, lp, lm2, lp1);
 
-
-    // make sure the angle between triangle is ok!
+    // part 2 of 2 of dihedral angle constraint
     if(vesicle->tape->min_dihedral_angle_cosine>-1){
         tri_normals_angle_cosine_new_min=triangle_dot_normals(lm,lp);
         tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lm,lp1));
@@ -842,176 +751,105 @@ c
     delta_energy+=it->energy;
     delta_energy+=bond->energy; /* attraction with neighboring vertices, that have spontaneous curvature */
     //Neigbours of k, it, km, kp don't change its energy.
-	if(vesicle->tape->area_switch==1){
-		oldenergy+=lm->energy+lp->energy;
-		stretchenergy(vesicle,lm);
-		stretchenergy(vesicle,lp);
-		delta_energy+=lm->energy+lp->energy;
-	}
-
+    if(vesicle->tape->area_switch==1){
+        oldenergy+=lm->energy+lp->energy;
+        stretchenergy(vesicle,lm);
+        stretchenergy(vesicle,lp);
+        delta_energy+=lm->energy+lp->energy;
+    }
     delta_energy-=oldenergy;
+
+    // part 2 of 3 of volume area update
 	if(vesicle->tape->pressure_switch == 1 || vesicle->tape->volume_switch>0){
 		dvol = dvol + lm->volume + lp->volume;
-		if(vesicle->tape->pressure_switch==1) delta_energy-= vesicle->pressure*dvol;
 	}
-
-
     if(vesicle->tape->area_switch==2 || vesicle->tape->volume_switch==4){
-        darea=darea+lm->area+lp->area; 
-    } if (vesicle->tape->area_switch==2){
-/*check whether the dvol is gt than epsvol */
-		if((fabs(vesicle->area+darea-A0)>epsarea) && (fabs(vesicle->area+darea-A0)>fabs(vesicle->area-A0))){
-			//restore old state.
-			/* restoration procedure copied from few lines below */
-			    for(i=0;i<4;i++){
-			//			fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
-				free(orig_vtx[i]->neigh);
-				free(orig_vtx[i]->tristar);
-				free(orig_vtx[i]->bond);
-				free(orig_tria[i]->neigh);
-				memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
-				memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
-			//			fprintf(stderr,"Restored vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
-				/* level 2 pointers are redirected*/
-			    }
-			    memcpy(bond,bck_bond,sizeof(ts_bond));
-			    for(i=0;i<4;i++){
-				free(bck_vtx[i]);
-				free(bck_tria[i]);
-			/*			fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d =",i, orig_vtx[i]->neigh_no );
-				for(j=0;j<orig_vtx[i]->neigh_no;j++) fprintf(stderr," %d", orig_vtx[i]->neigh[j]->idx);
-				fprintf(stderr,"\n"); */
-			    }
-			    free(bck_bond);
-			    return TS_FAIL;
-
-		}
+        darea = darea+lm->area+lp->area; 
+    } 
+    
+    // volume area pressure energy and constraints
+    if (volume_pressure_area_energy_constraints(vesicle,&delta_energy,dvol,darea) == TS_FAIL){
+        //restore old state.
+        /* restoration procedure copied from few lines below */
+        for(i=0;i<4;i++){
+            free(orig_vtx[i]->neigh);
+            free(orig_vtx[i]->tristar);
+            free(orig_vtx[i]->bond);
+            free(orig_tria[i]->neigh);
+            memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
+            memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
+            /* level 2 pointers are redirected*/
+        }
+        memcpy(bond,bck_bond,sizeof(ts_bond));
+        for(i=0;i<4;i++){
+            free(bck_vtx[i]);
+            free(bck_tria[i]);
+        }
+        free(bck_bond);
+        return TS_FAIL;
     }
 
 
+    /* MONTE CARLO */
+    if(delta_energy>=0){
+        if(exp(-delta_energy)< drand48())  {
+            //not accepted, reverting changes
+            //restore all backups
+            // fprintf(stderr,"Restoring!!!\n");
 
+            // if(vesicle->tape->volume_switch == 1){
+            //     constvolumerestore(vesicle, constvol_vtx_moved,constvol_vtx_backup);
+            // }
 
-	if(vesicle->tape->volume_switch == 2){
-		/*check whether the dvol is gt than epsvol */
-		if((fabs(vesicle->volume+dvol-V0)>epsvol) && (fabs(vesicle->volume+dvol-V0)>fabs(vesicle->volume-V0))){
-			//restore old state.
-			/* restoration procedure copied from few lines below */
-			    for(i=0;i<4;i++){
-			//			fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
-				free(orig_vtx[i]->neigh);
-				free(orig_vtx[i]->tristar);
-				free(orig_vtx[i]->bond);
-				free(orig_tria[i]->neigh);
-				memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
-				memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
-			//			fprintf(stderr,"Restored vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
-				/* level 2 pointers are redirected*/
-			    }
-			    memcpy(bond,bck_bond,sizeof(ts_bond));
-			    for(i=0;i<4;i++){
-				free(bck_vtx[i]);
-				free(bck_tria[i]);
-			/*			fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d =",i, orig_vtx[i]->neigh_no );
-				for(j=0;j<orig_vtx[i]->neigh_no;j++) fprintf(stderr," %d", orig_vtx[i]->neigh[j]->idx);
-				fprintf(stderr,"\n"); */
-			    }
-			    free(bck_bond);
-			    return TS_FAIL;
-
-		}
-	} else if(vesicle->tape->volume_switch==3){
-        /*energy difference */
-        delta_energy += 0.5*vesicle->tape->xkV0*(pow(vesicle->volume+dvol-V0,2) - pow(vesicle->volume-V0,2))/pow(vesicle->vlist->n,2);
-    } else if(vesicle->tape->volume_switch==4){
-        /*energy difference */
-        v_sph=sqrt(pow(vesicle->area+darea,3)/M_PI)/6;
-        v_sph_old=sqrt(pow(vesicle->area,3)/M_PI)/6;
-        delta_energy += 0.5*vesicle->tape->xkV0*(pow(vesicle->tape->Vfraction-((vesicle->volume+dvol)/v_sph),2) - pow(vesicle->tape->Vfraction-(vesicle->volume/v_sph_old),2));
-    } else if(vesicle->tape->volume_switch == 1){
-        retval=constvolume(vesicle, it, -dvol, &delta_energy_cv, &constvol_vtx_moved,&constvol_vtx_backup);
-        if(retval==TS_FAIL){
-/* restoration procedure copied from few lines below */
             for(i=0;i<4;i++){
-    //			fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
+                //fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
                 free(orig_vtx[i]->neigh);
                 free(orig_vtx[i]->tristar);
                 free(orig_vtx[i]->bond);
                 free(orig_tria[i]->neigh);
                 memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
                 memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
-    //			fprintf(stderr,"Restored vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
+                //fprintf(stderr,"Restored vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
                 /* level 2 pointers are redirected*/
             }
             memcpy(bond,bck_bond,sizeof(ts_bond));
+
             for(i=0;i<4;i++){
                 free(bck_vtx[i]);
                 free(bck_tria[i]);
-    /*			fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d =",i, orig_vtx[i]->neigh_no );
+                /*fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d =",i, orig_vtx[i]->neigh_no );
                 for(j=0;j<orig_vtx[i]->neigh_no;j++) fprintf(stderr," %d", orig_vtx[i]->neigh[j]->idx);
                 fprintf(stderr,"\n"); */
             }
+
             free(bck_bond);
-            return TS_FAIL;
-        }
-        delta_energy+=delta_energy_cv;
-    }
 
-
-/* MONTE CARLO */
-    if(delta_energy>=0){
-        if(exp(-delta_energy)< drand48())  {
-            //not accepted, reverting changes
-	        //restore all backups
-            // fprintf(stderr,"Restoring!!!\n");
-            if(vesicle->tape->volume_switch == 1){
-                constvolumerestore(vesicle, constvol_vtx_moved,constvol_vtx_backup);
+            //fprintf(stderr,"Restoration complete!!!\n");
+            //vesicle_volume(vesicle);
+            //fprintf(stderr,"Volume after fail=%1.16e\n", vesicle->volume);
+            if(vesicle->tape->area_switch==1){
+                stretchenergy(vesicle,lm);
+                stretchenergy(vesicle,lp);
             }
 
-		    for(i=0;i<4;i++){
-            //	fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
-			free(orig_vtx[i]->neigh);
-			free(orig_vtx[i]->tristar);
-			free(orig_vtx[i]->bond);
-			free(orig_tria[i]->neigh);
-			memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
-			memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
-//			fprintf(stderr,"Restored vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
-			/* level 2 pointers are redirected*/
-		}
-		memcpy(bond,bck_bond,sizeof(ts_bond));
-
-		for(i=0;i<4;i++){
-			free(bck_vtx[i]);
-			free(bck_tria[i]);
-/*			fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d =",i, orig_vtx[i]->neigh_no );
-			for(j=0;j<orig_vtx[i]->neigh_no;j++) fprintf(stderr," %d", orig_vtx[i]->neigh[j]->idx);
-			fprintf(stderr,"\n"); */
-		}
-
-		free(bck_bond);
-
-//		fprintf(stderr,"Restoration complete!!!\n");
-//    vesicle_volume(vesicle);
-//    fprintf(stderr,"Volume after fail=%1.16e\n", vesicle->volume);
-	if(vesicle->tape->area_switch==1){
-		stretchenergy(vesicle,lm);
-		stretchenergy(vesicle,lp);
-	}
-
-		return TS_FAIL;
+            return TS_FAIL;
         }
     }
-     /* IF BONDFLIP ACCEPTED, THEN RETURN SUCCESS! */
-//            fprintf(stderr,"SUCCESS!!!\n");
+    
+    /* IF BONDFLIP ACCEPTED, THEN RETURN SUCCESS! */
+    // fprintf(stderr,"SUCCESS!!!\n");
 
-    if(vesicle->tape->volume_switch > 1){
+    // part 3 of 3 of volume area update
+    if(vesicle->tape->pressure_switch == 1 || vesicle->tape->volume_switch>0){
 	    vesicle->volume+=dvol;
-    } else if(vesicle->tape->volume_switch == 1){
-        constvolumeaccept(vesicle,constvol_vtx_moved,constvol_vtx_backup);
     }
     if(vesicle->tape->area_switch==2 || vesicle->tape->volume_switch==4){
         vesicle->area+=darea;
     }
+    // else if(vesicle->tape->volume_switch == 1){
+    //     constvolumeaccept(vesicle,constvol_vtx_moved,constvol_vtx_backup);
+    // }
+
 	// delete all backups
 	for(i=0;i<4;i++){
 	    free(bck_vtx[i]->neigh);
