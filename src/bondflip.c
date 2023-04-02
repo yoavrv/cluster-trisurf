@@ -34,15 +34,14 @@ c
     ts_small_idx i,j;
     ts_double oldenergy, delta_energy, dvol=0.0, darea=0.0;
     ts_double tri_normals_angle_cosine_old_min=1,tri_normals_angle_cosine_new_min=1;
-    ts_double v_sph=0, v_sph_old=0;
     ts_triangle *lm=NULL,*lp=NULL, *lp1=NULL, *lm2=NULL;
     ts_triangle *lm1=NULL, *lp2=NULL;
 
     ts_vertex *kp,*km;
 
-    ts_double delta_energy_cv;
-    ts_vertex *constvol_vtx_moved, *constvol_vtx_backup;
-    ts_bool retval;
+    // ts_double delta_energy_cv;
+    // ts_vertex *constvol_vtx_moved, *constvol_vtx_backup;
+    // ts_bool retval;
 
     if (it->type==is_ghost_vtx && k->type==is_ghost_vtx) return TS_FAIL;
 
@@ -546,14 +545,13 @@ c
     ts_small_idx i;
     ts_double oldenergy, delta_energy, dvol=0.0, darea=0.0;
     ts_double tri_normals_angle_cosine_old_min=1, tri_normals_angle_cosine_new_min=1;
-    ts_double v_sph=0, v_sph_old=0;
     ts_triangle *lm=NULL,*lp=NULL, *lp1=NULL, *lm2=NULL;
     ts_triangle *lm1=NULL,*lp2=NULL;
 
     ts_vertex *kp,*km;
 
-    ts_double delta_energy_cv;
-    ts_vertex *constvol_vtx_moved, *constvol_vtx_backup;
+    // ts_double delta_energy_cv;
+    // ts_vertex *constvol_vtx_moved, *constvol_vtx_backup;
     ts_bool retval;
 
     if(k==NULL || it==NULL){

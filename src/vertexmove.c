@@ -21,12 +21,12 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
     ts_double dist;
     ts_bool retval; 
     ts_cell_idx cellidx; 
-    ts_double delta_energy, delta_energy_cv,oenergy,dvol=0.0, darea=0.0, dstretchenergy=0.0;
+    ts_double delta_energy, oenergy,dvol=0.0, darea=0.0, dstretchenergy=0.0;
     ts_double costheta,sintheta,phi,cosphi,sinphi,r, omega, cosomega, sinomega;
     ts_double tri_angle, tri_angle_old_min, tri_angle_new_min;
-    ts_double v_sph=0.0,v_sph_old=0.0;
     //This will hold all the information of vtx and its neighbours
-    ts_vertex backupvtx[20], *constvol_vtx_moved=NULL, *constvol_vtx_backup=NULL;
+    ts_vertex backupvtx[20];
+    // ts_vertex* *constvol_vtx_moved=NULL, *constvol_vtx_backup=NULL;
     ts_triangle *t1, *t2;
     memcpy((void *)&backupvtx[0],(void *)vtx,sizeof(ts_vertex));
 
