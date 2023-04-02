@@ -1004,20 +1004,23 @@ inline ts_double total_force_on_vesicle(ts_vesicle *vesicle){
 ts_double adhesion_energy_diff(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_old){
     ts_double delta_energy=0;
     ts_double delta=0,delta_old=0;
+    ts_bool oriented=0, oriented_old=0;
     ts_double dz=vesicle->tape->adhesion_cuttoff;
     ts_flag model = vesicle->tape->adhesion_model;
 
     delta = adhesion_geometry_distance(vesicle, vtx);
+    oriented = adhesion_geometry_side(vesicle,vtx);
     delta_old = adhesion_geometry_distance(vesicle, vtx_old);
+    oriented_old = adhesion_geometry_side(vesicle,vtx);
 
-    if( (vtx->type&is_adhesive_vtx) && (delta<=dz) ){
+    if( (vtx->type&is_adhesive_vtx) && (oriented) && (delta<=dz) ){
             if (model==adhesion_step_potential) {
                 delta_energy-=vtx->ad_w;
             } else if (model==adhesion_parabolic_potential){
                 delta_energy-=vtx->ad_w*(1-pow(delta,2)/pow(dz,2));
             }
     }
-    if( (vtx_old->type&is_adhesive_vtx) && (delta_old<=dz) ){
+    if( (vtx_old->type&is_adhesive_vtx) && (oriented_old) &&  (delta_old<=dz) ){
             if (model==adhesion_step_potential) {
                 delta_energy+=vtx_old->ad_w;
             } else if (model==adhesion_parabolic_potential){
@@ -1051,6 +1054,29 @@ ts_double adhesion_geometry_distance(ts_vesicle *vesicle, ts_vertex *vtx){
     }
 
     return 0;
+}
+
+// Check if vertex normal is oriented towards the geometry
+ts_bool adhesion_geometry_side(ts_vesicle *vesicle, ts_vertex *vtx){
+    ts_double z=vtx->z;
+    ts_double z0=vesicle->tape->z_adhesion;
+    ts_double c0=vesicle->adhesion_center;
+    ts_double r=vesicle->tape->adhesion_radius;
+    ts_flag geometry = vesicle->tape->adhesion_geometry;
+
+    //1 for plane potential, surface facing the -z direction way
+    if(geometry==model_plane_potential){
+        return vtx->nz<0;
+    }
+    //2 for spherical potential, surface facing into the sphere -x,-y,-(z+c0)
+    else if(geometry==model_spherical_potential){
+        return (vtx->nx*vtx->x + vtx->ny*vtx->y + vtx->nz*(z+c0)<0); 
+    }
+    //3 for cylindrical adhesive substrate, surface facing the (-x,-y,0) way
+    else if(geometry==model_cylindrical_potential){
+        return (vtx->nx*vtx->x + vtx->nz*(z+c0)<0) ;
+    }
+    return 1;
 }
 
 void stretchenergy(ts_vesicle *vesicle, ts_triangle *triangle){

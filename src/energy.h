@@ -13,7 +13,7 @@ ts_double direct_force_from_Fz_balance(ts_vesicle *vesicle, ts_vertex *vtx, ts_v
 inline ts_double total_force_on_vesicle(ts_vesicle *vesicle);
 ts_double adhesion_energy_diff(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_old);
 ts_double adhesion_geometry_distance(ts_vesicle *vesicle,ts_vertex *vtx);
-
+ts_bool adhesion_geometry_side(ts_vesicle *vesicle,ts_vertex *vtx);
 void stretchenergy(ts_vesicle *vesicle, ts_triangle *triangle);
 
 #endif
