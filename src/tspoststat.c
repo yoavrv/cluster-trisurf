@@ -16,7 +16,6 @@
 #include "stats.h"
 #include "sh.h"
 #include "shcomplex.h"
-#include "dumpstate.h"
 #include "restore.h"
 #include "cluster.h"
 #include <string.h>

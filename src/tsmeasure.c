@@ -15,7 +15,6 @@
 //#include "poly.h"
 #include "sh.h"
 #include "shcomplex.h"
-#include "dumpstate.h"
 #include "restore.h"
 #include <string.h>
 #include <getopt.h>
