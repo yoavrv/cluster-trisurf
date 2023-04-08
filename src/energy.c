@@ -662,6 +662,15 @@ inline ts_bool vertex_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
     // if the model is for anisotropy only, also make sure the vertex type is anisotropic
     if (do_use_shape_op_e){
         vtx->energy = vtx->mean_energy2 + vtx->gaussian_energy2;
+        xh=vtx->nx;
+        yh=vtx->ny;
+        zh=vtx->nz;
+        vtx->nx=vtx->nx2;
+        vtx->ny=vtx->ny2;
+        vtx->nz=vtx->nz2;
+        vtx->nx2=xh;
+        vtx->ny2=yh;
+        vtx->nz2=zh;
     }
 
     return TS_SUCCESS;

@@ -1098,7 +1098,7 @@ ts_bool write_vertex_xml_file(ts_vesicle *vesicle, ts_idx timestepno, ts_cluster
     TS_WRITE_VECTOR_ITERATE_VTX("%.17e %.17e %.17e\n",nx,ny,nz);
     fprintf(fh,"</DataArray>\n");
 
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"normal2\" NumberOfComponents=\"3\" format=\"ascii\">\n");
+    fprintf(fh,"<DataArray type=\"Float64\" Name=\"normal_unused_debug\" NumberOfComponents=\"3\" format=\"ascii\">\n");
     TS_WRITE_VECTOR_ITERATE_VTX("%.17e %.17e %.17e\n",nx2,ny2,nz2);
     fprintf(fh,"</DataArray>\n");
 
