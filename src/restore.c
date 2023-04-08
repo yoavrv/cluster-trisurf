@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
+#include <libxml/tree.h>
 #include <general.h>
 #include <restore.h>
 #include <snapshot.h>
@@ -177,7 +178,8 @@ ts_vesicle *parseDump(char *dumpfname) {
     for (i=0; i<vesicle->vlist->n; i++){
         order_vertex_triangles(vesicle->vlist->vtx[i]);
     }
-    mean_curvature_and_energy(vesicle);
+    sweep_vertex_curvature_energy(vesicle);
+    sweep_vertex_forces(vesicle);
     sweep_attraction_bond_energy(vesicle);
     if(vesicle->tape->area_switch==1){
         vesicle->tlist->a0=sqrt(3)/4.0*pow((vesicle->tape->dmax+1.0)/2.0,2);  

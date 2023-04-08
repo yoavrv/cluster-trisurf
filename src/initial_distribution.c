@@ -250,9 +250,9 @@ ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
     }
     free(indices);
 
-    // This updates the energy, curvatures, and normals using the energy_vertex
-    mean_curvature_and_energy(vesicle);
-    
+    // This updates the energy, curvatures, and normals using the vertex_curvature_energy
+    sweep_vertex_curvature_energy(vesicle);
+    sweep_vertex_forces(vesicle);
     //	ts_fprintf(stderr,"Setting attraction between vertices with spontaneous curvature\n");
     sweep_attraction_bond_energy(vesicle);
     

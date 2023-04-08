@@ -458,7 +458,7 @@ typedef struct {
     ts_bool area_switch;
     ts_bool quiet;
     ts_bool plane_confinement_switch;
-    ts_bool allow_xy_plane_movement;
+    ts_bool allow_center_mass_movement;
     ts_bool force_balance_along_z_axis;
     ts_flag adhesion_geometry; // geometry of adhesion (none, plane, sphere, cylinder)
     ts_flag adhesion_model; // adhesion (none, step potential, parabolic potential)
@@ -476,7 +476,11 @@ typedef struct {
     ts_double dmax;
     ts_double stepsize;
     ts_double cm[3];
+    ts_double fx;
+    ts_double fy;
+    ts_double fz;
     ts_double volume;
+    ts_double area;
     ts_double spring_constant;
     ts_double pressure;
     ts_double R_nucleus;
@@ -484,8 +488,6 @@ typedef struct {
     ts_double R_nucleusY;
     ts_double R_nucleusZ;
     ts_double nucleus_center[3];
-    ts_double area;
-    ts_double adhesion_center;
     ts_tape *tape;
     ts_spharm *sphHarmonics;
     // Polymers outside the vesicle and attached to the vesicle membrane (polymer brush):

@@ -449,10 +449,10 @@ ts_bool ts_flip_bond(ts_vesicle *vesicle, ts_vertex *k,ts_vertex *it,ts_vertex *
 
 
     // 7. step. Update energy
-    energy_vertex(vesicle, k);
-    energy_vertex(vesicle, kp);
-    energy_vertex(vesicle, km);
-    energy_vertex(vesicle, it);
+    vertex_curvature_energy(vesicle, k);
+    vertex_curvature_energy(vesicle, kp);
+    vertex_curvature_energy(vesicle, km);
+    vertex_curvature_energy(vesicle, it);
     // Yoav: this also updates the normals
 
     // Yoav: Do we need to update force?
@@ -965,10 +965,10 @@ ts_bool ts_flip_bond_ordered(ts_vesicle *vesicle, ts_bond *bond,
     // 7. step. Update properties of the structures: normals and energy
     triangle_normal_vector(lp);
     triangle_normal_vector(lm);
-    energy_vertex(vesicle, k);
-    energy_vertex(vesicle, kp);
-    energy_vertex(vesicle, km);
-    energy_vertex(vesicle, it);
+    vertex_curvature_energy(vesicle, k);
+    vertex_curvature_energy(vesicle, kp);
+    vertex_curvature_energy(vesicle, km);
+    vertex_curvature_energy(vesicle, it);
     // energy also updates the normals
     // Yoav: Do we need to update force?
 

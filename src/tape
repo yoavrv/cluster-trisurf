@@ -34,35 +34,43 @@ quiet=false
 # bending rigidity of the membrane (in units kT)
 xk0=20
 # xk2: Gaussian bending modulus
-xk2=-10
+xk2=-20
 
-# number of vertices with spontaneous curvature (integer)
+# Each vertex is associated with a type (8 bit flag):
+# 0x01 : bonding vertex              0x02 : active force vertex
+# 0x04 : adhesive vertex             0x08 : anisotropic vertex
+# 0x10 : (reserved for future use)   0x20 : vicsek vertex (correlated force)
+# 0x40 : edge vertex (not used)      0x80 : ghost vertex (unnmoving) (must be ==type!)
+# Bare membrane vertices (default) are adhesive 0x04 (4), 
+# CMC vertices are bonding, active, anisotropic, and correlated 0x2F (47)
+# number of CMC vertices (integer)
 number_of_vertices_with_c0=50
 # c0/2 is spontaneous curvature. c0 is used as (c1+c1-c0)^2 in energy term (float)
 c0=0.5
 # d0/2 is spontaneous deviator. d0 is used in shape tensor only (float)
 # Mismatch = Curvature - c0/2*I - d0/2 sigma_z (i.e. the 1st and 2nd intrinsic curvatures are half the sum and half the difference )
 d0=0.5
-# curvature model (bool)
-# and 0x1  : calculate angle-sum gaussian curvature,  and 0x2  : calculate shape operator, 
-# and 0x4  : update director even in the old method.  and 0x8  : use shape operator energy rather than just save it
-# and 0x10 : use shape, but only for anisotropic.     and 0x20 : do not rotate director as a MC step
-# and 0x40 : disable old method (use shape op only)   and 0x80 : calculate angle sum only if kx2!=0
+
+# curvature model (8 bit flag)
+# 0x01 : calculate angle-sum gaussian curvature,  0x02 : calculate shape operator, 
+# 0x04 : update director even in the old method.  0x08 : use shape operator energy rather than just save it
+# 0x10 : use shape, but only for anisotropic.     0x20 : do not rotate director as a MC step
+# 0x40 : disable old method (use shape op only)   0x80 : calculate angle sum only if kx2!=0
 # example of important models: 
 # 0: old method. 7: debug, save everything but use energy from old method. 35: parallel transport of directors only
 curvature_model=15
-# limit sharp edges by having a dihedral angle cosine limit cos(phi_ab)>x. defaults to -1 (no limit)
+# limit sharp edges by imposing the dihedral angle between triangle obeys cos(phi_ab)>X. -1 means no limit
 min_dihedral_angle_cosine=0.1
 
-#energy of attraction of vertices with spontaneous curvature (float, positive value for attraction)
+# energy of bond between bonding vertices (float, positive value for attraction)
 w=1.0
-# bond model- vertex of bonding type bind with mean(w). (bool)
-# and 0x1: require type identity, and 0x2: nematic interaction between anisotropic vtx
+# bond model- vertex of bonding type bind with mean(w). (flag)
+# 0x1: require type identity.   0x2: nematic interaction between anisotropic vtx
 bond_model=0
 
-#direct force on vesicles with spontaneous curvature (float)
+#direct force on active vertices (float)
 F=1.0
-# force_model- force on active type vertices. (bool)
+# force_model- force on active type vertices. (integer flag)
 # 0: force in normal direction
 # 1: F proportional nonactive neigh, 2: F proportional nonconcave neigh
 # 3: F=0 if any neigh is concave
@@ -80,28 +88,30 @@ vicsek_radius=4.0
 ###### Adhesion to surface #######
 ######---------------------#######
 
-# Adhesion model (flag)
+# Adhesion model (integer flag)
+# energy of any adhesive vertex dx distance from the adhesion geometry 
+# as long as distance is less than the cutoff (dx0)
 # 1: step potential ad_w*(dx/dx0), 
 # 2: parabolic ad_w*(1-(dx/dx0)^2)
 adhesion_model=0
-# type of adhesion geometry do you want (flag)
-# 1: step_potential 
-# 2: spherical surface with step potential 
-# 3: cylindrical surface with step potential
+# type of adhesion geometry do you want (integer flag)
+# 1: plane_potential 
+# 2: spherical surface
+# 3: cylindrical surface
 adhesion_geometry=0
 # potential range (float in lmin)
 adhesion_cuttoff=1
-# adhesion energy per unit area or per vertex
+# adhesion energy per vertex (float)
 adhesion_strength=1.0
-# radius of the sphere or cylinder; for a flat substarte, choose it to be zero
+# radius of the sphere or cylinder. irrelevant for a flat substrate.
 adhesion_radius=5.0
-# position of the adhesive surface
+# position of the adhesive surface (float)
 # bipyramid topmost is approx. z_max = 0.630877*nshell, so -z_max is a good guess
 z_adhesion=-5
 
-#do you want to see any crawling motion on x-y plane, then choose 1, 0 otherwise; only for flat and cylindrical substrate 
-allow_xy_plane_movement=0
-#in active case, we need to apply an external force in the z-direction for overall force balance along z-direction, choose 1 if you want this, 0 otherwise
+# Allow motion of center mass: default (0) reset vesicle to 0,0,0 every few time steps (bool) 
+allow_center_mass_movement=0
+# In active case, we need to apply an external force in the z-direction for overall force balance along z-direction, choose 1 if you want this, 0 otherwise (bool)
 force_balance_along_z_axis=0
 
 
@@ -109,12 +119,12 @@ force_balance_along_z_axis=0
 ###### Pressure/volume/area/tension calculations #######
 ######-------------------------------------------#######
 
-# (pressure_switch=1: calculate p*dV energy contribution)
+# Calculate p*dV energy contribution (bool)
 pressure_switch=0
 # pressure difference: p_inside - p_outside (in units kT/l_min^3):
-pressure=0.1
+pressure=0.0
 
-# Volume constraint 
+# Volume constraint/energy (integer flag) 
 # 0: disable constant volume
 # 1: enable with additional vertex move {broken}
 # 2: enable with epsvol range
@@ -122,23 +132,24 @@ pressure=0.1
 # 4: enable reduced volume parabolic potential (xkV0/2 (V_red_eq-V/Vsph)^2)
 volume_switch=0
 constvolprecision=1e-14
-# V0 less than 1 to determine volume from initial conditions
+# V0 less than 1 to determine volume from initial conditions (see constant_volume tag in .vtu files) (float)
 V0=0
-# modulus needs some work: reasonable value depends on N vertices!
+# volume modulus (float)
+# needs some thinking: reasonable values depends on number of vertices N!
 # reduced volume scaling is between 1/(N Sqrt(N)) and 1/N
 xkV0=1.0
-# reduce volume at equilibrium (between 0 and 1)
+# reduce volume at equilibrium (between 0 and 1) (float)
 Vr=1.0
 
-# Area constraint 
+# Area constraint/energy (integer flag) 
 # 0: disable constant area, 
-# 1: stretching
+# 1: stretching of triangles
 # 2: enable constant area with epsarea
 # 3: enable parabolic potential (xkA0/2A0 (A-A0)^2)
 area_switch=0
-# A0 less than 1 to determine area from initial conditions
+# A0 less than 1 to determine area from initial conditions (see constant_area tag in .vtu files)  (float)
 A0=0
-# Stretching
+# Stretching modulus (float)
 xkA0=1.0
 
 
@@ -148,7 +159,7 @@ xkA0=1.0
 
 ####### Nucleus (inside the vesicle) ###########
 
-# Radius of an impenetrable hard sphere inside the vesicle
+# Radius and position of an impenetrable hard sphere inside the vesicle (float)
 R_nucleus=0
 R_nucleusX=0
 R_nucleusY=0
@@ -165,7 +176,7 @@ plane_F=1.0
 
 ###### Spherical harmonics ###########
 
-# If 0 then spherical harmonics are not calculated at all.
+# If 0 then spherical harmonics are not calculated at all. (integer)
 spherical_harmonics_coefficients=0
 
 

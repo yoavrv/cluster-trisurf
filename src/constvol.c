@@ -75,12 +75,12 @@ ts_bool constvolume(ts_vesicle *vesicle, ts_vertex *vtx_avoid, ts_double Vol, ts
         if(fabs(voldiff)/vesicle->volume < vesicle->tape->constvolprecision){
             //calculate energy, return change in energy...
              oenergy=vtx_moved->energy;
-            energy_vertex(vtx_moved);
+            vertex_curvature_energy(vtx_moved);
             delta_energy=vtx_moved->xk*(vtx_moved->energy - oenergy);
             //the same is done for neighbouring vertices
             for(j=0;j<vtx_moved->neigh_no;j++){
                 oenergy=vtx_moved->neigh[j]->energy;
-                energy_vertex(vtx_moved->neigh[j]);
+                vertex_curvature_energy(vtx_moved->neigh[j]);
                 delta_energy+=vtx_moved->neigh[j]->xk*(vtx_moved->neigh[j]->energy-oenergy);
             }
             *retEnergy=delta_energy;
@@ -120,12 +120,12 @@ ts_bool constvolume(ts_vesicle *vesicle, ts_vertex *vtx_avoid, ts_double Vol, ts
             }
 
             oenergy=vtx_moved->energy;
-            energy_vertex(vesicle, vtx_moved);
+            vertex_curvature_energy(vesicle, vtx_moved);
             delta_energy=(vtx_moved->energy - oenergy);
             //the same is done for neighbouring vertices
             for(j=0;j<vtx_moved->neigh_no;j++){
                 oenergy=vtx_moved->neigh[j]->energy;
-                energy_vertex(vesicle, vtx_moved->neigh[j]);
+                vertex_curvature_energy(vesicle, vtx_moved->neigh[j]);
                 delta_energy+=(vtx_moved->neigh[j]->energy-oenergy);
             }
             //adhesion energy
@@ -179,7 +179,7 @@ ts_bool constvolumerestore(ts_vesicle *vesicle, ts_vertex *vtx_moved,ts_vertex *
     for(j=0;j<vtx_moved->tristar_no;j++) triangle_normal_vector(vtx_moved->tristar[j]);
     for(j=0;j<vtx_moved->neigh_no;j++){
         // memcpy((void *)vtx_moved->neigh[j],(void *)&vtx_backup[j+1],sizeof(ts_vertex));
-        energy_vertex(vesicle, vtx_moved->neigh[j]);
+        vertex_curvature_energy(vesicle, vtx_moved->neigh[j]);
     }
 
     free(vtx_backup);

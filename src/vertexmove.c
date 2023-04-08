@@ -236,12 +236,12 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
     }
     // bending energy of the vertex
     oenergy=vtx->energy;
-    energy_vertex(vesicle, vtx);
+    vertex_curvature_energy(vesicle, vtx);
     delta_energy=(vtx->energy - oenergy);
     //the same is done for neighbouring vertices
     for(i=0;i<vtx->neigh_no;i++){
         oenergy=vtx->neigh[i]->energy;
-        energy_vertex(vesicle, vtx->neigh[i]);
+        vertex_curvature_energy(vesicle, vtx->neigh[i]);
         delta_energy+=(vtx->neigh[i]->energy-oenergy);
     }
 

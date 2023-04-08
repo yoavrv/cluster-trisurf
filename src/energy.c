@@ -18,29 +18,46 @@ int cmpfunc(const void *x, const void *y)
     else return -1;
 }
 
-/** @brief Wrapper that calculates energy of every vertex in vesicle
+/** @brief Wrapper that calculates and saves energy of every vertex in vesicle
  *  
  *  Function calculated energy of every vertex in vesicle. It can be used in
  *  initialization procedure or in recalculation of the energy after non-MCsweep *  operations. However, when random move of vertex or flip of random bond occur *  call to this function is not necessary nor recommended. 
  *  @param *vesicle is a pointer to vesicle.
  *  @returns TS_SUCCESS on success.
 */
-ts_bool mean_curvature_and_energy(ts_vesicle *vesicle){
-
-    ts_idx i;
-    
+ts_bool sweep_vertex_curvature_energy(ts_vesicle *vesicle){
+    ts_idx i;  
     ts_vertex_list *vlist=vesicle->vlist;
     ts_vertex **vtx=vlist->vtx;
 
     for(i=0;i<vlist->n;i++){
         if (!(vtx[i]->type==is_ghost_vtx)) {       
-            energy_vertex(vesicle, vtx[i]);
+            vertex_curvature_energy(vesicle, vtx[i]);
         }
         
     }
 
     return TS_SUCCESS;
 }
+
+/** @brief Wrapper that calculate and saves force of every vertex in vesicle
+ * 
+ *  @param *vesicle is a pointer to vesicle.
+ *  @returns TS_SUCCESS on success.
+*/
+ts_bool sweep_vertex_forces(ts_vesicle *vesicle){
+    ts_idx i;
+    ts_vertex_list *vlist=vesicle->vlist;
+    ts_vertex **vtx=vlist->vtx;
+    for(i=0;i<vlist->n;i++){
+        if (!(vtx[i]->type==is_ghost_vtx)) {       
+            direct_force_energy(vesicle,vtx[i],vtx[i]);
+        }    
+    }
+
+    return TS_SUCCESS;
+}
+
 
 /** @brief Calculate energy of a bond (in models where energy is bond related)
  *
@@ -474,7 +491,7 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
  * @param *vtx is a pointer to vertex at which we want to calculate the energy
  * @returns TS_SUCCESS on successful calculation.
 */
-inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
+inline ts_bool vertex_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
     
     ts_small_idx jj;
     ts_small_idx jjm; // next (p) and prev (m) neighbor idx
@@ -956,7 +973,8 @@ ts_double direct_force_from_Fz_balance(ts_vesicle *vesicle, ts_vertex *vtx, ts_v
     static ts_char countdown=0;
 
     if (!countdown){
-        Fz=total_force_on_vesicle(vesicle);
+        total_force_on_vesicle(vesicle);
+        Fz = vesicle->fz;
         countdown=64;//pow(2,20)-1; go back here in 64 steps
     }
     else{
@@ -975,16 +993,20 @@ ts_double direct_force_from_Fz_balance(ts_vesicle *vesicle, ts_vertex *vtx, ts_v
     
 }
 
-inline ts_double total_force_on_vesicle(ts_vesicle *vesicle){
+ts_bool total_force_on_vesicle(ts_vesicle *vesicle){
     ts_idx i;
-    ts_double fz=0;
+    vesicle->fx = 0;
+    vesicle->fy = 0;
+    vesicle->fz = 0;
     /*find normal of the vertex as sum of all the normals of the triangles surrounding it. */
     for (i=0;i<vesicle->vlist->n;i++){
         if(vesicle->vlist->vtx[i]->type&is_active_vtx){
-            fz+=vesicle->vlist->vtx[i]->fz;
+            vesicle->fx+=vesicle->vlist->vtx[i]->fx;
+            vesicle->fy+=vesicle->vlist->vtx[i]->fy;
+            vesicle->fz+=vesicle->vlist->vtx[i]->fz;
         }
     }
-    return fz;
+    return TS_SUCCESS;
     
 }
 
@@ -1036,8 +1058,8 @@ ts_double adhesion_energy_diff(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *v
 ts_double adhesion_geometry_distance(ts_vesicle *vesicle, ts_vertex *vtx){
     ts_double z=vtx->z;
     ts_double z0=vesicle->tape->z_adhesion;
-    ts_double c0=vesicle->adhesion_center;
     ts_double r=vesicle->tape->adhesion_radius;
+    ts_double c0=z0-r;
     ts_flag geometry = vesicle->tape->adhesion_geometry;
 
     //1 for plane potential
@@ -1059,7 +1081,7 @@ ts_double adhesion_geometry_distance(ts_vesicle *vesicle, ts_vertex *vtx){
 // Check if vertex normal is oriented towards the geometry
 ts_bool adhesion_geometry_side(ts_vesicle *vesicle, ts_vertex *vtx){
     ts_double z=vtx->z;
-    ts_double c0=vesicle->adhesion_center;
+    ts_double c0=vesicle->tape->z_adhesion-vesicle->tape->adhesion_radius;
     ts_flag geometry = vesicle->tape->adhesion_geometry;
 
     //1 for plane potential, surface facing the -z direction way
