@@ -2,6 +2,8 @@
 #ifndef _H_RESTORE
 #define _H_RESTORE
 
+#include <libxml/tree.h>
+
 ts_vesicle *parseDump(char *dumpfname);
 ts_vesicle *parseTrisurfTag(xmlDocPtr doc, xmlNodePtr cur);
 ts_bool setGlobalTapeTXTfromTapeTag(xmlDocPtr doc, xmlNodePtr cur);
