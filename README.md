@@ -3,7 +3,9 @@ TRISURF NG
 A Monte-Carlo Triangulated-Surface simulator for membrane dynamics.  
 
 At the core, this simulates of the bending energy due to curvature of a 2D membrane, based on the Helfrich Hamiltonian  
+
 $$ \iint \frac{\kappa}{2}\left(C_1+C_2-C_0\right)^2 dA $$
+
 Where the membrane is described by a graph of vertices/nodes $i\in V$, bonds/edges $\left\langle i,j\right\rangle \in E$, and triangles $\left\langle i,j,k\right\rangle\in T$.
 
 
@@ -46,7 +48,8 @@ build_no_install.sh is modified not to install, only making `src/trisurf` in the
 
 Hint: To install different versions on the cluster  
 ``./configure --prefix=~/apps --program_prefix=special_``  
-Check that it works with  
+``make install`` will install a special_trisurf in ~/apps.  
+Check that it is correct with  
 ``make install --dry-run``
 
 ### 2. Use
@@ -54,9 +57,9 @@ Check that it works with
 
 Prepare tape file, storing the definition for the simulation. You can use the sample tape file in the ``src/`` directory as a template for your simulation.
 
-Run simulations with ``trisurf --force-from-tape`` for initial run, or ``cluster-trisurf/src/trisurf`` for continuing aborted simulations from binary ``dump.bin``.  
-Run ``trisurf --restore-from-vtk timestep_000999.vtu`` to continue simulation from a VTU file.
-Run  
+Run simulations with ``trisurf --force-from-tape`` for initial run, or ``cluster-trisurf/src/trisurf`` for continuing stopped simulations from binary ``dump.bin``.  
+Run ``trisurf --restore-from-vtk some_file.vtu`` to continue simulation from a VTU file.  
+see ``trisurf --help`` for more information.
 
 ======== LIBRARY VERSION ================  
 
@@ -76,7 +79,7 @@ This line seemed to fixed everything:
 - Adhesion from Raj-kumar Sadhu: step, parabolic energy from surface of plane, spherical or cylindrical geometry.
 - Added random_seed option to the tape fro reproducability: default (0) to this moment (linux epoch)
 - Gaussian curvature with angle sum formula $\frac{1}{A}\left( 2\pi-\sum\theta_i\right)$. Note gaussian modulus is negative!
-- Anisotropy: vertices have director $\hat{d}$ and shape operator energy $E(\hat{S})$, as well as spontaneous deviator d0
+- Anisotropy: vertices have director $\hat{d}$ and shape operator energy $E(\hat{S})$, as well as spontaneous deviator $d_0$
 - Dihedral angle limits between triangles to prevent "spikiness" pathologys (in tape  "min_dihedral_angle_cosine=0.1". value of -1 means no effect)
 - More vertex data is individualized per-vertex and outputted to the .vtu 
     - type
