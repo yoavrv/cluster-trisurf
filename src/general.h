@@ -140,101 +140,6 @@ typedef unsigned int ts_cell_idx; // index of a cell
 typedef char ts_flag;
 typedef int ts_big_flag;
 
-/* STRUCTURES */
-
-
-/** @brief Data structure for keeping the coordinates in selected coordinate
- * system
- */
-#define TS_COORD_CARTESIAN 0
-#define TS_COORD_SPHERICAL 1
-#define TS_COORD_CYLINDRICAL 2
-// ^ coordinates in the vtu file?
-
-/** @brief Prevent spikiness of triangles by imposing a minimum angle between them
- * We measure the normal between neighboring two triangles n1*n2=cos(theta)
- * And impose this is greater than 
- * */
-// #define MIN_INTERTRIANGLE_ANGLE_COSINE 0
-
-typedef struct {
-    ts_double e1;
-    ts_double e2;
-    ts_double e3;
-    ts_uint coord_type;
-} ts_coord;
-
-/** @brief Data structure of all data connected to a vertex
- *
- *  ts_vertex holds the data for one single point (bead, vertex). To understand how to use it
- *  here is a detailed description of the fields in the data structure. */
-struct ts_vertex {
-        ts_double x; /**< The x coordinate of vertex. */
-        ts_double y; /**< The y coordinate of vertex. */
-        ts_double z; /**< The z coordinate of vertex. */
-        ts_double mean_curvature;
-        ts_double gaussian_curvature; // to be determined: mean, Gaussian curvature or c1,c2
-        ts_double mean_energy;
-        ts_double gaussian_energy;
-        ts_double energy;
-        //ts_double energy_h;
-        ts_double xk; //bending rigidity
-        ts_double xk2; //second bending modulus (Gaussian/ deviatoric?): should be excess (Gauss-Bonet)
-        ts_double w;
-        ts_double c;
-        ts_double nx; // normal vector
-        ts_double ny;
-        ts_double nz;
-        ts_double nx2; // normal vector
-        ts_double ny2;
-        ts_double nz2;
-        ts_double f;  // force
-        ts_double fx; // force vector
-        ts_double fy;
-        ts_double fz;
-        ts_double ad_w; // adhesive surface bonding
-        ts_double d;  // spontaneous curvature deviator
-        ts_double dx; // director vector
-        ts_double dy;
-        ts_double dz;
-        ts_double eig0[3];
-        ts_double eig1[3];
-        ts_double eig2[3];
-        ts_double new_c1;
-        ts_double new_c2;
-        ts_double eig_v0;
-        ts_double eig_v1;
-        ts_double eig_v2;
-        ts_double mean_curvature2;
-        ts_double gaussian_curvature2; 
-        ts_double mean_energy2;
-        ts_double gaussian_energy2;
-        struct ts_vertex **neigh; /**< The pointer that holds neigh_no pointers to this structure. */
-        struct ts_triangle **tristar; /**< The list of triangles this vertex belongs to. This is an array of pointers to ts_triangle structure of tristar_no length */
-        struct ts_bond **bond; /**< Array of pointers of lenght bond_no that stores information on bonds. */
-        struct ts_cell *cell; /**< Which cell do we belong to? */
-        struct ts_poly *grafted_poly;
-        struct ts_cluster *cluster;
-        ts_idx idx; //vertex index
-        ts_idx id;	//filament index
-        // number of neighbors, of all types
-        // these never really go beyond even 12, so
-        // we can squeeze to char
-        // (n.n is capped at 19 at vertexmove backup[], 10 at (currently broken) constvol)
-        ts_small_idx neigh_no; /**< The number of neighbours. */
-        ts_small_idx tristar_no; //number of triangle-neighbors
-        ts_small_idx bond_no;
-        /* 1st bit: bonds, 2nd bit: active, 
-        3rd bit: adhesive, 4th bit: anisotropic, 
-        5th bit: reserved, 6th bit: vicsek 
-        7th bit: edge, 8th bit: ghost*/
-        ts_flag type; 
-
-        // apparently using a bool for the type flag does nothing, but I don't want to reserve 
-        // flags for all 32 bytes of an int
-
-};
-
 /** Enums for various options
  * 
  * These are intended to work by
@@ -298,6 +203,100 @@ enum adhesion_geometry_type{
 
 };
 
+
+/* STRUCTURES */
+
+
+/** @brief Data structure for keeping the coordinates in selected coordinate
+ * system
+ */
+#define TS_COORD_CARTESIAN 0
+#define TS_COORD_SPHERICAL 1
+#define TS_COORD_CYLINDRICAL 2
+// ^ coordinates in the vtu file?
+
+/** @brief Prevent spikiness of triangles by imposing a minimum angle between them
+ * We measure the normal between neighboring two triangles n1*n2=cos(theta)
+ * And impose this is greater than 
+ * */
+// #define MIN_INTERTRIANGLE_ANGLE_COSINE 0
+
+typedef struct {
+    ts_double e1;
+    ts_double e2;
+    ts_double e3;
+    ts_uint coord_type;
+} ts_coord;
+
+/** @brief Data structure of all data connected to a vertex
+ *
+ *  ts_vertex holds the data for one single point (bead, vertex). To understand how to use it
+ *  here is a detailed description of the fields in the data structure. */
+struct ts_vertex {
+        ts_double x; /**< The x coordinate of vertex. */
+        ts_double y; /**< The y coordinate of vertex. */
+        ts_double z; /**< The z coordinate of vertex. */
+        ts_double mean_curvature;
+        ts_double gaussian_curvature;
+        ts_double mean_energy;
+        ts_double gaussian_energy;
+        ts_double energy;
+        ts_double xk; //bending rigidity
+        ts_double xk2; //second bending modulus (Gaussian/ deviatoric?)
+        ts_double w;
+        ts_double c;
+        ts_double nx; // normal vector
+        ts_double ny;
+        ts_double nz;
+        ts_double nx2; // normal vector
+        ts_double ny2;
+        ts_double nz2;
+        ts_double f;  // force
+        ts_double fx; // force vector
+        ts_double fy;
+        ts_double fz;
+        ts_double ad_w; // adhesive surface bonding
+        ts_double d;  // spontaneous curvature deviator
+        ts_double dx; // director vector
+        ts_double dy; // director vector
+        ts_double dz; // director vector
+        ts_double eig0[3]; // principal curvature direction (largest curvature)
+        ts_double eig1[3]; // principal curvature direction (smallest curvature)
+        ts_double eig2[3]; // shape tensor normal (0)
+        ts_double new_c1; // c1 from non-tensor mean curvature and gaussian
+        ts_double new_c2; // c2 from non-tensor mean curvature and gaussian
+        ts_double eig_v0; // c1 from shape tensor (largest curvature)
+        ts_double eig_v1; // c2 from shape tensor (smallest curvature)
+        ts_double eig_v2; // 0 noraml eigenvalue: 3x3 shape tensor has 0 eigenvalue normal
+        ts_double mean_curvature2; // from shape tensor
+        ts_double gaussian_curvature2; // from shape tensor
+        ts_double mean_energy2; // from shape tensor
+        ts_double gaussian_energy2; // from shape tensor
+        struct ts_vertex **neigh; /**< The pointer that holds neigh_no pointers to this structure. */
+        struct ts_triangle **tristar; /**< The list of triangles this vertex belongs to. This is an array of pointers to ts_triangle structure of tristar_no length */
+        struct ts_bond **bond; /**< Array of pointers of lenght bond_no that stores information on bonds. */
+        struct ts_cell *cell; /**< Which cell do we belong to? */
+        struct ts_poly *grafted_poly;
+        struct ts_cluster *cluster;
+        ts_idx idx; //vertex index
+        ts_idx id;	//filament index
+        // number of neighbors, of all types
+        // these never really go beyond even 12, so
+        // we can squeeze to char
+        // (n.n is capped at 19 at vertexmove backup[], 10 at (currently broken) constvol)
+        ts_small_idx neigh_no; /**< The number of neighbours. */
+        ts_small_idx tristar_no; //number of triangle-neighbors
+        ts_small_idx bond_no;
+        /* 1st bit: bonds, 2nd bit: active, 
+        3rd bit: adhesive, 4th bit: anisotropic, 
+        5th bit: reserved, 6th bit: vicsek 
+        7th bit: edge, 8th bit: ghost*/
+        ts_flag type; 
+
+        // apparently using a bool for the type flag does nothing, but I don't want to reserve 
+        // flags for all 32 bytes of an int
+
+};
 
 typedef struct ts_vertex ts_vertex;
 
@@ -367,15 +366,16 @@ typedef struct ts_cell_list{
 
 typedef struct {
     ts_double *vtx_relR; //stuff taken from vertex
-    ts_double* vtx_solAngle;
-    ts_idx n_vtx; //vlist->n
-    ts_uint l;
+    ts_double *vtx_solAngle;
     ts_double **ulm;
-    gsl_complex **ulmComplex;
-    ts_double **sumUlm2;
-    ts_uint N;
     ts_double **co;
     ts_double ***Ylmi;
+    ts_double **sumUlm2;
+    gsl_complex **ulmComplex;
+    ts_idx n_vtx; //vlist->n
+    ts_uint l;
+    ts_uint N;
+
 } ts_spharm;
 
 
@@ -397,8 +397,8 @@ typedef struct ts_poly_list ts_poly_list;
 
 
 typedef struct{
-    ts_float z_max;
-    ts_float z_min;
+    ts_double z_max;
+    ts_double z_min;
     ts_bool force_switch;
 } ts_confinement_plane;
 
@@ -438,9 +438,9 @@ typedef struct {
     //  long int brezveze0;
     //	long int brezveze1;
     //	long int brezveze2;
-    ts_idx iterations;
     ts_massive_idx mcsweeps;
     ts_ulong random_seed;
+    ts_idx iterations;
     ts_idx inititer;
     ts_idx number_of_vertices_with_c0;
     ts_uint nshell;
@@ -465,7 +465,6 @@ typedef struct {
     ts_flag type_of_bond_model;
     ts_flag type_of_curvature_model;
     ts_flag type_of_force_model;
-    //char *multiprocessing;
 } ts_tape;
 
 
