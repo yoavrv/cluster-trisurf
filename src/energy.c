@@ -1048,14 +1048,14 @@ ts_double adhesion_energy_diff(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *v
             if (model==adhesion_step_potential) {
                 delta_energy-=vtx->ad_w;
             } else if (model==adhesion_parabolic_potential){
-                delta_energy-=vtx->ad_w*(1-pow(delta,2)/pow(dz,2));
+                delta_energy-=vtx->ad_w*(1-pow(delta/dz,2));
             }
     }
     if( (vtx_old->type&is_adhesive_vtx) && (oriented_old) &&  (delta_old<=dz) ){
             if (model==adhesion_step_potential) {
                 delta_energy+=vtx_old->ad_w;
             } else if (model==adhesion_parabolic_potential){
-                delta_energy+=vtx_old->ad_w*(1-pow(delta_old,2)/pow(dz,2));
+                delta_energy+=vtx_old->ad_w*(1-pow(delta_old/dz,2));
             }
     }
 
