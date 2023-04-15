@@ -4,9 +4,9 @@
 #include "vertex.h"
 
 // allocate a cell list, allocating ncmax1*ncmax2*ncmax3 cells
-ts_cell_list  *init_cell_list(ts_uint ncmax1, ts_uint ncmax2, ts_uint ncmax3, ts_double stepsize){
-    ts_uint i;
-    ts_uint nocells=ncmax1*ncmax2*ncmax3;
+ts_cell_list  *init_cell_list(ts_cell_idx ncmax1, ts_cell_idx ncmax2, ts_cell_idx ncmax3, ts_double stepsize){
+    ts_cell_idx i;
+    ts_cell_idx nocells=ncmax1*ncmax2*ncmax3;
     ts_cell_list *clist=(ts_cell_list *)malloc(sizeof(ts_cell_list));
     if(clist==NULL) fatal("Error while allocating memory for cell list!",100);
 
@@ -15,7 +15,9 @@ ts_cell_list  *init_cell_list(ts_uint ncmax1, ts_uint ncmax2, ts_uint ncmax3, ts
     clist->ncmax[2]=ncmax3;
     clist->cellno=nocells;
     clist->dcell=1.0/(1.0 + stepsize);
-    clist->shift=(ts_double) clist->ncmax[0]/2;
+    clist->shift[0]=(ts_double) clist->ncmax[0]/2;
+    clist->shift[1]=(ts_double) clist->ncmax[1]/2;
+    clist->shift[2]=(ts_double) clist->ncmax[2]/2;
 
     clist->cell=(ts_cell **)malloc(nocells*sizeof(ts_cell *));
     if(clist->cell==NULL) fatal("Error while allocating memory for cell list! ncmax too large?",101);
@@ -35,9 +37,9 @@ ts_bool cell_free(ts_cell* cell){
 }
 
 ts_bool cell_list_free(ts_cell_list *clist){
-    ts_uint i;
+    ts_cell_idx i;
     if(clist==NULL) return TS_FAIL;
-    ts_uint nocells=clist->cellno;
+    ts_cell_idx nocells=clist->cellno;
     for(i=0;i<nocells;i++)
          if(clist->cell[i] != NULL) cell_free(clist->cell[i]);
     free(clist->cell);
@@ -46,13 +48,13 @@ ts_bool cell_list_free(ts_cell_list *clist){
 }
 
 // possibly returns the cell the vtx suppose to belong to?
-inline ts_uint vertex_self_avoidance(ts_vesicle *vesicle, ts_vertex *vtx){
-    ts_uint cellidx;
-    ts_uint ncx, ncy,ncz;
+inline ts_cell_idx vertex_self_avoidance(ts_vesicle *vesicle, ts_vertex *vtx){
+    ts_cell_idx cellidx;
+    ts_cell_idx ncx, ncy,ncz;
     ts_cell_list *clist=vesicle->clist;
-    ncx=(ts_uint) ((vtx->x-vesicle->cm[0])*clist->dcell + clist->shift);
-    ncy=(ts_uint) ((vtx->y-vesicle->cm[1])*clist->dcell + clist->shift);
-    ncz=(ts_uint) ((vtx->z-vesicle->cm[2])*clist->dcell + clist->shift);
+    ncx=(ts_cell_idx) ((vtx->x-vesicle->cm[0])*clist->dcell + clist->shift[0]);
+    ncy=(ts_cell_idx) ((vtx->y-vesicle->cm[1])*clist->dcell + clist->shift[1]);
+    ncz=(ts_cell_idx) ((vtx->z-vesicle->cm[2])*clist->dcell + clist->shift[2]);
 
     if(ncx >= clist->ncmax[0]-1 || ncx <= 2){
         fatal("Vesicle is positioned outside the cell covered area. Coordinate x is the problem.",1500);
@@ -111,7 +113,7 @@ inline ts_bool cell_remove_vertex(ts_cell *cell, ts_vertex *vtx){
 
 // free each cell->vertex i.e. return to a pristine space
 ts_bool cell_list_cell_occupation_clear(ts_cell_list *clist){
-    ts_uint i;
+    ts_cell_idx i;
     for(i=0;i<clist->cellno;i++){
         if(clist->cell[i]->vertex != NULL){
             free(clist->cell[i]->vertex);
@@ -123,9 +125,11 @@ ts_bool cell_list_cell_occupation_clear(ts_cell_list *clist){
 }
 
 // ??? perhaps ??? check vertex is not too close to others in a 3x3x3 cell neighborhood
-ts_bool cell_occupation_number_and_internal_proximity(ts_cell_list *clist, ts_uint cellidx, ts_vertex *vtx){
-    ts_uint ncx,ncy,ncz,remainder,cell_occupation;
-    ts_uint i,j,k,l,neigh_cidx;
+ts_bool cell_occupation_number_and_internal_proximity(ts_cell_list *clist, ts_cell_idx cellidx, ts_vertex *vtx){
+    ts_uint remainder;
+    ts_cell_idx ncx,ncy,ncz;
+    ts_cell_idx x,y,z,neigh_cidx;
+    ts_small_idx i, cell_occupation;
     ts_double dist;
     ncx=(cellidx+1)/(clist->ncmax[2]*clist->ncmax[1])+1; //+1 because of zero indexing.
     remainder=(cellidx+1)%(clist->ncmax[2]*clist->ncmax[1]);
@@ -133,10 +137,10 @@ ts_bool cell_occupation_number_and_internal_proximity(ts_cell_list *clist, ts_ui
     ncz=remainder%clist->ncmax[2];
     // fprintf(stderr,"here are ncx,ncy,ncz=%i,%i,%i\n",ncx,ncy,ncz);
 
-    for(i=ncx-1;i<=ncx+1;i++){
-        for(j=ncy-1;j<=ncy+1;j++){
-            for(k=ncz-1;k<=ncz+1;k++){
-                neigh_cidx=k+(j-1)*clist->ncmax[2]+(i-1)*clist->ncmax[2]*clist->ncmax[1] -1;
+    for(x=ncx-1;x<=ncx+1;x++){
+        for(y=ncy-1;y<=ncy+1;y++){
+            for(z=ncz-1;z<=ncz+1;z++){
+                neigh_cidx=z+(y-1)*clist->ncmax[2]+(x-1)*clist->ncmax[2]*clist->ncmax[1] -1;
                 // fprintf(stderr,"neigh_cell_index=%i\n",neigh_cidx);
                 cell_occupation=clist->cell[neigh_cidx]->nvertex;
                 // fprintf(stderr, "cell_occupation=%i\n",cell_occupation);
@@ -147,20 +151,20 @@ ts_bool cell_occupation_number_and_internal_proximity(ts_cell_list *clist, ts_ui
                 }
                 // Now we check whether we didn't come close to some other vertices in the same cell!
                 if(cell_occupation>0){
-                    for(l=0;l<cell_occupation;l++){
+                    for(i=0;i<cell_occupation;i++){
                     //carefull with this checks!
-                        if(clist->cell[neigh_cidx]->vertex[l]!=vtx){
-                            // fprintf(stderr,"calling dist on vertex %i\n",l);
-                            dist=vtx_distance_sq(clist->cell[neigh_cidx]->vertex[l],vtx);
+                        if(clist->cell[neigh_cidx]->vertex[i]!=vtx){
+                            // fprintf(stderr,"calling dist on vertex %i\n",i);
+                            dist=vtx_distance_sq(clist->cell[neigh_cidx]->vertex[i],vtx);
 
                             // if(vtx->idx==1)
-                            // fprintf(stderr,"VTX(0) ima bliznji vertex z indeksom, %d, tipa %d \n", clist->cell[neigh_cidx]->vertex[l]->idx, clist->cell[neigh_cidx]->vertex[l]->id);
-                            // if(vtx->idx==0 && clist->cell[neigh_cidx]->vertex[l]->idx==0)
+                            // fprintf(stderr,"VTX(0) ima bliznji vertex z indeksom, %d, tipa %d \n", clist->cell[neigh_cidx]->vertex[i]->idx, clist->cell[neigh_cidx]->vertex[i]->id);
+                            // if(vtx->idx==0 && clist->cell[neigh_cidx]->vertex[i]->idx==0)
                             //     fprintf(stderr,"*** dist was %f\n",dist);
                 
                             if(dist<=1.0 || 
                                 (dist<=clist->dmin_interspecies &&
-                                                     (clist->cell[neigh_cidx]->vertex[l]->id != vtx->id))) return TS_FAIL;
+                                                     (clist->cell[neigh_cidx]->vertex[i]->id != vtx->id))) return TS_FAIL;
                         }
                     }
                 }

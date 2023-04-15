@@ -11,7 +11,7 @@
   * @param N is the number of vertices to be initialized
   * @returns TS_SUCCESS on success, TS_FAIL otherwise. If allocation fails, the execution is terminated, reporting error code to the underlying operating system.
 */
-ts_vesicle *initial_distribution_dipyramid(ts_uint nshell, ts_uint ncmax1, ts_uint ncmax2, ts_uint ncmax3, ts_double stepsize);
+ts_vesicle *initial_distribution_dipyramid(ts_uint nshell, ts_cell_idx ncmax1, ts_cell_idx ncmax2, ts_cell_idx ncmax3, ts_double stepsize);
 
 ts_vesicle *create_vesicle_from_tape(ts_tape *tape);
 ts_bool set_vesicle_values_from_tape(ts_vesicle *vesicle);

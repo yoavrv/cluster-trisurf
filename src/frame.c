@@ -35,17 +35,20 @@ ts_bool centermass(ts_vesicle *vesicle){
 	}
 
 	//center mass for z component does not  change when adhesion is switched on
-	if(vesicle->tape->adhesion_switch){
+	if(vesicle->tape->adhesion_geometry==model_plane_potential){
 		temp_z_cm=vesicle->cm[2];
 		vesicle->cm[2]=0;
 	}
-	//center mass for x component does not  change for cylyndrical substrate
-	if(vesicle->tape->type_of_adhesion_model==model_cylindrical_step_potential){
+	//center mass for x and z component does not  change for cylyndrical substrate
+	else if(vesicle->tape->adhesion_geometry==model_cylindrical_potential){
+		temp_z_cm=vesicle->cm[2];
+		vesicle->cm[2]=0;
 		vesicle->cm[0]=0;
-	}
-
-	//center mass for x and y component does not  change for spherical substrate
-	if(vesicle->tape->type_of_adhesion_model==model_spherical_step_potential){
+	} 
+	//center mass for x y, and z component does not  change for spherical substrate
+	else if(vesicle->tape->adhesion_geometry==model_spherical_potential){
+		temp_z_cm=vesicle->cm[2];
+		vesicle->cm[2]=0;
 		vesicle->cm[0]=0;
 		vesicle->cm[1]=0;
 	}
@@ -94,7 +97,7 @@ ts_bool centermass(ts_vesicle *vesicle){
 // update cell occupation (? which is not done each vertex move)
 ts_bool cell_occupation(ts_vesicle *vesicle){
 	ts_idx i, j, n=vesicle->vlist->n;
-    ts_uint cellidx;
+    ts_cell_idx cellidx;
 	ts_cell_list *clist=vesicle->clist; //aliases for less wide code
 	ts_vertex_list *vlist;
 	ts_poly_list *poly_list=vesicle->poly_list;
@@ -140,9 +143,9 @@ ts_bool cell_occupation(ts_vesicle *vesicle){
 // overfilling a single cell with too many {x=0,y=0,z=0} vertices
 ts_bool initialization_cell_occupation(ts_vesicle *vesicle){
 	ts_bool is_initialized=0;
-	ts_uint rolling = 0;
+	ts_cell_idx rolling = 0;
 	ts_idx i, j, n=vesicle->vlist->n;
-    ts_uint cellidx;
+    ts_cell_idx cellidx;
 	ts_cell_list *clist=vesicle->clist; //aliases for less wide code
 	ts_vertex_list *vlist;
 	ts_poly_list *poly_list=vesicle->poly_list;

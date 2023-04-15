@@ -125,10 +125,16 @@ out of bound might be simpler: it's always i greater than vec->max
 typedef signed char ts_small_idx; // for tiny indices <<64, mostly short circular neighbor vectors
 typedef signed int ts_idx; // for big indices
 typedef signed long ts_massive_idx; //for mcsweeps
+
+// small index functions
 extern inline ts_small_idx next_small(ts_small_idx i, ts_small_idx max);
 extern inline ts_idx next_idx(ts_idx i, ts_idx max);
 extern inline ts_small_idx prev_small(ts_small_idx i, ts_small_idx max);
 extern inline ts_idx prev_idx(ts_idx i, ts_idx max);
+
+// yoav: I'm going to bravely denote the cell indices with their own typedef
+typedef unsigned int ts_cell_idx; // index of a cell
+
 // for the many flags: ts_flag to distinguish from ts_bool
 // with the idea that ts_bool is only 0/1 like TS_SUCCESS or TS_FAIL
 typedef char ts_flag;
@@ -280,11 +286,15 @@ enum force_model_type{
     model_vicsek_1overR=17, // use vicsek model with 1/R weights
 
 };
-enum adhesion_model_type{
-  model_step_potential=1,
-  model_parabolic_potential=2,
-  model_spherical_step_potential=3,
-  model_cylindrical_step_potential=4,
+enum adhesion_type{
+  adhesion_step_potential=1,
+  adhesion_parabolic_potential=2,
+
+};
+enum adhesion_geometry_type{
+  model_plane_potential=1,
+  model_spherical_potential=2,
+  model_cylindrical_potential=3,
 
 };
 
@@ -317,6 +327,9 @@ struct ts_triangle {
     ts_double xnorm;
     ts_double ynorm;
     ts_double znorm;
+    ts_double xcirc;
+    ts_double ycirc;
+    ts_double zcirc;
     ts_double area; // firstly needed for sh.c
     ts_double volume; // firstly needed for sh.c
     ts_double energy;
@@ -337,17 +350,17 @@ typedef struct ts_triangle_list ts_triangle_list;
 
 typedef struct ts_cell {
     ts_vertex **vertex;
-    ts_uint idx;
+    ts_cell_idx idx;
     ts_small_idx nvertex;
 } ts_cell; 
 
 typedef struct ts_cell_list{
-    ts_double dcell;
-    ts_double shift;
+    ts_double dcell;    // density (1/size) of each cell. vtx->x*dcell+shift(+-1?) is the vtx cell coordinate
+    ts_double shift[3]; // shift of x,y,z to the center
     ts_double dmin_interspecies; // ? minimum distance between non-connected vertices squared ?
     ts_cell **cell;
-    ts_uint ncmax[3]; // no idea what kind of indexing goes on here
-    ts_uint cellno;
+    ts_cell_idx ncmax[3]; // no idea what kind of indexing goes on here
+    ts_cell_idx cellno;
     ts_small_idx max_occupancy;
 } ts_cell_list;
 
@@ -395,10 +408,14 @@ typedef struct {
     ts_double R_nucleusX;
     ts_double R_nucleusY;
     ts_double R_nucleusZ;
-    ts_double xkA0;
+    ts_double xkA0; // area change modulus
+    ts_double xkV0; // volume change modulus
+    ts_double V0;
+    ts_double A0;
+    ts_double Vfraction; // equilibrium_reduced_volume
     ts_double constvolprecision;
     ts_double xk0; // bending modulus
-    ts_double xk2; // second bending modulus (Gaussian/ deviatoric?): should be excess (Gauss-Bonet)
+    ts_double xk2; // second bending modulus (Gaussian/ deviatoric?)
     ts_double dmax;
     ts_double dmin_interspecies;
     ts_double stepsize;
@@ -416,7 +433,8 @@ typedef struct {
     ts_double adhesion_strength;
     ts_double z_adhesion;
     ts_double adhesion_radius;
-    ts_double min_dihedral_angle_cosine; // Prevent spikiness of triangles by imposing a minimum dihedral angle
+    ts_double min_dihedral_angle_cosine; // prevent spikiness of triangles by imposing a minimum dihedral angle
+    ts_double d0; // spontaneous deviator
     //  long int brezveze0;
     //	long int brezveze1;
     //	long int brezveze2;
@@ -435,16 +453,15 @@ typedef struct {
     ts_idx nfil;
     ts_idx nfono;
     ts_uint shc; // related to max l of the spherical harmonics
-    ts_bool pswitch;
-    ts_bool constvolswitch;
-    ts_bool constareaswitch;
-    ts_bool stretchswitch;
+    ts_bool pressure_switch;
+    ts_bool volume_switch;
+    ts_bool area_switch;
     ts_bool quiet;
     ts_bool plane_confinement_switch;
-    ts_flag type_of_adhesion_model;
-    ts_bool allow_xy_plane_movement;
+    ts_bool allow_center_mass_movement;
     ts_bool force_balance_along_z_axis;
-    ts_bool adhesion_switch;
+    ts_flag adhesion_geometry; // geometry of adhesion (none, plane, sphere, cylinder)
+    ts_flag adhesion_model; // adhesion (none, step potential, parabolic potential)
     ts_flag type_of_bond_model;
     ts_flag type_of_curvature_model;
     ts_flag type_of_force_model;
@@ -459,7 +476,11 @@ typedef struct {
     ts_double dmax;
     ts_double stepsize;
     ts_double cm[3];
+    ts_double fx;
+    ts_double fy;
+    ts_double fz;
     ts_double volume;
+    ts_double area;
     ts_double spring_constant;
     ts_double pressure;
     ts_double R_nucleus;
@@ -467,8 +488,6 @@ typedef struct {
     ts_double R_nucleusY;
     ts_double R_nucleusZ;
     ts_double nucleus_center[3];
-    ts_double area;
-    ts_double adhesion_center;
     ts_tape *tape;
     ts_spharm *sphHarmonics;
     // Polymers outside the vesicle and attached to the vesicle membrane (polymer brush):
@@ -481,7 +500,6 @@ typedef struct {
     ts_cell_list *clist;
     ts_confinement_plane confinement_plane;
     ts_uint nshell;
-    ts_bool pswitch;
 } ts_vesicle;
 
 
@@ -517,11 +535,11 @@ typedef struct {
 
 /* GLOBAL VARIABLES */
 
-ts_bool quiet;
-ts_double V0;
-ts_double A0;
-ts_double epsvol;
-ts_double epsarea;
+extern ts_bool quiet;
+extern ts_double V0;
+extern ts_double A0;
+extern ts_double epsvol;
+extern ts_double epsarea;
 /* FUNCTIONS */
 
 /** Non-fatal error function handler:

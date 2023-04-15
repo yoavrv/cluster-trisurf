@@ -29,7 +29,6 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_massive_idx mcsweeps, ts_idx init
     ts_double l1,l2,l3,vmsr,bfsr, vmsrt, bfsrt; //gyration eigenvalues, statistics succsess rate
     ts_ulong epochtime;
     ts_double max_z;
-    ts_flag adhesion_model = vesicle->tape->type_of_adhesion_model;
     FILE *fd3=NULL;
      char filename[10000];
     //struct stat st;
@@ -61,12 +60,20 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_massive_idx mcsweeps, ts_idx init
     }
 
     //initialize vesicle properties
-    if(vesicle->tape->allow_xy_plane_movement==0){
+    if(vesicle->tape->allow_center_mass_movement==0){
         centermass(vesicle);
     }
     cell_occupation(vesicle);
     vesicle_volume(vesicle); //needed for constant volume at this moment
     vesicle_area(vesicle); //needed for constant area at this moment
+    if (vesicle->tape->V0>1){
+        // override equilibrium/constraint volume by tape
+        V0=vesicle->tape->V0;
+    }
+    if (vesicle->tape->A0>1){
+        // override equilibrium/constraint volume by tape
+        A0=vesicle->tape->A0;
+    }
     if(V0<0.000001) {
         V0=vesicle->volume; 
     }
@@ -78,6 +85,7 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_massive_idx mcsweeps, ts_idx init
     epsvol=4.0*sqrt(2.0*M_PI)/pow(3.0,3.0/4.0)*V0/pow(vesicle->tlist->n,3.0/2.0);
     // printf("epsvol=%e\n",epsvol);
     epsarea=A0/(ts_double)vesicle->tlist->n;
+
 
     if(start_iteration<inititer) ts_fprintf(stdout, "Starting simulation (first %d x %d MC sweeps will not be recorded on disk)\n", inititer, mcsweeps);
     
@@ -108,12 +116,8 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_massive_idx mcsweeps, ts_idx init
         }
         //end plane confinement
 
-        //adhesion
-        if(adhesion_model==model_spherical_step_potential || adhesion_model==model_cylindrical_step_potential){	
-            vesicle->adhesion_center = vesicle->tape->z_adhesion - vesicle->tape->adhesion_radius;
-        }
-        //end of adhesion
-
+        //total force
+        total_force_on_vesicle(vesicle);
 
         // MAIN INNER LOOP
         // MONTE CARLO SWEEP
@@ -126,17 +130,17 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_massive_idx mcsweeps, ts_idx init
         //post sweep processing: statistics, save state
         vmsr/=(ts_double)mcsweeps;
         bfsr/=(ts_double)mcsweeps;
-        if(vesicle->tape->allow_xy_plane_movement==0){
+        if(vesicle->tape->allow_center_mass_movement==0){
             centermass(vesicle);
         }
         cell_occupation(vesicle);
         dump_state(vesicle,i);
         vesicle_volume(vesicle); //calculates just volume. 
         vesicle_area(vesicle); //calculates area.
-        if(vesicle->tape->constvolswitch==0){
+        if(vesicle->tape->volume_switch==0){
             V0=vesicle->volume;
         }
-        if(vesicle->tape->constareaswitch==0){
+        if(vesicle->tape->area_switch<=1){
             A0=vesicle->area;
         }
 

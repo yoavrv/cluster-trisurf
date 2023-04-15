@@ -20,12 +20,13 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
     ts_small_idx i,j;
     ts_double dist;
     ts_bool retval; 
-    ts_uint cellidx; 
-    ts_double delta_energy, delta_energy_cv,oenergy,dvol=0.0, darea=0.0, dstretchenergy=0.0;
+    ts_cell_idx cellidx; 
+    ts_double delta_energy, oenergy,dvol=0.0, darea=0.0, dstretchenergy=0.0;
     ts_double costheta,sintheta,phi,cosphi,sinphi,r, omega, cosomega, sinomega;
-    ts_double tri_angle_first_last_old, tri_angle_old, tri_angle_new, tx_old, ty_old, tz_old, tri_angle_old_min, tri_angle_new_min;
+    ts_double tri_angle, tri_angle_old_min, tri_angle_new_min;
     //This will hold all the information of vtx and its neighbours
-    ts_vertex backupvtx[20], *constvol_vtx_moved=NULL, *constvol_vtx_backup=NULL;
+    ts_vertex backupvtx[20];
+    // ts_vertex* *constvol_vtx_moved=NULL, *constvol_vtx_backup=NULL;
     ts_triangle *t1, *t2;
     memcpy((void *)&backupvtx[0],(void *)vtx,sizeof(ts_vertex));
 
@@ -118,25 +119,14 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
     }
 
     // adhesion check whether the new position of vertex will be out of bounds
-    if(vesicle->tape->adhesion_switch){
-        if (vesicle->tape->type_of_adhesion_model==model_step_potential || vesicle->tape->type_of_adhesion_model==model_parabolic_potential){
-            if(vtx->z<vesicle->tape->z_adhesion){
+    // parabolic potential will push things out instead
+    if(vesicle->tape->adhesion_model==adhesion_step_potential){
+        if( (adhesion_geometry_distance(vesicle, vtx) < 0) 
+        && (adhesion_geometry_distance(vesicle, vtx)<adhesion_geometry_distance(vesicle, backupvtx)) ){
             vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
             return TS_FAIL;
-            }
         }
-        if (vesicle->tape->type_of_adhesion_model==model_spherical_step_potential){
-            if((pow(vesicle->adhesion_center - vtx->z,2) + pow(vtx->x,2) + pow(vtx->y,2)) < pow(vesicle->tape->adhesion_radius,2)){
-            vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
-            return TS_FAIL;
-            }
-        }
-        if (vesicle->tape->type_of_adhesion_model==model_cylindrical_step_potential){
-            if((pow(vesicle->adhesion_center - vtx->z,2) + pow(vtx->x,2)) < pow(vesicle->tape->adhesion_radius,2)){
-            vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
-            return TS_FAIL;
-            }
-        }
+
     }
 
     //#undef SQ
@@ -158,94 +148,79 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
 
 
     // remove current vtx values (for future update) (vesicle->prop -= vtx->prop; update(vtx), vesicle->prop += vtx->prop)
-    if(vesicle->pswitch == 1 || vesicle->tape->constvolswitch>0){
+    if(vesicle->tape->pressure_switch == 1 || vesicle->tape->volume_switch>0){
         for(i=0;i<vtx->tristar_no;i++) dvol-=vtx->tristar[i]->volume;
     }
 
-    if(vesicle->tape->constareaswitch==2){
+    if(vesicle->tape->area_switch==2 || vesicle->tape->volume_switch==4 ){
         for(i=0;i<vtx->tristar_no;i++) darea-=vtx->tristar[i]->area;
     
     }
     //stretching energy 1 of 3
-    if(vesicle->tape->stretchswitch==1){
+    if(vesicle->tape->area_switch==1){
         for(i=0;i<vtx->tristar_no;i++) dstretchenergy-=vtx->tristar[i]->energy;
     }
     delta_energy=0;
 
 
     if(vesicle->tape->min_dihedral_angle_cosine>-1){
-    // vesicle_volume(vesicle);
-    // fprintf(stderr,"Volume in the beginning=%1.16e\n", vesicle->volume);
+        // vesicle_volume(vesicle);
+        // fprintf(stderr,"Volume in the beginning=%1.16e\n", vesicle->volume);
 
-    //update the normals of triangles that share bead i.
-    // combined with angle check!!!
-    // for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]);
-    // update the normals of the vertices is in the energy
-    // angle between triangles must be large to prevent spikiness, 
-    // which is small angle in the normals (provided they are oriented correctly)
-    // but only if the angle was not already too small
-    //
-    // structure:
-    // end, 0: save end,0 angle; saving 0's normal in txyz and updating 0
-    // loop i,j=(0:end-1,1:end) check (i*j>min,i*j>old angle); , saving j's old normal in txyz and updating j
-    // compare end:0 with old angle;
-    //
-    tri_angle_old_min=1;
-    tri_angle_new_min=1;
-    if( !(vtx->type & is_edge_vtx) && vtx->tristar_no>0){
-        // for nonedge vertices with triangles, save first and last old angle, update first
-        // at the end of the loop, the end will be updated too
-        t1 = vtx->tristar[vtx->tristar_no-1];
-        t2 = vtx->tristar[0];
-
-        tri_angle_first_last_old = t1->xnorm * t2->xnorm + t1->ynorm * t2->ynorm + t1->znorm * t2->znorm;
-        tx_old = t2->xnorm; ty_old = t2->ynorm; tz_old = t2->znorm; // remember old t2 (t1 next step)
-        triangle_normal_vector(t2);
-        // tri_angle_new = ... t1 is not updated
-    } else {
-        tri_angle_first_last_old = 1;
-        tx_old = vtx->tristar[0]->xnorm; ty_old = vtx->tristar[0]->ynorm; tz_old = vtx->tristar[0]->znorm;
-    }
-    for(i=1;i<vtx->tristar_no;i++){
-        t2 = vtx->tristar[i];   // unupdated
-        t1 = vtx->tristar[i-1]; // updated prev step
-
-        tri_angle_old = tx_old*t2->xnorm + ty_old*t2->ynorm + tz_old*t2->znorm;          // old t1 * unupdated t2
-        tx_old = t2->xnorm; ty_old = t2->ynorm; tz_old = t2->znorm;  // remember old t2 (t1 next step)
-        triangle_normal_vector(t2);
-        tri_angle_new = t1->xnorm*t2->xnorm + t1->ynorm*t2->ynorm + t1->znorm*t2->znorm; // t1 * updated t2
-        tri_angle_old_min = fmin(tri_angle_old_min, tri_angle_old);
-        tri_angle_new_min = fmin(tri_angle_new_min, tri_angle_new);
-        
-    }
-    if( !(vtx->type & is_edge_vtx) && vtx->tristar_no>0 ){
-        t1 = vtx->tristar[vtx->tristar_no-1];
-        t2 = vtx->tristar[0];
-        tri_angle_old = tri_angle_first_last_old;
-        // t1 already updated
-        tri_angle_new = t1->xnorm*t2->xnorm + t1->ynorm*t2->ynorm + t1->znorm*t2->znorm; // t1 * updated t2
-        tri_angle_old_min = fmin(tri_angle_old_min, tri_angle_old);
-        tri_angle_new_min = fmin(tri_angle_new_min, tri_angle_new);
-
-    }
-    if(  (tri_angle_new_min) < vesicle->tape->min_dihedral_angle_cosine && tri_angle_new_min < tri_angle_old_min) {
-            // failure! too spiky (and step is not de-spiking)
-            vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
-            for(i=0;i<vtx->neigh_no;i++){
-                vtx->neigh[i]=memcpy((void *)vtx->neigh[i],(void *)&backupvtx[i+1],sizeof(ts_vertex));
+        //update the normals of triangles that share bead i.
+        // combined with angle check!!!
+        // for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]);
+        // update the normals of the vertices is in the energy
+        // angle between triangles must be large to prevent spikiness, 
+        // which is small angle in the normals (provided they are oriented correctly)
+        // but only if the angle was not already too small (fix existing bad angles)
+        //
+        tri_angle_old_min=1;
+        tri_angle_new_min=1;
+        // min old angles
+        for(i=0; i<vtx->tristar_no;i++){
+            t1 = vtx->tristar[i];   
+            for(j=0; j<t1->neigh_no;j++){
+                // technically we are double checking some angle, but hopefully it is easier and more parallel than checking
+                t2 = t1->neigh[j];
+                tri_angle = t1->xnorm*t2->xnorm + t1->ynorm*t2->ynorm + t1->znorm*t2->znorm; 
+                tri_angle_old_min = fmin(tri_angle_old_min, tri_angle);
             }
-            for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]); // we need to un-do normal updates on the triangles, since they aren't saved
-
-            return TS_FAIL;
         }
-    }
+        // update normals
+        for(i=0;i<vtx->tristar_no;i++){
+            t1 = vtx->tristar[i];  
+            triangle_normal_vector(t1);   
+        }
+        // min new angles
+        for(i=0;i<vtx->tristar_no;i++){
+            t1 = vtx->tristar[i];   
+            for(j=0; j<t1->neigh_no;j++){
+                t2 = t1->neigh[j];
+                tri_angle = t1->xnorm*t2->xnorm + t1->ynorm*t2->ynorm + t1->znorm*t2->znorm; 
+                tri_angle_new_min = fmin(tri_angle_new_min, tri_angle);
+            }
+        }
+
+        //accept or reject
+        if(  (tri_angle_new_min) < vesicle->tape->min_dihedral_angle_cosine && tri_angle_new_min < tri_angle_old_min) {
+                // failure! too spiky (and step is not de-spiking)
+                vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
+                for(i=0;i<vtx->neigh_no;i++){
+                    vtx->neigh[i]=memcpy((void *)vtx->neigh[i],(void *)&backupvtx[i+1],sizeof(ts_vertex));
+                }
+                for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]); // we need to un-do normal updates on the triangles, since they aren't saved
+
+                return TS_FAIL;
+            }
+        }
     else {
        // update normals
        for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]); 
     }
 
     // rotate director
-    if (vtx->type & is_anisotropic_vtx && vesicle->tape->type_of_curvature_model&to_not_rotate_directors){
+    if (vtx->type & is_anisotropic_vtx && !(vesicle->tape->type_of_curvature_model&to_not_rotate_directors)){
         // we do this before the parallel transport, because the new normal calculation is fused in the energy calculation
         // we may want to bias to the original direction
         omega=(2*drand48()-1)*M_PI;
@@ -261,12 +236,12 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
     }
     // bending energy of the vertex
     oenergy=vtx->energy;
-    energy_vertex(vesicle, vtx);
+    vertex_curvature_energy(vesicle, vtx);
     delta_energy=(vtx->energy - oenergy);
     //the same is done for neighbouring vertices
     for(i=0;i<vtx->neigh_no;i++){
         oenergy=vtx->neigh[i]->energy;
-        energy_vertex(vesicle, vtx->neigh[i]);
+        vertex_curvature_energy(vesicle, vtx->neigh[i]);
         delta_energy+=(vtx->neigh[i]->energy-oenergy);
     }
 
@@ -285,87 +260,35 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
     }
 
 
-
-    if(vesicle->pswitch == 1 || vesicle->tape->constvolswitch >0){
+    // part 1 of 2 of volume and area update
+    if(vesicle->tape->pressure_switch == 1 || vesicle->tape->volume_switch >0){
         for(i=0;i<vtx->tristar_no;i++) dvol+=vtx->tristar[i]->volume;
-        if(vesicle->pswitch==1) delta_energy-=vesicle->pressure*dvol;
-    };
-
-    if(vesicle->tape->constareaswitch==2){
-        /* check whether the darea is gt epsarea */
+    }
+    if(vesicle->tape->area_switch==2 || vesicle->tape->volume_switch == 4){
         for(i=0;i<vtx->tristar_no;i++) darea+=vtx->tristar[i]->area;
-        if(fabs(vesicle->area+darea-A0)>epsarea){
-            //restore old state.
-             vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
-            for(i=0;i<vtx->neigh_no;i++){
-                vtx->neigh[i]=memcpy((void *)vtx->neigh[i],(void *)&backupvtx[i+1],sizeof(ts_vertex));
-            }
-            // unupdate triangles
-            for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]);
-            //unupdate bonds
-            for(i=0;i<vtx->neigh_no;i++){
-                for(j=0;j<vtx->neigh[i]->bond_no;j++){
-                    // no problem double updating, just double counting the energy
-                    attraction_bond_energy(vesicle, vtx->neigh[i]->bond[j]);
-                }
-            }
-
-            return TS_FAIL;
-        }
     }
-    if(vesicle->tape->constvolswitch==2){
-        /*check whether the dvol is gt than epsvol */
-        if(fabs(vesicle->volume+dvol-V0)>epsvol){
-            //restore old state.
-            vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
-            for(i=0;i<vtx->neigh_no;i++){
-                vtx->neigh[i]=memcpy((void *)vtx->neigh[i],(void *)&backupvtx[i+1],sizeof(ts_vertex));
-            }
-            // unupdate triangles
-            for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]);
-            //unupdate bonds
-            for(i=0;i<vtx->neigh_no;i++){
-                for(j=0;j<vtx->neigh[i]->bond_no;j++){
-                    // no problem double updating, just double counting the energy
-                    attraction_bond_energy(vesicle, vtx->neigh[i]->bond[j]);
-                }
-            }
 
-            return TS_FAIL;
+
+    // volume area pressure energy and constraints
+    retval = volume_pressure_area_energy_constraints(vesicle,&delta_energy,dvol,darea);
+    if (retval == TS_FAIL){
+        //restore old state.
+        vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
+        for(i=0;i<vtx->neigh_no;i++){
+            vtx->neigh[i]=memcpy((void *)vtx->neigh[i],(void *)&backupvtx[i+1],sizeof(ts_vertex));
         }
-
-    } else
-    // vesicle_volume(vesicle);
-    // fprintf(stderr,"Volume before=%1.16e\n", vesicle->volume);
-
-    // TODO: wrong! need to update the new vertex moves
-    if(vesicle->tape->constvolswitch == 1){
-        retval=constvolume(vesicle, vtx, -dvol, &delta_energy_cv, &constvol_vtx_moved,&constvol_vtx_backup);
-        if(retval==TS_FAIL){ // if we couldn't move the vertex to assure constant volume
-            vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
-            for(i=0;i<vtx->neigh_no;i++){
-                vtx->neigh[i]=memcpy((void *)vtx->neigh[i],(void *)&backupvtx[i+1],sizeof(ts_vertex));
+        // unupdate triangles
+        for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]);
+        //unupdate bonds
+        for(i=0;i<vtx->neigh_no;i++){
+            for(j=0;j<vtx->neigh[i]->bond_no;j++){
+                // no problem double updating, just double counting the energy
+                attraction_bond_energy(vesicle, vtx->neigh[i]->bond[j]);
             }
-            // unupdate triangles
-            for(i=0;i<vtx->tristar_no;i++) triangle_normal_vector(vtx->tristar[i]);
-            //unupdate bonds
-            for(i=0;i<vtx->neigh_no;i++){
-                for(j=0;j<vtx->neigh[i]->bond_no;j++){
-                    // no problem double updating, just double counting the energy
-                    attraction_bond_energy(vesicle, vtx->neigh[i]->bond[j]);
-                }
-            }
-
-            return TS_FAIL;
         }
-        // vesicle_volume(vesicle);
-        // fprintf(stderr,"Volume after=%1.16e\n", vesicle->volume);
-        // fprintf(stderr,"Volume after-dvol=%1.16e\n", vesicle->volume-dvol);
-        // fprintf(stderr,"Denergy before=%e\n",delta_energy);
-
-        delta_energy+=delta_energy_cv;
-        // fprintf(stderr,"Denergy after=%e\n",delta_energy);
+        return TS_FAIL;        
     }
+
     
     // vertices may be active, and have force applied on them
     // to do: think hard on stratonovich/ito approach
@@ -379,7 +302,7 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
     
 
     //stretching energy 2 of 3
-    if(vesicle->tape->stretchswitch==1){
+    if(vesicle->tape->area_switch==1){
         for(i=0;i<vtx->tristar_no;i++){ 
             stretchenergy(vesicle, vtx->tristar[i]);
             dstretchenergy+=vtx->tristar[i]->energy;
@@ -436,16 +359,16 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
             }
 
             //stretching energy 3 of 3
-            if(vesicle->tape->stretchswitch==1){
+            if(vesicle->tape->area_switch==1){
                 for(i=0;i<vtx->tristar_no;i++){ 
                     stretchenergy(vesicle,vtx->tristar[i]);
                 }
             }
 
             // fprintf(stderr, "before vtx(x,y,z)=%e,%e,%e\n",constvol_vtx_moved->x, constvol_vtx_moved->y, constvol_vtx_moved->z);
-            if(vesicle->tape->constvolswitch == 1){
-                constvolumerestore(vesicle, constvol_vtx_moved,constvol_vtx_backup);
-            }
+            // if(vesicle->tape->volume_switch == 1){
+            //     constvolumerestore(vesicle, constvol_vtx_moved,constvol_vtx_backup);
+            // }
 
 
             return TS_FAIL; 
@@ -461,17 +384,20 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
         
     }
 
-    if(vesicle->tape->constvolswitch == 2){
+
+    // else if(vesicle->tape->volume_switch == 1){
+    //     constvolumeaccept(vesicle,constvol_vtx_moved,constvol_vtx_backup);
+    // }
+
+    // part 2 of 2 of volume and area update
+    if(vesicle->tape->pressure_switch == 1 || vesicle->tape->volume_switch > 0){
         vesicle->volume+=dvol;
     } 
-    else if(vesicle->tape->constvolswitch == 1){
-        constvolumeaccept(vesicle,constvol_vtx_moved,constvol_vtx_backup);
-    }
 
-    if(vesicle->tape->constareaswitch==2){
+    if(vesicle->tape->area_switch == 2 || vesicle->tape->volume_switch == 4){
         vesicle->area+=darea;
     }
-    // if(oldcellidx);
+
 
     //END MONTE CARLOOOOOOO
 
@@ -481,9 +407,9 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
 
 
 ts_bool single_poly_vertex_move(ts_vesicle *vesicle,ts_poly *poly,ts_vertex *vtx,ts_double *rn){
-    ts_uint i;
+    ts_idx i;
     ts_bool retval; 
-    ts_uint cellidx; 
+    ts_cell_idx cellidx; 
     // ts_double delta_energy;
     ts_double costheta,sintheta,phi,r;
     ts_double dist;
@@ -588,9 +514,9 @@ ts_bool single_poly_vertex_move(ts_vesicle *vesicle,ts_poly *poly,ts_vertex *vtx
 
 
 ts_bool single_filament_vertex_move(ts_vesicle *vesicle,ts_poly *poly,ts_vertex *vtx,ts_double *rn){
-    ts_uint i;
+    ts_idx i;
     ts_bool retval; 
-    ts_uint cellidx; 
+    ts_cell_idx cellidx; 
     ts_double delta_energy;
     ts_double costheta,sintheta,phi,r;
     ts_double dist[2];

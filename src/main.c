@@ -15,7 +15,6 @@
 #include "poly.h"
 #include "sh.h"
 #include "shcomplex.h"
-#include "dumpstate.h"
 #include "restore.h"
 
 #include <fcntl.h>
@@ -85,7 +84,6 @@ int main(int argv, char *argc[]){
         // nove vrednosti iz tapea...
         vesicle->tape=tape;
         //vtx_set_global_values(vesicle); // xks are set for each vertex rather than globally
-        vesicle->pswitch =tape->pswitch;
         vesicle->pressure=tape->pressure;
         vesicle->dmax=tape->dmax*tape->dmax;
         poly_assign_filament_xi(vesicle,tape);
@@ -124,7 +122,11 @@ int main(int argv, char *argc[]){
     }
 
     //write_vertex_xml_file(vesicle,1000);
-
+    if (vesicle->tape->volume_switch==1){
+        ts_fprintf(stdout,"volume_switch in tape was set to 1. Did you mean to set it to\n");
+        ts_fprintf(stdout,"2: move with epsvol from V0\n3: volume-V0 (quadratic energy) \n4: reduced volume (quadratic energy) \n");
+        fatal("Volume_switch==1 is Broken! Reciprocal volume-preserving motion has not been updated",1);
+    }
     if (vesicle->tape->type_of_curvature_model==7){
         ts_fprintf(stdout,"using debug curvature model 7 (use old energy): set to 15 to use the new energy method\n");
         ts_fprintf(stdout,"set to 0 to use only the old method (faster), set to 1 to use sum-angle gaussian curvature (E+= kx2*c1*c2)\n");
@@ -132,6 +134,7 @@ int main(int argv, char *argc[]){
     if (vesicle->tape->type_of_curvature_model==15){
         ts_fprintf(stdout,"using debug curvature model 15 (use new energy): set to 7 to use the old energy method\n");
     }
+
 
     // ##########################
     // # Running the simulation #

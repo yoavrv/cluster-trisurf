@@ -15,7 +15,7 @@
 #include "sh.h"
 #include "shcomplex.h"
 
-ts_vesicle *initial_distribution_dipyramid(ts_uint nshell, ts_uint ncmax1, ts_uint ncmax2, ts_uint ncmax3, ts_double stepsize){
+ts_vesicle *initial_distribution_dipyramid(ts_uint nshell, ts_cell_idx ncmax1, ts_cell_idx ncmax2, ts_cell_idx ncmax3, ts_double stepsize){
     ts_fprintf(stdout,"Starting initial_distribution on vesicle with %u shells!...\n",nshell);
     ts_bool retval;
     ts_idx no_vertices=(ts_idx) 5*nshell*nshell+2;	//unneccesary, ideological cast
@@ -120,7 +120,6 @@ ts_bool set_vesicle_values_from_tape(ts_vesicle *vesicle){
     vesicle->nshell=tape->nshell;
     vesicle->dmax=tape->dmax*tape->dmax; /* dmax^2 in the vesicle dmax variable */
     vesicle->pressure= tape->pressure;
-    vesicle->pswitch=tape->pswitch;
     vtx_set_global_values(vesicle); /* make xk0 xk2 default value for every vertex  */ 
     // ts_fprintf(stdout, "Tape setting: xk0=%e\n",tape->xk0);
     vesicle->stepsize=tape->stepsize;
@@ -199,7 +198,7 @@ ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
         vtx->c=tape->c0;
         vtx->f=tape->F;
         vtx->ad_w=tape->adhesion_strength;
-        vtx->d=0;  // curvature deviator
+        vtx->d=tape->d0;  // curvature deviator
         vtx->xk = tape->xk0;
         vtx->xk2 = tape->xk2;
         vtx->nx=0; //normal
@@ -234,7 +233,7 @@ ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
         vtx->ad_w=tape->adhesion_strength;
         vtx->d=0;  // curvature deviator
         vtx->xk = tape->xk0;
-        vtx->xk2 = 0; // Gauss-Bonet: we only need excess compare to the regular membrane
+        vtx->xk2 = tape->xk2;
         vtx->nx=0; //normal
         vtx->ny=0;
         vtx->nz=0;
@@ -251,9 +250,9 @@ ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
     }
     free(indices);
 
-    // This updates the energy, curvatures, and normals using the energy_vertex
-    mean_curvature_and_energy(vesicle);
-    
+    // This updates the energy, curvatures, and normals using the vertex_curvature_energy
+    sweep_vertex_curvature_energy(vesicle);
+    sweep_vertex_forces(vesicle);
     //	ts_fprintf(stderr,"Setting attraction between vertices with spontaneous curvature\n");
     sweep_attraction_bond_energy(vesicle);
     

@@ -1098,7 +1098,7 @@ ts_bool write_vertex_xml_file(ts_vesicle *vesicle, ts_idx timestepno, ts_cluster
     TS_WRITE_VECTOR_ITERATE_VTX("%.17e %.17e %.17e\n",nx,ny,nz);
     fprintf(fh,"</DataArray>\n");
 
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"normal2\" NumberOfComponents=\"3\" format=\"ascii\">\n");
+    fprintf(fh,"<DataArray type=\"Float64\" Name=\"normal_unused_debug\" NumberOfComponents=\"3\" format=\"ascii\">\n");
     TS_WRITE_VECTOR_ITERATE_VTX("%.17e %.17e %.17e\n",nx2,ny2,nz2);
     fprintf(fh,"</DataArray>\n");
 
@@ -1139,7 +1139,7 @@ ts_bool write_vertex_xml_file(ts_vesicle *vesicle, ts_idx timestepno, ts_cluster
         }
         fprintf(fh,"</DataArray>\n");
 
-    if(vesicle->tape->stretchswitch==1){
+    if(vesicle->tape->area_switch==1){
         fprintf(fh,"<DataArray type=\"Float64\" Name=\"stretching_energy\" format=\"ascii\">");
         for(i=0;i<blist->n;i++){
             fprintf(fh, "0.0 ");
@@ -1342,12 +1342,15 @@ ts_tape *parsetapebuffer(char *buffer){
         CFG_FLOAT("dmin_interspecies", 1.2, CFGF_NONE),
         CFG_FLOAT("xk0", 20, CFGF_NONE),
         CFG_FLOAT("xk2", 0, CFGF_NONE),
-        CFG_INT("pswitch", 0, CFGF_NONE),
-        CFG_INT("constvolswitch", 0, CFGF_NONE),
-        CFG_INT("constareaswitch", 0, CFGF_NONE),
+        CFG_INT("pressure_switch", 0, CFGF_NONE),
+        CFG_INT("volume_switch", 0, CFGF_NONE),
+        CFG_INT("area_switch", 0, CFGF_NONE),
         CFG_FLOAT("constvolprecision", 0, CFGF_NONE),
-        CFG_INT("stretchswitch", 0, CFGF_NONE),
         CFG_FLOAT("xkA0", 1.0, CFGF_NONE),
+        CFG_FLOAT("xkV0", 1.0, CFGF_NONE),
+        CFG_FLOAT("V0", 0.0, CFGF_NONE),
+        CFG_FLOAT("A0", 0.0, CFGF_NONE),
+        CFG_FLOAT("Vr", 1.0, CFGF_NONE),
         CFG_FLOAT("pressure", 0, CFGF_NONE),
         CFG_FLOAT("k_spring", 800, CFGF_NONE),
         CFG_FLOAT("xi", 100, CFGF_NONE),
@@ -1365,8 +1368,8 @@ ts_tape *parsetapebuffer(char *buffer){
         //CFG_SIMPLE_INT("distributed_processes",&tape->brezveze2),
         CFG_INT("spherical_harmonics_coefficients", 0, CFGF_NONE),
         CFG_INT("number_of_vertices_with_c0", 50, CFGF_NONE),
-        CFG_INT("type_of_adhesion_model", 1, CFGF_NONE),
-        CFG_INT("allow_xy_plane_movement", 0, CFGF_NONE),
+        CFG_INT("adhesion_geometry", 1, CFGF_NONE),
+        CFG_INT("allow_center_mass_movement", 0, CFGF_NONE),
         CFG_INT("force_balance_along_z_axis", 0, CFGF_NONE),
         CFG_FLOAT("c0", 0.5, CFGF_NONE),
         CFG_FLOAT("w", 1.5, CFGF_NONE),
@@ -1376,7 +1379,7 @@ ts_tape *parsetapebuffer(char *buffer){
         CFG_FLOAT("plane_d", 15, CFGF_NONE),
         CFG_FLOAT("plane_F", 1000, CFGF_NONE),
         /* Variables related to adhesion */
-        CFG_INT("adhesion_switch", 0, CFGF_NONE),
+        CFG_INT("adhesion_model", 0, CFGF_NONE),
         CFG_FLOAT("adhesion_cuttoff", 15, CFGF_NONE),
         CFG_FLOAT("adhesion_strength", 1000, CFGF_NONE),
         CFG_FLOAT("adhesion_radius", 1000, CFGF_NONE),
@@ -1389,13 +1392,14 @@ ts_tape *parsetapebuffer(char *buffer){
         CFG_INT("curvature_model", 0, CFGF_NONE),
         /* Dihedral angle cosine constraint*/
         CFG_FLOAT("min_dihedral_angle_cosine",-1,CFGF_NONE),
+        CFG_FLOAT("d0", 0.5, CFGF_NONE),
         /* random seed */
         CFG_INT("random_seed",0,CFGF_NONE),
         CFG_END()
     };
     cfg_t *cfg;    
     ts_uint retval; // not int?
-    cfg = cfg_init(opts, CFGF_IGNORE_UNKNOWN); //consider using CFGF_IGNORE_UNKNOWN
+    cfg = cfg_init(opts, 256); //consider using CFGF_IGNORE_UNKNOWN
     retval = cfg_parse_buf(cfg, buffer);
     tape->nshell = cfg_getint(cfg,"nshell");
     tape->npoly = cfg_getint(cfg,"npoly");
@@ -1412,12 +1416,15 @@ ts_tape *parsetapebuffer(char *buffer){
     tape->dmin_interspecies = cfg_getfloat(cfg,"dmin_interspecies");
     tape->xk0 = cfg_getfloat(cfg,"xk0");
     tape->xk2 = cfg_getfloat(cfg,"xk2");
-    tape->pswitch = cfg_getint(cfg,"pswitch");
-    tape->constvolswitch = cfg_getint(cfg,"constvolswitch");
-    tape->constareaswitch = cfg_getint(cfg,"constareaswitch");
+    tape->pressure_switch = cfg_getint(cfg,"pressure_switch");
+    tape->volume_switch = cfg_getint(cfg,"volume_switch");
+    tape->area_switch = cfg_getint(cfg,"area_switch");
     tape->constvolprecision = cfg_getfloat(cfg,"constvolprecision");
-    tape->stretchswitch = cfg_getint(cfg,"stretchswitch");
     tape->xkA0 = cfg_getfloat(cfg,"xkA0");
+    tape->xkV0 = cfg_getfloat(cfg,"xkV0");
+    tape->V0 = cfg_getfloat(cfg,"V0");
+    tape->A0 = cfg_getfloat(cfg,"A0");
+    tape->Vfraction = cfg_getfloat(cfg,"Vr");
     tape->pressure = cfg_getfloat(cfg,"pressure");
     tape->kspring = cfg_getfloat(cfg,"k_spring");
     tape->xi = cfg_getfloat(cfg,"xi");
@@ -1431,8 +1438,8 @@ ts_tape *parsetapebuffer(char *buffer){
     tape->quiet = cfg_getbool(cfg,"quiet"); 
     tape->shc = cfg_getint(cfg,"spherical_harmonics_coefficients");
     tape->number_of_vertices_with_c0 = cfg_getint(cfg,"number_of_vertices_with_c0");
-    tape->type_of_adhesion_model = cfg_getint(cfg,"type_of_adhesion_model");
-    tape->allow_xy_plane_movement = cfg_getint(cfg,"allow_xy_plane_movement");
+    tape->adhesion_geometry = cfg_getint(cfg,"adhesion_geometry");
+    tape->allow_center_mass_movement = cfg_getint(cfg,"allow_center_mass_movement");
     tape->force_balance_along_z_axis = cfg_getint(cfg,"force_balance_along_z_axis");
     tape->c0 = cfg_getfloat(cfg,"c0");
     tape->w = cfg_getfloat(cfg,"w");
@@ -1443,7 +1450,7 @@ ts_tape *parsetapebuffer(char *buffer){
     tape->type_of_force_model = cfg_getint(cfg, "force_model");
     tape->vicsek_strength = cfg_getfloat(cfg, "vicsek_strength");
     tape->vicsek_radius = cfg_getfloat(cfg, "vicsek_radius");
-    tape->adhesion_switch = cfg_getint(cfg, "adhesion_switch");
+    tape->adhesion_model = cfg_getint(cfg, "adhesion_model");
     tape->adhesion_cuttoff = cfg_getfloat(cfg, "adhesion_cuttoff");
     tape->adhesion_strength = cfg_getfloat(cfg, "adhesion_strength");
     tape->adhesion_radius = cfg_getfloat(cfg, "adhesion_radius");
@@ -1452,6 +1459,7 @@ ts_tape *parsetapebuffer(char *buffer){
     tape->type_of_bond_model = cfg_getint(cfg, "bond_model");
     tape->type_of_curvature_model = cfg_getint(cfg, "curvature_model");
     tape->min_dihedral_angle_cosine = cfg_getfloat(cfg,"min_dihedral_angle_cosine");
+    tape->d0 = cfg_getfloat(cfg,"d0");
 
     if (retval==CFG_FILE_ERROR){
         fatal("No tape file.", 100);

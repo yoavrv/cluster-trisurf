@@ -18,29 +18,46 @@ int cmpfunc(const void *x, const void *y)
     else return -1;
 }
 
-/** @brief Wrapper that calculates energy of every vertex in vesicle
+/** @brief Wrapper that calculates and saves energy of every vertex in vesicle
  *  
  *  Function calculated energy of every vertex in vesicle. It can be used in
  *  initialization procedure or in recalculation of the energy after non-MCsweep *  operations. However, when random move of vertex or flip of random bond occur *  call to this function is not necessary nor recommended. 
  *  @param *vesicle is a pointer to vesicle.
  *  @returns TS_SUCCESS on success.
 */
-ts_bool mean_curvature_and_energy(ts_vesicle *vesicle){
-
-    ts_idx i;
-    
+ts_bool sweep_vertex_curvature_energy(ts_vesicle *vesicle){
+    ts_idx i;  
     ts_vertex_list *vlist=vesicle->vlist;
     ts_vertex **vtx=vlist->vtx;
 
     for(i=0;i<vlist->n;i++){
         if (!(vtx[i]->type==is_ghost_vtx)) {       
-            energy_vertex(vesicle, vtx[i]);
+            vertex_curvature_energy(vesicle, vtx[i]);
         }
         
     }
 
     return TS_SUCCESS;
 }
+
+/** @brief Wrapper that calculate and saves force of every vertex in vesicle
+ * 
+ *  @param *vesicle is a pointer to vesicle.
+ *  @returns TS_SUCCESS on success.
+*/
+ts_bool sweep_vertex_forces(ts_vesicle *vesicle){
+    ts_idx i;
+    ts_vertex_list *vlist=vesicle->vlist;
+    ts_vertex **vtx=vlist->vtx;
+    for(i=0;i<vlist->n;i++){
+        if (!(vtx[i]->type==is_ghost_vtx)) {       
+            direct_force_energy(vesicle,vtx[i],vtx[i]);
+        }    
+    }
+
+    return TS_SUCCESS;
+}
+
 
 /** @brief Calculate energy of a bond (in models where energy is bond related)
  *
@@ -84,7 +101,7 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     //      step 3.3: get energy information from the 2x2 shape difference
 
     // we hardcoded 10 neighbor limit!
-    ts_small_idx jj, i;
+    ts_small_idx jj, i, ip;
     ts_double edge_vector_x[10]={0,0,0,0,0,0,0,0,0,0};
     ts_double edge_vector_y[10]={0,0,0,0,0,0,0,0,0,0};
     ts_double edge_vector_z[10]={0,0,0,0,0,0,0,0,0,0};
@@ -117,9 +134,13 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     ts_double tr, det, lambda1, lambda2, discrim_sqrt;
     ts_double eigen_vec1d, eigen_vec1t, eigen_vec2d, eigen_vec2t;
 
+    ts_triangle *t;
+    ts_double s, l_m_x,l_m_y,l_m_z,l_p_x,l_p_y,l_p_z, sigma_m_x, sigma_m_y,sigma_m_z, sigma_p_x, sigma_p_y,sigma_p_z;
+
 
     ts_double We;
     ts_double Av, We_Av;
+    // static int REMOVEMEDEBUG=0;
 
     ts_double he[10];
     ts_double Sv[3][3]={{0,0,0},{0,0,0},{0,0,0}};
@@ -129,10 +150,39 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     // #########################################################################
     Av=0;
     for(i=0; i<vtx->tristar_no; i++){
-        vertex_normal_x=(vertex_normal_x - vtx->tristar[i]->xnorm*vtx->tristar[i]->area);
-        vertex_normal_y=(vertex_normal_y - vtx->tristar[i]->ynorm*vtx->tristar[i]->area);
-        vertex_normal_z=(vertex_normal_z - vtx->tristar[i]->znorm*vtx->tristar[i]->area);
-        Av+=vtx->tristar[i]->area/3;
+        ip = next_small(i, vtx->tristar_no);
+        t = vtx->tristar[i];
+        l_m_x = (vtx->neigh[i]->x - vtx->x)/2;
+        l_m_y = (vtx->neigh[i]->y - vtx->y)/2;
+        l_m_z = (vtx->neigh[i]->z - vtx->z)/2;
+        l_p_x = (vtx->neigh[ip]->x - vtx->x)/2;
+        l_p_y = (vtx->neigh[ip]->y - vtx->y)/2;
+        l_p_z = (vtx->neigh[ip]->z - vtx->z)/2;
+        sigma_m_x = t->xcirc - (vtx->neigh[i]->x + vtx->x)/2;
+        sigma_m_y = t->ycirc - (vtx->neigh[i]->y + vtx->y)/2;
+        sigma_m_z = t->zcirc - (vtx->neigh[i]->z + vtx->z)/2;
+        sigma_p_x = t->xcirc - (vtx->neigh[ip]->x + vtx->x)/2;
+        sigma_p_y = t->ycirc - (vtx->neigh[ip]->y + vtx->y)/2;
+        sigma_p_z = t->zcirc - (vtx->neigh[ip]->z + vtx->z)/2;
+        // here we do N*(lxsigma) on the left and N*(lxsigma) on the right
+        // which is N*(lxsigma - lxsigma)
+        cross_x = -( l_p_y*sigma_p_z - l_p_z*sigma_p_y ) + ( l_m_y*sigma_m_z - l_m_z*sigma_m_y );
+        cross_y = -( l_p_z*sigma_p_x - l_p_x*sigma_p_z ) + ( l_m_z*sigma_m_x - l_m_x*sigma_m_z );
+        cross_z = -( l_p_x*sigma_p_y - l_p_y*sigma_p_x ) + ( l_m_x*sigma_m_y - l_m_y*sigma_m_x );
+        s = 0.5 * (t->xnorm*cross_x + t->ynorm*cross_y + t->znorm*cross_z);
+        vertex_normal_x -= t->xnorm*s;
+        vertex_normal_y -= t->ynorm*s;
+        vertex_normal_z -= t->znorm*s;
+        Av += s;
+        // if (REMOVEMEDEBUG++>20000) {
+        //     ts_fprintf(stdout,"a=%f,%f,%f\tb=%f,%f,%f\tc=%f,%f,%f\to=%f,%f,%f\n",vtx->x, vtx->y, vtx->z,
+        //                                                                          vtx->neigh[i]->x,vtx->neigh[i]->y,vtx->neigh[i]->z,
+        //                                                                          vtx->neigh[ip]->x,vtx->neigh[ip]->y,vtx->neigh[ip]->z,
+        //                                                                          t->xcirc, t->ycirc, t->zcirc);
+        //     ts_fprintf(stdout,"tria->%d,%d,%d, vtx->%d,%d,%d\n",t->vertex[0]->idx, t->vertex[1]->idx, t->vertex[2]->idx, vtx->idx, vtx->neigh[i]->idx, vtx->neigh[ip]->idx);
+        //     ts_fprintf(stdout,"A=%f,s=%f\n",t->area,s);
+        //     fatal("negative areas!", 900);
+        // }
     }
     temp_length=sqrt(pow(vertex_normal_x,2)+pow(vertex_normal_y,2)+pow(vertex_normal_z,2));
     vertex_normal_x=vertex_normal_x/temp_length;
@@ -296,7 +346,7 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     // first, the primary matrix invariants, the trace and determinant
     tr  = dSd + tSt;
     det = dSd*tSt - dSt*tSd;
-    vtx->mean_curvature2 = tr/2; // curvatures up to signs and factors of 2
+    vtx->mean_curvature2 = -tr; // curvatures up to signs and factors of 2
     vtx->gaussian_curvature2 = det;
     // eigenvalues: trace determinant formula. We have real symmetric matrix, so positive discriminant
     discrim_sqrt = sqrt(tr*tr - 4*det);
@@ -328,20 +378,14 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
     if(lambda1==lambda2){
         eigen_vec1d = 1; // we pick the director and tangent vectors as the eigenvectors
         eigen_vec1t = 0;
-        //eigen_vec2d = 0;
-        //eigen_vec2t = 1;
     }
     else{
         // b. nondegenerate case
         if(dSd>=tSt){  // a>d
             eigen_vec1d = lambda1-tSt;  //tSd==0 -> lambda1=dSd, eigen_vec1d!=0
             eigen_vec1t = tSd;
-            //eigen_vec2d = -dSt;
-            //eigen_vec2t = -lambda2+dSd; //tSd==0 -> lambda2=tSt, eigen_vec2t!=0
         }
         else { // dSd<tSt, d<a
-            //eigen_vec2d = lambda2-tSt;  //tSd==0 -> lambda2=dSd, eigen_vec2d!=0
-            //eigen_vec2t = tSd;
             eigen_vec1d = dSt;
             eigen_vec1t = lambda1-dSd;; //tSd==0 -> lambda1=tSt, eigen_vec1t!=0
         }
@@ -349,9 +393,6 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
         temp_length = sqrt(eigen_vec1d*eigen_vec1d + eigen_vec1t*eigen_vec1t);
         eigen_vec1d/=temp_length;
         eigen_vec1t/=temp_length;
-        //temp_length = sqrt(eigen_vec2d*eigen_vec2d + eigen_vec2t*eigen_vec2t);
-        //eigen_vec2d/=temp_length;
-        //eigen_vec2t/=temp_length;
     }
 
     // ----------------------------------------------------------
@@ -367,31 +408,26 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
         eigen_vec2d = -eigen_vec1t;
         eigen_vec2t = eigen_vec1d;
 
-        vtx->eig0[0] = eigen_vec1d*director_x + eigen_vec1t*tangent_x;
-        vtx->eig0[1] = eigen_vec1d*director_y + eigen_vec1t*tangent_y;
-        vtx->eig0[2] = eigen_vec1d*director_z + eigen_vec1t*tangent_z;
-
-        vtx->eig1[0] = eigen_vec2d*director_x + eigen_vec2t*tangent_x;
-        vtx->eig1[1] = eigen_vec2d*director_y + eigen_vec2t*tangent_y;
-        vtx->eig1[2] = eigen_vec2d*director_z + eigen_vec2t*tangent_z;
     } else {
         vtx->eig_v0 = lambda2;
         vtx->eig_v1 = lambda1;
 
         // lambda2's eigenvector is first
-        eigen_vec2d = eigen_vec1t;
-        eigen_vec2t = -eigen_vec1d;
-        
-        vtx->eig0[0] = eigen_vec2d*director_x + eigen_vec2t*tangent_x;
-        vtx->eig0[1] = eigen_vec2d*director_y + eigen_vec2t*tangent_y;
-        vtx->eig0[2] = eigen_vec2d*director_z + eigen_vec2t*tangent_z;
+        eigen_vec2d = eigen_vec1d;
+        eigen_vec2t = eigen_vec1t;
+        eigen_vec1d = eigen_vec2t;
+        eigen_vec1t = -eigen_vec2d;
 
-        vtx->eig1[0] = eigen_vec1d*director_x + eigen_vec1t*tangent_x;
-        vtx->eig1[1] = eigen_vec1d*director_y + eigen_vec1t*tangent_y;
-        vtx->eig1[2] = eigen_vec1d*director_z + eigen_vec1t*tangent_z;
     }
-    vtx->eig_v2 = 0; // we annihilate the shape operator in the normal direction
+    vtx->eig0[0] = eigen_vec1d*director_x + eigen_vec1t*tangent_x;
+    vtx->eig0[1] = eigen_vec1d*director_y + eigen_vec1t*tangent_y;
+    vtx->eig0[2] = eigen_vec1d*director_z + eigen_vec1t*tangent_z;
 
+    vtx->eig1[0] = eigen_vec2d*director_x + eigen_vec2t*tangent_x;
+    vtx->eig1[1] = eigen_vec2d*director_y + eigen_vec2t*tangent_y;
+    vtx->eig1[2] = eigen_vec2d*director_z + eigen_vec2t*tangent_z;
+
+    vtx->eig_v2 = 0; // we annihilate the shape operator in the normal direction
     
     vtx->eig2[0] = vertex_normal_x;
     vtx->eig2[1] = vertex_normal_y;
@@ -455,25 +491,34 @@ inline ts_bool curvature_tensor_energy_vertex(ts_vesicle *vesicle, ts_vertex *vt
  * @param *vtx is a pointer to vertex at which we want to calculate the energy
  * @returns TS_SUCCESS on successful calculation.
 */
-inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
+inline ts_bool vertex_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
     
     ts_small_idx jj;
-    ts_small_idx jjp,jjm; // next (p) and prev (m) neighbor idx
+    ts_small_idx jjm; // next (p) and prev (m) neighbor idx
     ts_vertex *j; // current neighbor
-    ts_vertex *jp;// next neighbor
     ts_vertex *jm;// prev neighbor
-    ts_triangle *jt; // triangle (vtx,j,jp)
+    ts_triangle *tm, *tp; // triangle (vtx,jm,j) and (vtx,j,jp)
     ts_double s=0.0; // area
     ts_double xh=0.0,yh=0.0,zh=0.0,txn=0.0,tyn=0.0,tzn=0.0;
-    ts_double x1,x2,x3,ctp,ctm,tot,xlen;
+    ts_double lx, ly, lz, sigx, sigy, sigz, sigl, l_sqr;
     ts_double h,ht,norml;
     ts_double angle_sum=0;
     ts_double a_dot_b, a_cross_b_x, a_cross_b_y, a_cross_b_z, mag_a_cross_b;
     ts_flag model=vesicle->tape->type_of_curvature_model; // control how and what model we use to calculate energy: see enum curvature_model_type in general.h
-    ts_bool do_angle_sum=0;
+    ts_bool do_angle_sum=0, do_calculate_shape_op=0, do_use_shape_op_e=0;
     do_angle_sum=(model&to_calculate_sum_angle && 
                     (!(model&to_use_sum_angle_for_kx2_only) || (model&to_use_sum_angle_for_kx2_only && vtx->xk2!=0))
                     );
+    do_calculate_shape_op = model&to_calculate_shape_operator 
+                            || (model&to_use_shape_for_anisotropy_only 
+                                && (vtx->type & is_anisotropic_vtx));
+    do_use_shape_op_e = (model&to_use_shape_operator_energy 
+                            && !(model&to_use_shape_for_anisotropy_only))
+                        || (model&to_use_shape_operator_energy 
+                            && (model&to_use_shape_for_anisotropy_only  
+                            && (vtx->type & is_anisotropic_vtx)));    
+    // model has to use the shape operator energy
+    // if the model is for anisotropy only, also make sure the vertex type is anisotropic
 
     // we have 4 steps:
     // ?: at some point, use the new shape-operator based method (depends on model)
@@ -496,46 +541,42 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     // - calculate the dual lattice edge contribution to the curvature xh voodoo magic vector
     // - calculate the angle sum for the gaussian curvature
     for(jj=0; jj<vtx->neigh_no;jj++){
-        jjp=next_small(jj, vtx->neigh_no);
         jjm=prev_small(jj, vtx->neigh_no);
         j=vtx->neigh[jj];
-        jp=vtx->neigh[jjp];
         jm=vtx->neigh[jjm];
 
         // step 1.1 calculate the contribution to the vertex normal
         // txn normal points inwards!!
-        jt=vtx->tristar[jj]; 
-        txn+=jt->xnorm;
-        tyn+=jt->ynorm;
-        tzn+=jt->znorm;
+        tp=vtx->tristar[jj]; 
+        tm=vtx->tristar[jjm]; 
+        txn+=tp->xnorm;
+        tyn+=tp->ynorm;
+        tzn+=tp->znorm;
     
         // step 1.2 calculate cotangent of the edge, dual lattice edge triangles (vertex, edge middle, circumcenter-m), (vertex, edge middle, circumcenter-p)
         // These have the same angle as the opposing angle (half of a central angle = inscribed angle)
-        x1=vtx_distance_sq(vtx,jp);
-        x2=vtx_distance_sq(j,jp);
-        x3=(j->x-jp->x)*(vtx->x-jp->x)+
-           (j->y-jp->y)*(vtx->y-jp->y)+
-           (j->z-jp->z)*(vtx->z-jp->z);
-        ctp=x3/sqrt(x1*x2-x3*x3);
+        lx = (j->x-vtx->x);
+        ly = (j->y-vtx->y); // edge vector
+        lz = (j->z-vtx->z);
+        l_sqr = lx*lx + ly*ly + lz*lz; // half edge square
+        sigx = tm->xcirc - (j->x+vtx->x)/2;
+        sigy = tm->ycirc - (j->y+vtx->y)/2;
+        sigz = tm->zcirc - (j->z+vtx->z)/2;
+        sigl = lx*(sigy*tm->znorm - sigz*tm->ynorm) + ly*(sigz*tm->xnorm - sigx*tm->znorm) + lz*(sigx*tm->ynorm - sigy*tm->xnorm); // l*(sigxN)
+        sigl *= -1; // the jm section is left handed
+        s += 0.25*sigl; // A = 1/2 (sigma * l/1) = 1/4 sigl
+        xh += sigl*(lx)/l_sqr;
+        yh += sigl*(ly)/l_sqr;
+        zh += sigl*(lz)/l_sqr;
+        sigx = tp->xcirc - (j->x+vtx->x)/2;
+        sigy = tp->ycirc - (j->y+vtx->y)/2;
+        sigz = tp->zcirc - (j->z+vtx->z)/2;
+        sigl = lx*(sigy*tp->znorm - sigz*tp->ynorm) + ly*(sigz*tp->xnorm - sigx*tp->znorm) + lz*(sigx*tp->ynorm - sigy*tp->xnorm); // sigma * l
+        s += 0.25*sigl; // A = 1/2 (sigma * l/1) = 1/4 sigl
+        xh += sigl*(lx)/l_sqr;
+        yh += sigl*(ly)/l_sqr;
+        zh += sigl*(lz)/l_sqr;
 
-        x1=vtx_distance_sq(vtx,jm);
-        x2=vtx_distance_sq(j,jm);
-        x3=(j->x-jm->x)*(vtx->x-jm->x)+
-           (j->y-jm->y)*(vtx->y-jm->y)+
-           (j->z-jm->z)*(vtx->z-jm->z);
-        ctm=x3/sqrt(x1*x2-x3*x3);
-
-        // step 1.3 use the cotangents to calculate the dual lattice edge and area contribution
-        // given l as the length of the i-j edge
-        // sigma = l/2 * ctm + l/2 * ctp
-        tot=ctp+ctm;
-        tot=0.5*tot; // sigma = l*tot
-        xlen=vtx_distance_sq(j,vtx); // l^2
-        s+=tot*xlen; // 4 (1/2 (l/2) * sigma) = 4xarea associated to this edge
-    
-        xh+=tot*(j->x - vtx->x);
-        yh+=tot*(j->y - vtx->y); // sigma*(edge vector) contribution to the voodoo xh vector
-        zh+=tot*(j->z - vtx->z);
 
 
         // step 1.4 angle calculation for gaussian curvature
@@ -543,6 +584,7 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
         // instead: get the angle m-vtx-j
         // atan2(|axb|,a*b) was recommended at mathwork forum (cosin has small angle problems, and still need a sqrt)
         // possibly more complicated but better one from linked pdf (kahan)
+        // TODO: sheck if there is a good formula using sigl/l^2  (maybe tan(a+b) = tan(a)+tan(b)/1-tan(a)tan(b), and we get tans from sigl1/l^2 sigl2*l2)
         if (do_angle_sum){
             a_dot_b = (jm->x-vtx->x)*(j->x-vtx->x)+
                         (jm->y-vtx->y)*(j->y-vtx->y)+
@@ -557,7 +599,6 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     } // end for jj neighbors
 
     // step 2 calculate the curvatures from the xh voodoo formula
-    s=s/4.0; // area was calculated with an extra factor of 4
     // xh voodoo magic vector has the mean curvature times area as the magnitude and a direction roughly(?) towards the center of curvature
     h=xh*xh + yh*yh + zh*zh; 
     ht=txn*xh + tyn*yh + tzn*zh; // direction of center of curvature with the normal i.e. convex or concave
@@ -575,16 +616,21 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     // step 3.1 project the director to the tangent plane
     if (model&to_update_director_shapeless){
         // t = t - (t.n)n   (or -nx(nxt)
+        // ts_fprintf(stdout,"0 director: %f,%f,%f\n",vtx->dx,vtx->dy,vtx->dz);
         a_dot_b = (vtx->dx*vtx->nx)+(vtx->dy*vtx->ny)+(vtx->dz*vtx->nz); // temporarily used as the dot product
         vtx->dx = vtx->dx - a_dot_b*vtx->nx;
         vtx->dy = vtx->dy - a_dot_b*vtx->ny;
         vtx->dz = vtx->dz - a_dot_b*vtx->nz;
+        // ts_fprintf(stdout,"1 normal: %f,%f,%f\n",vtx->nx,vtx->ny,vtx->nz);
+        // ts_fprintf(stdout,"1 director: %f,%f,%f\n",vtx->dx,vtx->dy,vtx->dz);
         // this operation exclusively lowers |t|: if we do manage to avoid using the size (always taking t*A*(nxt)/t^2) we can avoid the normalization
         // and just periodically make sure the size is large enough if (t^2<0.5) t=2t
         norml=sqrt((vtx->dx*vtx->dx)+(vtx->dy*vtx->dy)+(vtx->dz*vtx->dz)); // should be the same as sqrt(1-*(n.t)^2)
         vtx->dx=vtx->dx/norml;
         vtx->dy=vtx->dy/norml;
         vtx->dz=vtx->dz/norml;
+        // ts_fprintf(stdout,"2 director: %f,%f,%f\n",vtx->dx,vtx->dy,vtx->dz);
+        // fatal("debug director",333);
     }
 
     // step 3.2 calculate gaussian curvature using sum angle formula
@@ -593,9 +639,9 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
 
 
         // step 3.3 save the curvatures using the gaussian and mean curvature
-        x1 = sqrt(pow(vtx->mean_curvature,2)-vtx->gaussian_curvature); // deltaC/2 in temp variable
-        vtx->new_c1 = vtx->mean_curvature + x1;
-        vtx->new_c2 = vtx->mean_curvature - x1;
+        h = sqrt(pow(vtx->mean_curvature,2)-vtx->gaussian_curvature); // deltaC/2 in temp variable
+        vtx->new_c1 = vtx->mean_curvature + h;
+        vtx->new_c2 = vtx->mean_curvature - h;
     }
 
     //step 4: calculate the bending energy
@@ -607,18 +653,24 @@ inline ts_bool energy_vertex(ts_vesicle *vesicle, ts_vertex *vtx){
     vtx->energy = vtx->mean_energy + vtx->gaussian_energy;
 
     // step ?? calculate the energy using the curvature tensor model instead
-    if (model&to_calculate_shape_operator || (model&to_use_shape_for_anisotropy_only && (vtx->type & is_anisotropic_vtx))) {
+    if (do_calculate_shape_op) {
         curvature_tensor_energy_vertex(vesicle, vtx);
     }
     
     // step ??.2  use the new energy 
     // model has to use the shape operator energy
     // if the model is for anisotropy only, also make sure the vertex type is anisotropic
-    if (model&to_use_shape_operator_energy && !(model&to_use_shape_for_anisotropy_only)){
+    if (do_use_shape_op_e){
         vtx->energy = vtx->mean_energy2 + vtx->gaussian_energy2;
-    }
-    if (model&to_use_shape_operator_energy && (model&to_use_shape_for_anisotropy_only  && (vtx->type & is_anisotropic_vtx))){
-        vtx->energy = vtx->mean_energy2 + vtx->gaussian_energy2;
+        xh=vtx->nx;
+        yh=vtx->ny;
+        zh=vtx->nz;
+        vtx->nx=vtx->nx2;
+        vtx->ny=vtx->ny2;
+        vtx->nz=vtx->nz2;
+        vtx->nx2=xh;
+        vtx->ny2=yh;
+        vtx->nz2=zh;
     }
 
     return TS_SUCCESS;
@@ -930,7 +982,8 @@ ts_double direct_force_from_Fz_balance(ts_vesicle *vesicle, ts_vertex *vtx, ts_v
     static ts_char countdown=0;
 
     if (!countdown){
-        Fz=total_force_on_vesicle(vesicle);
+        total_force_on_vesicle(vesicle);
+        Fz = vesicle->fz;
         countdown=64;//pow(2,20)-1; go back here in 64 steps
     }
     else{
@@ -949,16 +1002,20 @@ ts_double direct_force_from_Fz_balance(ts_vesicle *vesicle, ts_vertex *vtx, ts_v
     
 }
 
-inline ts_double total_force_on_vesicle(ts_vesicle *vesicle){
+ts_bool total_force_on_vesicle(ts_vesicle *vesicle){
     ts_idx i;
-    ts_double fz=0;
+    vesicle->fx = 0;
+    vesicle->fy = 0;
+    vesicle->fz = 0;
     /*find normal of the vertex as sum of all the normals of the triangles surrounding it. */
     for (i=0;i<vesicle->vlist->n;i++){
         if(vesicle->vlist->vtx[i]->type&is_active_vtx){
-            fz+=vesicle->vlist->vtx[i]->fz;
+            vesicle->fx+=vesicle->vlist->vtx[i]->fx;
+            vesicle->fy+=vesicle->vlist->vtx[i]->fy;
+            vesicle->fz+=vesicle->vlist->vtx[i]->fz;
         }
     }
-    return fz;
+    return TS_SUCCESS;
     
 }
 
@@ -977,58 +1034,128 @@ inline ts_double total_force_on_vesicle(ts_vesicle *vesicle){
 */
 ts_double adhesion_energy_diff(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_old){
     ts_double delta_energy=0;
-    ts_double z=vtx->z;
-    ts_double z_old=vtx_old->z;
-    ts_double z0=vesicle->tape->z_adhesion;
+    ts_double delta=0,delta_old=0;
+    ts_bool oriented=0, oriented_old=0;
     ts_double dz=vesicle->tape->adhesion_cuttoff;
-    ts_double c0=vesicle->adhesion_center;
-    ts_double r=vesicle->tape->adhesion_radius;
-    ts_flag model = vesicle->tape->type_of_adhesion_model;
+    ts_flag model = vesicle->tape->adhesion_model;
 
-    //1 for step potential
-    if(model==model_step_potential){
+    delta = adhesion_geometry_distance(vesicle, vtx);
+    oriented = adhesion_geometry_side(vesicle,vtx);
+    delta_old = adhesion_geometry_distance(vesicle, vtx_old);
+    oriented_old = adhesion_geometry_side(vesicle,vtx);
 
-        if( (vtx->type&is_adhesive_vtx) && (abs(z-z0)<dz) ){
+    if( (vtx->type&is_adhesive_vtx) && (oriented) && (delta<=dz) ){
+            if (model==adhesion_step_potential) {
                 delta_energy-=vtx->ad_w;
-        }
-        if( (vtx_old->type&is_adhesive_vtx) &&(abs(z_old-z0)<dz) ){
+            } else if (model==adhesion_parabolic_potential){
+                delta_energy-=vtx->ad_w*(1-pow(delta,2)/pow(dz,2));
+            }
+    }
+    if( (vtx_old->type&is_adhesive_vtx) && (oriented_old) &&  (delta_old<=dz) ){
+            if (model==adhesion_step_potential) {
                 delta_energy+=vtx_old->ad_w;
-        }
+            } else if (model==adhesion_parabolic_potential){
+                delta_energy+=vtx_old->ad_w*(1-pow(delta_old,2)/pow(dz,2));
+            }
     }
 
-    //2 for parabolic potential
-    else if(model==model_parabolic_potential){
-
-        // can't combine them well: each has (theoretically) different adhesion
-        if( (vtx->type&is_adhesive_vtx) && ((z-z0)<=dz )){
-                delta_energy-=(vtx->ad_w/pow(dz,2))*pow(z - dz,2);
-        }
-        if( (vtx_old->type&is_adhesive_vtx) && ((z_old-z0)>dz) ){
-                delta_energy+=(vtx_old->ad_w/pow(dz,2))*pow(z_old - dz,2);
-        }
-    }
-
-    //3 for sphrerical adhesion substrate with constant potential
-    else if(model==model_spherical_step_potential){
-        if( (vtx->type&is_adhesive_vtx) && (pow(pow(c0-z,2) + pow(vtx->x,2) + pow(vtx->y,2),0.5) - r < dz)){
-            delta_energy-=vtx->ad_w;
-        }
-        if( (vtx_old->type&is_adhesive_vtx) && (pow(pow(c0-z_old,2) + pow(vtx_old->x,2) + pow(vtx_old->y,2),0.5) - r < dz)){
-            delta_energy+=vtx_old->ad_w;
-        }
-    }
-    
-    //4 for cylindrical adhesive substrate with constant potential
-    else if(model==model_cylindrical_step_potential){
-        if( (vtx->type&is_adhesive_vtx) && (pow(pow(c0 -z,2) + pow(vtx->x,2),0.5) - r < dz)){
-            delta_energy-=vtx->ad_w;
-        }
-        if( (vtx_old->type&is_adhesive_vtx) && (pow(pow(c0 - z_old,2) + pow(vtx_old->x,2),0.5) - r < dz)){
-            delta_energy+=vtx_old->ad_w;
-        }
-    }
 
     return delta_energy;
+}
+
+// Distance of vertex from the geometry: negative "inside" wall/cylinder/sphere
+ts_double adhesion_geometry_distance(ts_vesicle *vesicle, ts_vertex *vtx){
+    ts_double z=vtx->z;
+    ts_double z0=vesicle->tape->z_adhesion;
+    ts_double r=vesicle->tape->adhesion_radius;
+    ts_double c0=z0-r;
+    ts_flag geometry = vesicle->tape->adhesion_geometry;
+
+    //1 for plane potential
+    if(geometry==model_plane_potential){
+        return z-z0;
+    }
+    //2 for spherical potential
+    else if(geometry==model_spherical_potential){
+        return pow(pow(c0-z,2) + pow(vtx->x,2) + pow(vtx->y,2),0.5)- r;
+    }
+    //3 for cylindrical adhesive substrate
+    else if(geometry==model_cylindrical_potential){
+        return pow(pow(c0-z,2) + pow(vtx->x,2),0.5)- r;
+    }
+
+    return 0;
+}
+
+// Check if vertex normal is oriented towards the geometry
+ts_bool adhesion_geometry_side(ts_vesicle *vesicle, ts_vertex *vtx){
+    ts_double z=vtx->z;
+    ts_double c0=vesicle->tape->z_adhesion-vesicle->tape->adhesion_radius;
+    ts_flag geometry = vesicle->tape->adhesion_geometry;
+
+    //1 for plane potential, surface facing the -z direction way
+    if(geometry==model_plane_potential){
+        return vtx->nz<0;
+    }
+    //2 for spherical potential, surface facing into the sphere -x,-y,-(z+c0)
+    else if(geometry==model_spherical_potential){
+        return (vtx->nx*vtx->x + vtx->ny*vtx->y + vtx->nz*(z+c0)<0); 
+    }
+    //3 for cylindrical adhesive substrate, surface facing the (-x,0,-(z+c0)) way
+    else if(geometry==model_cylindrical_potential){
+        return (vtx->nx*vtx->x + vtx->nz*(z+c0)<0) ;
+    }
+    return 1;
+}
+
+// Except triangle stretch, calculate all volume/pressure/area energy and constraints: 
+// add the energy difference *energy+=delta_energy,
+// return TS_SUCCESS if no constraint was violated.
+// does not calculate triangle stretch energy!
+ts_bool volume_pressure_area_energy_constraints(ts_vesicle *vesicle, ts_double *energy, ts_double dvol, ts_double darea){
+    ts_double v_sph, v_sph_old;
+    ts_double delta_energy=0;
+
+    // area
+    if (vesicle->tape->area_switch==1){
+        // nothing: stretch energy is per triangle so it can't be wraped neatly in the function
+    } else if(vesicle->tape->area_switch==2){
+        /* check whether the darea is gt epsarea */
+        if((fabs(vesicle->area+darea-A0)>epsarea) && (fabs(vesicle->area+darea-A0)>fabs(vesicle->area-A0))){
+            return TS_FAIL;
+        }
+    } else if(vesicle->tape->area_switch==3){
+        delta_energy += 0.5*vesicle->tape->xkA0*(pow(vesicle->area+darea-A0,2) - pow(vesicle->area-A0,2))/A0;
+    }
+
+
+    // pressure energy
+    if(vesicle->tape->pressure_switch==1){
+         delta_energy-=vesicle->pressure*dvol;
+    }
+
+    //volume
+    if(vesicle->tape->volume_switch == 1){
+        //retval=constvolume(vesicle, vtx, -dvol, &delta_energy_cv, &constvol_vtx_moved,&constvol_vtx_backup);
+        return TS_FAIL;
+    } else if(vesicle->tape->volume_switch==2){
+        /*check whether the dvol is gt than epsvol */
+        if( (fabs(vesicle->volume+dvol-V0)>epsvol) && (fabs(vesicle->volume+dvol-V0)>fabs(vesicle->volume-V0))){
+            return TS_FAIL;
+        }
+    } else if(vesicle->tape->volume_switch==3){
+        /*energy difference */
+        delta_energy += 0.5*vesicle->tape->xkV0*(pow(vesicle->volume+dvol-V0,2) - pow(vesicle->volume-V0,2))/V0;
+    } else if(vesicle->tape->volume_switch==4){
+        /*energy difference */
+        v_sph=sqrt(pow(vesicle->area+darea,3)/M_PI)/6;
+        v_sph_old=sqrt(pow(vesicle->area,3)/M_PI)/6;
+        delta_energy += 0.5*vesicle->tape->xkV0*(pow(vesicle->tape->Vfraction-((vesicle->volume+dvol)/v_sph),2) - pow(vesicle->tape->Vfraction-(vesicle->volume/v_sph_old),2));
+    }
+
+    // update energy
+    *energy+=delta_energy;
+    return TS_SUCCESS;
 }
 
 void stretchenergy(ts_vesicle *vesicle, ts_triangle *triangle){

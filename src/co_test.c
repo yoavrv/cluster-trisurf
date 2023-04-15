@@ -13,11 +13,11 @@ int main(){
     //parsetape(vesicle,&i);
 
     //these four must come from parsetype!
-    vesicle->dmax = 1.67 * 1.67;
-    vesicle->stepsize = 0.15;
-    vesicle->clist->max_occupancy = 8;
-    vesicle->bending_rigidity = 25.0;
-    fprintf(stderr, "xk=%f\n", vesicle->bending_rigidity);
+    // vesicle->dmax = 1.67 * 1.67;
+    // vesicle->stepsize = 0.15;
+    // vesicle->clist->max_occupancy = 8;
+    // vesicle->tape->xk0 = 25.0;
+    // fprintf(stderr, "xk=%f\n", vesicle->tape->xk0);
 
     centermass(vesicle);
     vesicle->sphHarmonics = sph_init(vesicle->vlist, 21);

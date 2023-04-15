@@ -59,7 +59,7 @@ ts_bool poly_initial_distribution(ts_poly_list *poly_list, ts_idx i, ts_vesicle 
     /* Make straight grafted poylmers normal to membrane (polymer brush). Dist. between poly vertices put to 1*/
     ts_double xnorm,ynorm,znorm,normlength;
     ts_int intpoly=vesicle->tape->internal_poly;
-    ts_uint cellidx;
+    ts_cell_idx cellidx;
     ts_double posX,posY,posZ,prevPosX,prevPosY,prevPosZ, phi,costheta,sintheta;
     ts_bool retval;
     ts_int j,k,l,m;

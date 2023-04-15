@@ -75,12 +75,12 @@ ts_bool constvolume(ts_vesicle *vesicle, ts_vertex *vtx_avoid, ts_double Vol, ts
         if(fabs(voldiff)/vesicle->volume < vesicle->tape->constvolprecision){
             //calculate energy, return change in energy...
              oenergy=vtx_moved->energy;
-            energy_vertex(vtx_moved);
+            vertex_curvature_energy(vtx_moved);
             delta_energy=vtx_moved->xk*(vtx_moved->energy - oenergy);
             //the same is done for neighbouring vertices
             for(j=0;j<vtx_moved->neigh_no;j++){
                 oenergy=vtx_moved->neigh[j]->energy;
-                energy_vertex(vtx_moved->neigh[j]);
+                vertex_curvature_energy(vtx_moved->neigh[j]);
                 delta_energy+=vtx_moved->neigh[j]->xk*(vtx_moved->neigh[j]->energy-oenergy);
             }
             *retEnergy=delta_energy;
@@ -120,12 +120,12 @@ ts_bool constvolume(ts_vesicle *vesicle, ts_vertex *vtx_avoid, ts_double Vol, ts
             }
 
             oenergy=vtx_moved->energy;
-            energy_vertex(vesicle, vtx_moved);
+            vertex_curvature_energy(vesicle, vtx_moved);
             delta_energy=(vtx_moved->energy - oenergy);
             //the same is done for neighbouring vertices
             for(j=0;j<vtx_moved->neigh_no;j++){
                 oenergy=vtx_moved->neigh[j]->energy;
-                energy_vertex(vesicle, vtx_moved->neigh[j]);
+                vertex_curvature_energy(vesicle, vtx_moved->neigh[j]);
                 delta_energy+=(vtx_moved->neigh[j]->energy-oenergy);
             }
             //adhesion energy
@@ -144,7 +144,7 @@ ts_bool constvolume(ts_vesicle *vesicle, ts_vertex *vtx_avoid, ts_double Vol, ts
 ts_bool constvolConstraintCheck(ts_vesicle *vesicle, ts_vertex *vtx){ 
         ts_idx i;
         ts_double dist;
-        ts_uint cellidx;
+        ts_cell_idx cellidx;
         //distance with neighbours check
         for(i=0;i<vtx->neigh_no;i++){
             dist=vtx_distance_sq(vtx,vtx->neigh[i]);
@@ -179,7 +179,7 @@ ts_bool constvolumerestore(ts_vesicle *vesicle, ts_vertex *vtx_moved,ts_vertex *
     for(j=0;j<vtx_moved->tristar_no;j++) triangle_normal_vector(vtx_moved->tristar[j]);
     for(j=0;j<vtx_moved->neigh_no;j++){
         // memcpy((void *)vtx_moved->neigh[j],(void *)&vtx_backup[j+1],sizeof(ts_vertex));
-        energy_vertex(vesicle, vtx_moved->neigh[j]);
+        vertex_curvature_energy(vesicle, vtx_moved->neigh[j]);
     }
 
     free(vtx_backup);
@@ -188,7 +188,7 @@ ts_bool constvolumerestore(ts_vesicle *vesicle, ts_vertex *vtx_moved,ts_vertex *
 
 ts_bool constvolumeaccept(ts_vesicle *vesicle,ts_vertex *vtx_moved, ts_vertex *vtx_backup){
     ts_bool retval;
-    ts_uint cellidx=vertex_self_avoidance(vesicle, vtx_moved);
+    ts_cell_idx cellidx=vertex_self_avoidance(vesicle, vtx_moved);
     if(vtx_moved->cell!=vesicle->clist->cell[cellidx]){
         retval=cell_add_vertex(vesicle->clist->cell[cellidx],vtx_moved);
         if(retval==TS_SUCCESS) cell_remove_vertex(vtx_backup[0].cell,vtx_moved);
