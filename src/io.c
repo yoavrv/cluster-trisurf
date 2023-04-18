@@ -1389,6 +1389,7 @@ ts_tape *parsetapebuffer(char *buffer){
         CFG_FLOAT("adhesion_radius", 5, CFGF_NONE),
         CFG_FLOAT("z_adhesion", 0, CFGF_NONE),
         CFG_FLOAT("adhesion_scale", 5, CFGF_NONE),
+        CFG_FLOAT("adhesion_factor", 2, CFGF_NONE),
         /* variables for Vicsek interaction and general interaction modification*/
         CFG_INT("force_model", 0, CFGF_NONE),
         CFG_FLOAT("vicsek_strength", 0.1, CFGF_NONE),
@@ -1460,6 +1461,7 @@ ts_tape *parsetapebuffer(char *buffer){
     tape->adhesion_strength = cfg_getfloat(cfg, "adhesion_strength");
     tape->adhesion_radius = cfg_getfloat(cfg, "adhesion_radius");
     tape->adhesion_scale = cfg_getfloat(cfg, "adhesion_scale");
+    tape->adhesion_factor = cfg_getfloat(cfg, "adhesion_factor");
     tape->z_adhesion = cfg_getfloat(cfg, "z_adhesion");
     tape->random_seed = cfg_getint(cfg, "random_seed");
     tape->type_of_bond_model = cfg_getint(cfg, "bond_model");

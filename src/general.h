@@ -200,7 +200,8 @@ enum adhesion_geometry_type{
   model_plane_potential=1,
   model_spherical_potential=2,
   model_cylindrical_potential=3,
-
+  model_sinosoidal_potential=4,
+  model_plane_potential_with_spots=5,
 };
 
 
@@ -433,6 +434,8 @@ typedef struct {
     ts_double adhesion_strength;
     ts_double z_adhesion;
     ts_double adhesion_radius;
+    ts_double adhesion_scale;
+    ts_double adhesion_factor;
     ts_double min_dihedral_angle_cosine; // prevent spikiness of triangles by imposing a minimum dihedral angle
     ts_double d0; // spontaneous deviator
     //  long int brezveze0;

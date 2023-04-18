@@ -95,16 +95,22 @@ vicsek_radius=4.0
 # 2: parabolic ad_w*(1-(dx/dx0)^2)
 adhesion_model=0
 # type of adhesion geometry do you want (integer flag)
-# 1: plane_potential 
+# 1: plane potential 
 # 2: spherical surface
 # 3: cylindrical surface
+# 4: plane-sinosoidal surface
+# 5: plane surface with adhesion spots
 adhesion_geometry=0
 # potential range (float in lmin)
 adhesion_cuttoff=1
 # adhesion energy per vertex (float)
 adhesion_strength=1.0
-# radius of the sphere or cylinder. irrelevant for a flat substrate.
+# radius of the sphere or cylinder.
 adhesion_radius=5.0
+# for sinosoidal and adhesion spot lattice (float)
+adhesion_scale=5.0
+# factor of adhesin on spots
+adhesion_factor=2.0
 # position of the adhesive surface (float)
 # bipyramid topmost is approx. z_max = 0.630877*nshell, so -z_max is a good guess
 z_adhesion=-5
