@@ -66,6 +66,14 @@ do{\
     }\
 }while(0)
 
+
+// global vairables
+int force_from_tape;
+char tapetxt[128000]; //stores text file of the tape
+
+
+ts_args command_line_args;
+
 /** DUMP STATE TO DISK DRIVE **/
 ts_bool dump_state(ts_vesicle *vesicle, ts_idx iteration){
 
@@ -1362,10 +1370,6 @@ ts_tape *parsetapebuffer(char *buffer){
         CFG_INT("mcsweeps", 200000, CFGF_NONE),
         CFG_INT("inititer", 0, CFGF_NONE),
         CFG_BOOL("quiet", 0, CFGF_NONE),
-        //CFG_SIMPLE_STR("multiprocessing",&tape->multiprocessing),
-        //CFG_SIMPLE_INT("smp_cores",&tape->brezveze0),
-        //CFG_SIMPLE_INT("cluster_nodes",&tape->brezveze1),
-        //CFG_SIMPLE_INT("distributed_processes",&tape->brezveze2),
         CFG_INT("spherical_harmonics_coefficients", 0, CFGF_NONE),
         CFG_INT("number_of_vertices_with_c0", 50, CFGF_NONE),
         CFG_INT("adhesion_geometry", 1, CFGF_NONE),
@@ -1380,10 +1384,11 @@ ts_tape *parsetapebuffer(char *buffer){
         CFG_FLOAT("plane_F", 1000, CFGF_NONE),
         /* Variables related to adhesion */
         CFG_INT("adhesion_model", 0, CFGF_NONE),
-        CFG_FLOAT("adhesion_cuttoff", 15, CFGF_NONE),
-        CFG_FLOAT("adhesion_strength", 1000, CFGF_NONE),
-        CFG_FLOAT("adhesion_radius", 1000, CFGF_NONE),
-        CFG_FLOAT("z_adhesion", 1000, CFGF_NONE),
+        CFG_FLOAT("adhesion_cuttoff", 1, CFGF_NONE),
+        CFG_FLOAT("adhesion_strength", 1, CFGF_NONE),
+        CFG_FLOAT("adhesion_radius", 5, CFGF_NONE),
+        CFG_FLOAT("z_adhesion", 0, CFGF_NONE),
+        CFG_FLOAT("adhesion_scale", 5, CFGF_NONE),
         /* variables for Vicsek interaction and general interaction modification*/
         CFG_INT("force_model", 0, CFGF_NONE),
         CFG_FLOAT("vicsek_strength", 0.1, CFGF_NONE),
@@ -1454,6 +1459,7 @@ ts_tape *parsetapebuffer(char *buffer){
     tape->adhesion_cuttoff = cfg_getfloat(cfg, "adhesion_cuttoff");
     tape->adhesion_strength = cfg_getfloat(cfg, "adhesion_strength");
     tape->adhesion_radius = cfg_getfloat(cfg, "adhesion_radius");
+    tape->adhesion_scale = cfg_getfloat(cfg, "adhesion_scale");
     tape->z_adhesion = cfg_getfloat(cfg, "z_adhesion");
     tape->random_seed = cfg_getint(cfg, "random_seed");
     tape->type_of_bond_model = cfg_getint(cfg, "bond_model");

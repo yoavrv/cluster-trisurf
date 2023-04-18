@@ -7,8 +7,8 @@
 static char prefixname[1024];
 static ts_bool restore=0;
 static char tape[1024]; */
-int force_from_tape;
-char tapetxt[128000]; //stores text file of the tape
+extern int force_from_tape;
+extern char tapetxt[128000]; //stores text file of the tape
 
 typedef struct{
 	ts_int force_from_tape;
@@ -22,7 +22,7 @@ typedef struct{
     char dump_from_vtk[1024];
 } ts_args;
 
-ts_args command_line_args;
+extern ts_args command_line_args;
 
 ts_bool parse_args(int argc, char **argv);
 
