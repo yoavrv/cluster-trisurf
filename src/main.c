@@ -28,7 +28,6 @@ int main(int argv, char *argc[]){
     ts_vesicle *vesicle;
     ts_tape *tape;
     ts_idx start_iteration=0;
-    force_from_tape=0;
     /* Area and volume for constant area and constant volume are initialized to be zero */
     A0=0;
     V0=0;

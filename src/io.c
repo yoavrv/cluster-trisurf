@@ -68,7 +68,6 @@ do{\
 
 
 // global vairables
-int force_from_tape;
 char tapetxt[128000]; //stores text file of the tape
 
 

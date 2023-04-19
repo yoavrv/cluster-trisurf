@@ -2,12 +2,12 @@
 #ifndef _IO_H
 #define _IO_H
 #include <confuse.h>
+#include <general.h>
 /** @ Global variables for I/O operations like filenames etc. */
 /*static char mastername[1024];
 static char prefixname[1024];
 static ts_bool restore=0;
 static char tape[1024]; */
-extern int force_from_tape;
 extern char tapetxt[128000]; //stores text file of the tape
 
 typedef struct{
