@@ -439,9 +439,6 @@ typedef struct {
     ts_double adhesion_factor;
     ts_double min_dihedral_angle_cosine; // prevent spikiness of triangles by imposing a minimum dihedral angle
     ts_double d0; // spontaneous deviator
-    //  long int brezveze0;
-    //	long int brezveze1;
-    //	long int brezveze2;
     ts_massive_idx mcsweeps;
     ts_ulong random_seed;
     ts_idx iterations;
