@@ -59,7 +59,7 @@ ts_bool xml_trisurf_header(FILE *fh, ts_vesicle *vesicle){
     fprintf(fh, "<dumpdate>%s</dumpdate>\n", c_time_string);
 
     fprintf(fh, "<tape>");
-        fprintf(fh,"%s",tapetxt);	
+    fprintf(fh,"%s",vesicle->tape->tape_text);	
     fprintf(fh, "</tape>\n");
     if(vesicle->poly_list!=NULL){
         npoly=vesicle->poly_list->n;

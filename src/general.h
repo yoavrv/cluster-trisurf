@@ -405,6 +405,7 @@ typedef struct{
 
 
 typedef struct {
+    char* tape_text;
     ts_double R_nucleus;
     ts_double R_nucleusX;
     ts_double R_nucleusY;

@@ -101,8 +101,10 @@ ts_vesicle *parseDump(char *dumpfname) {
     xmlNodePtr root, tape_node=NULL, vesicle_node=NULL;
     xmlNodePtr cur, cur1, cur2; // different levels of XML nodes \<root>\<cur>\<cur1>\<cur2>\<\\cur2>\<\\cur1>\<\\cur>\<\\root>
     ts_vesicle *vesicle=NULL;
-    doc = xmlParseFile(dumpfname);
     ts_idx i;
+    char tapetxt[128000];
+
+    doc = xmlParseFile(dumpfname);
     if (doc == NULL ) {
         fatal("Dump file could not be found or parsed. It is correct file?",1);
     }
@@ -132,8 +134,8 @@ ts_vesicle *parseDump(char *dumpfname) {
         cur = cur->next;
     }
     
-    setGlobalTapeTXTfromTapeTag(doc, tape_node);
-    vesicle=parseTrisurfTag(doc, vesicle_node); // something is fishy here: we create and connect the vertices and triangles, but we only parse bonds below
+    setGlobalTapeTXTfromTapeTag(doc, tape_node, tapetxt);
+    vesicle=parseTrisurfTag(doc, vesicle_node, tapetxt); // something is fishy here: we create and connect the vertices and triangles, but we only parse bonds below
     // also very confusing with poly, which creates bonds anyway
 
     // the rest
@@ -199,7 +201,7 @@ ts_vesicle *parseDump(char *dumpfname) {
 }
 
 // read <tape> tag to global tapetxt 
-ts_bool setGlobalTapeTXTfromTapeTag(xmlDocPtr doc, xmlNodePtr cur){
+ts_bool setGlobalTapeTXTfromTapeTag(xmlDocPtr doc, xmlNodePtr cur, char *tapetxt){
     xmlChar *tape = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
     strcpy(tapetxt,(char *)tape);
     xmlFree(tape);
@@ -215,7 +217,7 @@ ts_bool setGlobalTapeTXTfromTapeTag(xmlDocPtr doc, xmlNodePtr cur){
  * @param cur xmlNodePtr to the <trisurf> tag
  * @return ts_vesicle* 
  */
-ts_vesicle *parseTrisurfTag(xmlDocPtr doc, xmlNodePtr cur){
+ts_vesicle *parseTrisurfTag(xmlDocPtr doc, xmlNodePtr cur, char *tapetxt){
     //fprintf(stderr,"Parsing trisurf tag\n");
     xmlNodePtr child;
 

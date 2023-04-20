@@ -1313,18 +1313,19 @@ ts_tape *parsetape(char *filename){
     FILE *fd = fopen (filename, "r");
     long length;
     size_t size;
+    char tape_text[128000];
     fseek (fd, 0, SEEK_END);
     length = ftell (fd);
     fseek (fd, 0, SEEK_SET);
-    size=fread (tapetxt, 1, length, fd);
+    size=fread (tape_text, 1, length, fd);
     fclose(fd);
     if(size);//?
 
 
     // fix the tape that is recorded to the .vtu
     // with the new command line arguments
-    update_tapetxt(tapetxt, command_line_args.tape_opts);
-    ts_tape *tape=parsetapebuffer(tapetxt);
+    update_tapetxt(tape_text, command_line_args.tape_opts);
+    ts_tape *tape=parsetapebuffer(tape_text);
     return tape;
 }
 
@@ -1332,7 +1333,11 @@ ts_tape *parsetape(char *filename){
 
 ts_tape *parsetapebuffer(char *buffer){
     ts_tape *tape=(ts_tape *)calloc(1,sizeof(ts_tape));
-    //tape->multiprocessing=calloc(255,sizeof(char));
+    tape->tape_text = (char *) malloc(strlen(buffer)+1);
+    if (tape->tape_text==NULL){
+        fatal("Could not allocate string for tape text!", 100);
+    }
+    strcpy(tape->tape_text,buffer);
     
     cfg_opt_t opts[] = {
         CFG_INT("nshell", 0, CFGF_NONE),
@@ -1474,12 +1479,6 @@ ts_tape *parsetapebuffer(char *buffer){
     else if (retval == CFG_PARSE_ERROR){
         fatal("Invalid tape!", 100);
     }
-
-    // this bit is not needed, since we already re-wrote the tape directly
-    // In order toi have the changes applied here and saved to .vtu
-
-    /* here we used to override all values read from tape with values from commandline*/
-    //getcmdline_tape(cfg,command_line_args.tape_opts);
     cfg_free(cfg);
 
     /* global variables are set automatically */
@@ -1488,7 +1487,7 @@ ts_tape *parsetapebuffer(char *buffer){
 }
 
 ts_bool tape_free(ts_tape *tape){
-    //free(tape->multiprocessing);
+    free(tape->tape_text);
     free(tape);
     return TS_SUCCESS;
 }
