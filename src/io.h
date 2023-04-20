@@ -13,7 +13,7 @@ typedef struct{
     char dump_fullfilename[1024]; //name of the dump file
     char tape_fullfilename[1024]; //name of the tape file
     char tape_templatefull[1024]; //name of the tape template file
-    char tape_opts[1000]; //commandline tape options
+    char tape_opts[1024]; //commandline tape options
     char dump_from_vtk[1024];
 } ts_args;
 
