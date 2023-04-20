@@ -15,7 +15,7 @@
 ts_bool centermass(ts_vesicle *vesicle){
     ts_idx i,j, n=vesicle->vlist->n;
     ts_vertex **vtx=vesicle->vlist->vtx;
-	ts_double temp_z_cm=0;
+	ts_double temp_x_cm=0,temp_y_cm=0,temp_z_cm=0;
     vesicle->cm[0]=0;
     vesicle->cm[1]=0;
     vesicle->cm[2]=0;
@@ -34,19 +34,22 @@ ts_bool centermass(ts_vesicle *vesicle){
 		vesicle->cm[2]=0;
 	}
 
-	//center mass for z component does not  change when adhesion is switched on
+	//center mass for z component does not change for plane substrate
 	if(vesicle->tape->adhesion_geometry==model_plane_potential){
 		temp_z_cm=vesicle->cm[2];
 		vesicle->cm[2]=0;
 	}
-	//center mass for x and z component does not  change for cylyndrical substrate
+	//center mass for x and z component does not change for cylindrical substrate
 	else if(vesicle->tape->adhesion_geometry==model_cylindrical_potential){
+		temp_x_cm=vesicle->cm[0];
 		temp_z_cm=vesicle->cm[2];
-		vesicle->cm[2]=0;
 		vesicle->cm[0]=0;
+		vesicle->cm[2]=0;
 	} 
-	//center mass for x y, and z component does not  change for spherical substrate
+	//center mass for x y, and z component does not change for spherical substrate
 	else if(vesicle->tape->adhesion_geometry==model_spherical_potential){
+		temp_x_cm=vesicle->cm[0];
+		temp_y_cm=vesicle->cm[1];
 		temp_z_cm=vesicle->cm[2];
 		vesicle->cm[2]=0;
 		vesicle->cm[0]=0;
@@ -80,11 +83,10 @@ ts_bool centermass(ts_vesicle *vesicle){
 	vesicle->nucleus_center[1]-=vesicle->cm[1];
 	vesicle->nucleus_center[2]-=vesicle->cm[2];
 
-    vesicle->cm[0]=0.0;
-    vesicle->cm[1]=0.0;
-	if(vesicle->tape->plane_confinement_switch){
-		vesicle->cm[2]=temp_z_cm;
-	}
+    vesicle->cm[0]=temp_x_cm;
+    vesicle->cm[1]=temp_y_cm;
+	vesicle->cm[2]=temp_z_cm;
+	
 
     for(i=0;i<vesicle->tlist->n;i++){
         triangle_normal_vector(vesicle->tlist->tria[i]);

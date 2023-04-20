@@ -1,86 +1,96 @@
+##################
+## Trisurf Tape ##
+##################
+
+# a control file for the trisurf simulations
+# $ are program control
+# * are initialization only
+
 ####### Vesicle definitions ###########
-# nshell is a number of divisions of dipyramid
+# * nshell is a number of divisions of dipyramid
 nshell=10
-# dmax is the max. bond length (in units l_min)
+# $ dmax is the max. bond length (in units l_min)
 dmax=1.7
-# dmin_interspecies in the min. dist. between different vertex species (in units l_min)
+# $ dmin_interspecies in the min. dist. between different vertex species (in units l_min)
 dmin_interspecies=1.2
-# max step size (in units l_min)
+# $ max step size (in units l_min)
 stepsize=0.15
 
 
 #######  Cell definitions ############
+# $ partition space to cells of 
 nxmax=100
 nymax=100
 nzmax=100
 
 
 ####### Program Control ############
-#how many MC sweeps between subsequent records of states to disk. 200000 is reasonable value
+# $ how many MC sweeps between subsequent records of states to disk. 200000 is reasonable value
 mcsweeps=1000
-#how many initial mcsweeps*inititer MC sweeps before recording to disk?
+# $ how many initial mcsweeps*inititer MC sweeps before recording to disk?
 inititer=0
-#how many records do you want on the disk iteration are there in a run?
+# $ how many records do you want on the disk iteration are there in a run?
 iterations=10
 
 
-#shut up if we are using cluster!!!
+# $ do not write "ts_fprintf" statesments to stdout (for use in cluster)
 quiet=false
+
 
 ######-----------------------------#######
 ###### Memrbane and CMC properties #######
 ######-----------------------------#######
 
-# bending rigidity of the membrane (in units kT)
+# * bending rigidity of the membrane (in units kT)
 xk0=20
-# xk2: Gaussian bending modulus
+# * xk2: Gaussian bending modulus
 xk2=-20
 
 # Each vertex is associated with a type (8 bit flag):
-# 0x01 : bonding vertex              0x02 : active force vertex
-# 0x04 : adhesive vertex             0x08 : anisotropic vertex
-# 0x10 : (reserved for future use)   0x20 : vicsek vertex (correlated force)
-# 0x40 : edge vertex (not used)      0x80 : ghost vertex (unnmoving) (must be ==type!)
-# Bare membrane vertices (default) are adhesive 0x04 (4), 
+#   0x01 : bonding vertex              0x02 : active force vertex
+#   0x04 : adhesive vertex             0x08 : anisotropic vertex
+#   0x10 : (reserved for future use)   0x20 : vicsek vertex (correlated force)
+#   0x40 : edge vertex (not used)      0x80 : ghost vertex (unnmoving) (must be ==type!)
+#   Bare membrane vertices (default) are adhesive 0x04 (4), 
 # CMC vertices are bonding, active, anisotropic, and correlated 0x2F (47)
-# number of CMC vertices (integer)
+# * number of CMC vertices (integer)
 number_of_vertices_with_c0=50
-# c0/2 is spontaneous curvature. c0 is used as (c1+c1-c0)^2 in energy term (float)
+# * c0/2 is spontaneous curvature. c0 is used as (c1+c1-c0)^2 in energy term (float)
 c0=0.5
-# d0/2 is spontaneous deviator. d0 is used in shape tensor only (float)
+# * d0/2 is spontaneous deviator. d0 is used in shape tensor only (float)
 # Mismatch = Curvature - c0/2*I - d0/2 sigma_z (i.e. the 1st and 2nd intrinsic curvatures are half the sum and half the difference )
 d0=0.5
 
-# curvature model (8 bit flag)
-# 0x01 : calculate angle-sum gaussian curvature,  0x02 : calculate shape operator, 
-# 0x04 : update director even in the old method.  0x08 : use shape operator energy rather than just save it
-# 0x10 : use shape, but only for anisotropic.     0x20 : do not rotate director as a MC step
-# 0x40 : disable old method (use shape op only)   0x80 : calculate angle sum only if kx2!=0
+# $ curvature model (8 bit flag)
+#   0x01 : calculate angle-sum gaussian curvature,  0x02 : calculate shape operator, 
+#   0x04 : update director even in the old method.  0x08 : use shape operator energy rather than just save it
+#   0x10 : use shape, but only for anisotropic.     0x20 : do not rotate director as a MC step
+#   0x40 : disable old method (use shape op only)   0x80 : calculate angle sum only if kx2!=0
 # example of important models: 
 # 0: old method. 7: debug, save everything but use energy from old method. 35: parallel transport of directors only
 curvature_model=15
-# limit sharp edges by imposing the dihedral angle between triangle obeys cos(phi_ab)>X. -1 means no limit
+# $ limit sharp edges by imposing the dihedral angle between triangle obeys cos(phi_ab)>X. -1 means no limit
 min_dihedral_angle_cosine=0.1
 
-# energy of bond between bonding vertices (float, positive value for attraction)
+# * energy of bond between bonding vertices (float, positive value for attraction)
 w=1.0
-# bond model- vertex of bonding type bind with mean(w). (flag)
+# $ bond model- vertex of bonding type bind with mean(w). (flag)
 # 0x1: require type identity.   0x2: nematic interaction between anisotropic vtx
 bond_model=0
 
-#direct force on active vertices (float)
+# * direct force on active vertices (float)
 F=1.0
-# force_model- force on active type vertices. (integer flag)
-# 0: force in normal direction
-# 1: F proportional nonactive neigh, 2: F proportional nonconcave neigh
-# 3: F=0 if any neigh is concave
-# 16: Vicsek, direction aligend with connected neighbors up to radius,
-# 17: 16, with weight 1/neighbor accoding to distance
+# $ force_model- force on active type vertices. (integer flag)
+#   0: force in normal direction
+#   1: F proportional nonactive neigh, 2: F proportional nonconcave neigh
+#   3: F=0 if any neigh is concave
+#   16: Vicsek, direction aligend with connected neighbors up to radius,
+#   17: 16, with weight 1/neighbor accoding to distance
 force_model=0
-# Vicsek: force direction is sum of own normal + (nearest neighbor normals * vicsek_strength)
+# $ Vicsek: force direction is sum of own normal + (nearest neighbor normals * vicsek_strength)
 # interaction strength parameter: Vicsek: weight of neighbors (float)
 vicsek_strength=0.1
-# interaction radius parameter: Vicsek: max. neighbor distance (integer)
+# $ interaction radius parameter: Vicsek: max. neighbor distance (integer)
 vicsek_radius=4.0
 
 
@@ -88,36 +98,36 @@ vicsek_radius=4.0
 ###### Adhesion to surface #######
 ######---------------------#######
 
-# Adhesion model (integer flag)
+# $ Adhesion model (integer flag)
 # energy of any adhesive vertex dx distance from the adhesion geometry 
 # as long as distance is less than the cutoff (dx0)
-# 1: step potential ad_w*(dx/dx0), 
-# 2: parabolic ad_w*(1-(dx/dx0)^2)
+#   1: step potential ad_w*(dx/dx0), 
+#   2: parabolic ad_w*(1-(dx/dx0)^2)
 adhesion_model=0
-# type of adhesion geometry do you want (integer flag)
-# 1: plane potential 
-# 2: spherical surface
-# 3: cylindrical surface
-# 4: plane-sinosoidal surface
-# 5: plane surface with adhesion spots
+# $ type of adhesion geometry do you want (integer flag)
+#   1: plane potential 
+#   2: spherical surface
+#   3: cylindrical surface
+#   4: plane-sinosoidal surface
+#   5: plane surface with adhesion spots
 adhesion_geometry=0
-# potential range (float in lmin)
+# $ potential range (float in lmin)
 adhesion_cuttoff=1
-# adhesion energy per vertex (float)
+# * adhesion energy per vertex (float)
 adhesion_strength=1.0
-# radius of the sphere or cylinder.
+# $ radius of the sphere or cylinder.
 adhesion_radius=5.0
-# for sinosoidal and adhesion spot lattice (float)
+# $ for sinosoidal and adhesion spot lattice (float)
 adhesion_scale=5.0
-# factor of adhesin on spots
+# $ factor of adhesin on spots
 adhesion_factor=2.0
-# position of the adhesive surface (float)
+# $ position of the adhesive surface (float)
 # bipyramid topmost is approx. z_max = 0.630877*nshell, so -z_max is a good guess
 z_adhesion=-5
 
-# Allow motion of center mass: default (0) reset vesicle to 0,0,0 every few time steps (bool) 
+# $ Allow motion of center mass: default (0) reset vesicle to 0,0,0 every few time steps (bool) 
 allow_center_mass_movement=0
-# In active case, we need to apply an external force in the z-direction for overall force balance along z-direction, choose 1 if you want this, 0 otherwise (bool)
+# $ In active case, we need to apply an external force in the z-direction for overall force balance along z-direction, choose 1 if you want this, 0 otherwise (bool)
 force_balance_along_z_axis=0
 
 
@@ -125,37 +135,39 @@ force_balance_along_z_axis=0
 ###### Pressure/volume/area/tension calculations #######
 ######-------------------------------------------#######
 
-# Calculate p*dV energy contribution (bool)
+# all of these are program control (# $)
+
+# $ Calculate p*dV energy contribution (bool)
 pressure_switch=0
-# pressure difference: p_inside - p_outside (in units kT/l_min^3):
+# $ pressure difference: p_inside - p_outside (in units kT/l_min^3):
 pressure=0.0
 
-# Volume constraint/energy (integer flag) 
-# 0: disable constant volume
-# 1: enable with additional vertex move {broken}
-# 2: enable with epsvol range
-# 3: enable parabolic potential (xkV0/2V0 (V-V0)^2)
-# 4: enable reduced volume parabolic potential (xkV0/2 (V_red_eq-V/Vsph)^2)
+# $ Volume constraint/energy (integer flag) 
+#   0: disable constant volume
+#   1: enable with additional vertex move {broken}
+#   2: enable with epsvol range
+#   3: enable parabolic potential (xkV0/2V0 (V-V0)^2)
+#   4: enable reduced volume parabolic potential (xkV0/2 (V_red_eq-V/Vsph)^2)
 volume_switch=0
 constvolprecision=1e-14
-# V0 less than 1 to determine volume from initial conditions (see constant_volume tag in .vtu files) (float)
+# $ Rest volume. Set V0 less than 1 to determine volume from initial conditions (see constant_volume tag in .vtu files) (float)
 V0=0
-# volume modulus (float)
+# $ volume modulus (float)
 # needs some thinking: reasonable values depends on number of vertices N!
 # reduced volume scaling is between 1/(N Sqrt(N)) and 1/N
 xkV0=1.0
-# reduce volume at equilibrium (between 0 and 1) (float)
+# $ reduce volume at equilibrium (between 0 and 1) (float)
 Vr=1.0
 
-# Area constraint/energy (integer flag) 
-# 0: disable constant area, 
-# 1: stretching of triangles
-# 2: enable constant area with epsarea
-# 3: enable parabolic potential (xkA0/2A0 (A-A0)^2)
+# $ Area constraint/energy (integer flag) 
+#   0: disable constant area, 
+#   1: stretching of triangles
+#   2: enable constant area with epsarea
+#   3: enable parabolic potential (xkA0/2A0 (A-A0)^2)
 area_switch=0
-# A0 less than 1 to determine area from initial conditions (see constant_area tag in .vtu files)  (float)
+# $ Rest area, A0 less than 1 to determine area from initial conditions (see constant_area tag in .vtu files)  (float)
 A0=0
-# Stretching modulus (float)
+# $ Stretching modulus (float)
 xkA0=1.0
 
 
@@ -165,7 +177,7 @@ xkA0=1.0
 
 ####### Nucleus (inside the vesicle) ###########
 
-# Radius and position of an impenetrable hard sphere inside the vesicle (float)
+# $ Radius and $ position of an impenetrable hard sphere inside the vesicle (float)
 R_nucleus=0
 R_nucleusX=0
 R_nucleusY=0
@@ -173,16 +185,16 @@ R_nucleusZ=0
 
 ###### Plane confinement ############
 
-#plane confinement; two plates between the substrate-vesicle system, upper plate in moving downwards untill plan_d, lower plate is stationary
+# $ plane confinement; two plates between the substrate-vesicle system, upper plate in moving downwards untill plan_d, lower plate is stationary
 plane_confinement_switch=0
-#final plane distance (float in lmin)
+# $ final plane distance (float in lmin)
 plane_d=10
-#plane to vesicle repulsion force while closing
+# $ plane to vesicle repulsion force while closing
 plane_F=1.0
 
 ###### Spherical harmonics ###########
 
-# If 0 then spherical harmonics are not calculated at all. (integer)
+# $ If 0 then spherical harmonics are not calculated at all. (integer)
 spherical_harmonics_coefficients=0
 
 
@@ -191,21 +203,21 @@ spherical_harmonics_coefficients=0
 #####----------------------------------######
 
 ####### Polymer (brush) definitions ###########
-# npoly is a number of polymers attached to npoly distinct vertices on vesicle
+# * npoly is a number of polymers attached to npoly distinct vertices on vesicle
 npoly=0
-# nmono is a number of monomers in each polymer
+# * nmono is a number of monomers in each polymer
 nmono=20
-# Spring constant between monomers of the polymer
+# $ Spring constant between monomers of the polymer
 k_spring=800
-#set to 1 if half of the polymeres are inside the vesicle
+# * set to 1 if half of the polymeres are inside the vesicle
 internal_poly=0
 
 ####### Filament (inside the vesicle) definitions ###########
-# nfil is a number of filaments inside the vesicle
+# * nfil is a number of filaments inside the vesicle
 nfil=0
-# nfono is a number of monomers in each filament
+# * nfono is a number of monomers in each filament
 nfono=3
-# Persistence lenght of the filaments (in units l_min)
+# $ Persistence lenght of the filaments (in units l_min)
 xi=100
 
 ##### no multiprocessing #######
