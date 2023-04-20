@@ -71,7 +71,17 @@ do{\
 char tapetxt[128000]; //stores text file of the tape
 
 
-ts_args command_line_args;
+ts_args command_line_args = {.force_from_tape=0, 
+                             .reset_iteration_count=0, 
+                             .path = "./",
+                             .output_fullfilename="output.pvd",
+                             .dump_fullfilename="dump.bin",
+                             .tape_fullfilename="tape",
+                             .tape_templatefull="./tape",
+                             .tape_opts="",
+                             .dump_from_vtk="",
+                            };
+
 
 /** DUMP STATE TO DISK DRIVE **/
 ts_bool dump_state(ts_vesicle *vesicle, ts_idx iteration){
@@ -1632,10 +1642,10 @@ ts_bool update_tapetxt(char* tape_txt, char* cmd_line_tape_args){
     ts_uint line_len; // length of current line of tape being read
 
     // step 1: check if there are tape arguments
-    if (arg_str!=NULL){
+    if (arg_str!=NULL && arg_str[0]!='\0'){
         num_opts++; // assume there is at least one option
     }
-    else { //null pointer
+    else { //null pointer or zero length string
         return TS_SUCCESS;
     }
 

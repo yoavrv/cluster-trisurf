@@ -40,7 +40,7 @@ int main(int argv, char *argc[]){
     ts_fprintf(stdout,"Starting program...\n\n");
 
 
-    if(command_line_args.dump_from_vtk[0]!=0){
+    if(command_line_args.dump_from_vtk[0]!='\0'){
         ts_fprintf(stdout,"************************************************\n");
         ts_fprintf(stdout,"**** Restoring vesicle from VTK points list ****\n");
         ts_fprintf(stdout,"************************************************\n\n");
