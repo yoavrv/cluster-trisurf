@@ -973,28 +973,15 @@ ts_double direct_force_from_Fz_balance(ts_vesicle *vesicle, ts_vertex *vtx, ts_v
     //     We could separate from direct_force_energy()
     //     since F_direct(old) = F_direct + Fz_balance \hat{z}
     //     W = F_direct * dX + Fz_balance * dz
-    // Total force is cached once and only once! : only update at each step
-    // Changing this behavior is weird: once, or always, work identically, 
-    // once every 2 works identically, once every 64 works identically, 
-    // but 65-128 don't!.
+
     ts_double f_diff=0;
-    static ts_double Fz;
-    static ts_char countdown=0;
 
-    if (!countdown){
-        total_force_on_vesicle(vesicle);
-        Fz = vesicle->fz;
-        countdown=64;//pow(2,20)-1; go back here in 64 steps
-    }
-    else{
-        if (vtx->type&is_active_vtx) f_diff+=vtx->fz;
-        if (vtx_old->type&is_active_vtx) f_diff-=vtx_old->fz;
-        Fz+=f_diff;
-        countdown-=1; //recalculate when reach 0
-    }
+    if (vtx->type&is_active_vtx) f_diff+=vtx->fz;
+    if (vtx_old->type&is_active_vtx) f_diff-=vtx_old->fz;
+    vesicle->fz+=f_diff;
 
-    if (Fz>0){
-        return Fz*(vtx->z-vtx_old->z)/vesicle->vlist->n;
+    if (vesicle->fz>0){
+        return vesicle->fz*(vtx->z-vtx_old->z)/vesicle->vlist->n;
     }
     else{
         return 0;
