@@ -504,7 +504,7 @@ inline ts_bool vertex_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
     ts_double h,ht,norml;
     ts_double angle_sum=0;
     ts_double a_dot_b, a_cross_b_x, a_cross_b_y, a_cross_b_z, mag_a_cross_b;
-    ts_flag model=vesicle->tape->type_of_curvature_model; // control how and what model we use to calculate energy: see enum curvature_model_type in general.h
+    ts_flag model=vesicle->tape->curvature_model; // control how and what model we use to calculate energy: see enum curvature_model_type in general.h
     ts_bool do_angle_sum=0, do_calculate_shape_op=0, do_use_shape_op_e=0;
     do_angle_sum=(model&to_calculate_sum_angle && 
                     (!(model&to_use_sum_angle_for_kx2_only) || (model&to_use_sum_angle_for_kx2_only && vtx->xk2!=0))
@@ -691,7 +691,7 @@ ts_bool sweep_attraction_bond_energy(ts_vesicle *vesicle){
  * 
  * 
  * 4 things determine the bonding (in theory): bond model, bond length, bonding strength, type of the vertices, and vertex orientation  
- * bond models:  vesicle->tape->type_of_bond_model  
+ * bond models:  vesicle->tape->bond_model  
  *    &1 : demand vertex type be the same to bond. (0: all bond, 1: same type)
  *    &2 : anisotropic vertices have nematic order (2: )
  * bond length: 
@@ -711,7 +711,7 @@ ts_bool sweep_attraction_bond_energy(ts_vesicle *vesicle){
  */
 inline ts_bool attraction_bond_energy(ts_vesicle *vesicle, ts_bond *bond){
     ts_double energy=0;
-    ts_flag bond_model = vesicle->tape->type_of_bond_model;
+    ts_flag bond_model = vesicle->tape->bond_model;
     // 1 bit: bond by type
     if(!(bond_model&is_bonding_type_specific) ){ 
         // all bonding type bond together
@@ -768,7 +768,7 @@ ts_double direct_force_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vt
     // quit if there is no force
     if(fabs(vtx->f)<1e-15) return 0.0;
 
-    ts_flag model=vesicle->tape->type_of_force_model;
+    ts_flag model=vesicle->tape->force_model;
     ts_double vicsek_strength=vesicle->tape->vicsek_strength;
     ts_double vicsek_radius= vesicle->tape->vicsek_radius;
 
@@ -1023,7 +1023,7 @@ ts_double adhesion_energy_diff(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *v
     ts_double delta_energy=0;
     ts_double delta=0,delta_old=0;
     ts_bool oriented=0, oriented_old=0;
-    ts_double dz=vesicle->tape->adhesion_cuttoff;
+    ts_double dz=vesicle->tape->adhesion_cutoff;
     ts_double adhesion_factor=1,adhesion_factor_old=1;
     ts_flag model = vesicle->tape->adhesion_model;
 
@@ -1059,7 +1059,7 @@ ts_double adhesion_energy_diff(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *v
 // Distance of vertex from the geometry: negative "inside" wall/cylinder/sphere
 ts_double adhesion_geometry_distance(ts_vesicle *vesicle, ts_vertex *vtx){
     ts_double z=vtx->z;
-    ts_double z0=vesicle->tape->z_adhesion;
+    ts_double z0=vesicle->tape->adhesion_z;
     ts_double r=vesicle->tape->adhesion_radius;
     ts_double c0=z0-r;
     ts_flag geometry = vesicle->tape->adhesion_geometry;
@@ -1088,7 +1088,7 @@ ts_double adhesion_geometry_distance(ts_vesicle *vesicle, ts_vertex *vtx){
 ts_bool adhesion_geometry_side(ts_vesicle *vesicle, ts_vertex *vtx){
     ts_double z=vtx->z;
     ts_double r=vesicle->tape->adhesion_radius;
-    ts_double c0=vesicle->tape->z_adhesion-r;
+    ts_double c0=vesicle->tape->adhesion_z-r;
     ts_flag geometry = vesicle->tape->adhesion_geometry;
 
     //1 for plane potential, surface facing the -z direction way

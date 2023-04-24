@@ -112,18 +112,18 @@ adhesion_model=0
 #   5: plane surface with adhesion spots
 adhesion_geometry=0
 # $ potential range (float in lmin)
-adhesion_cuttoff=1
-# * adhesion energy per vertex (float)
-adhesion_strength=1.0
+adhesion_cutoff=1
+# $ position of the adhesive surface (float)
+# bipyramid topmost is approx. z_max = 0.630877*nshell, so -z_max is a good guess
+adhesion_z=-5
 # $ radius of the sphere or cylinder.
 adhesion_radius=5.0
 # $ for sinosoidal and adhesion spot lattice (float)
 adhesion_scale=5.0
 # $ factor of adhesin on spots
 adhesion_factor=2.0
-# $ position of the adhesive surface (float)
-# bipyramid topmost is approx. z_max = 0.630877*nshell, so -z_max is a good guess
-z_adhesion=-5
+# * adhesion energy per vertex (float)
+adhesion_strength=1.0
 
 # $ Allow motion of center mass: default (0) reset vesicle to 0,0,0 every few time steps (bool) 
 allow_center_mass_movement=0

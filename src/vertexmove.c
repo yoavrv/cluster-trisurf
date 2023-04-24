@@ -220,7 +220,7 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
     }
 
     // rotate director
-    if (vtx->type & is_anisotropic_vtx && !(vesicle->tape->type_of_curvature_model&to_not_rotate_directors)){
+    if (vtx->type & is_anisotropic_vtx && !(vesicle->tape->curvature_model&to_not_rotate_directors)){
         // we do this before the parallel transport, because the new normal calculation is fused in the energy calculation
         // we may want to bias to the original direction
         omega=(2*drand48()-1)*M_PI;

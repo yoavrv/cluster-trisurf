@@ -110,7 +110,7 @@ ts_bool run_simulation(ts_vesicle *vesicle, ts_massive_idx mcsweeps, ts_idx init
                 vesicle->confinement_plane.z_max=vesicle->tape->plane_d;
             }
 
-            vesicle->confinement_plane.z_min=vesicle->tape->z_adhesion - 2*vesicle->tape->adhesion_radius;
+            vesicle->confinement_plane.z_min=vesicle->tape->adhesion_z - 2*vesicle->tape->adhesion_radius;
 
             if(vesicle->confinement_plane.force_switch) ts_fprintf(stdout,"Squeezing with force %e.\n",vesicle->tape->plane_F);
         }

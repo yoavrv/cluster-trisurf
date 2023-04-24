@@ -425,29 +425,29 @@ typedef struct {
     ts_double xi;
     ts_double pressure;
     ts_double c0;
+    ts_double d0; // spontaneous deviator
     ts_double w;
     ts_double F;
     ts_double plane_d;
     ts_double plane_F;
     ts_double vicsek_strength;
     ts_double vicsek_radius;
-    ts_double adhesion_cuttoff;
+    ts_double adhesion_z;
+    ts_double adhesion_cutoff;
     ts_double adhesion_strength;
-    ts_double z_adhesion;
     ts_double adhesion_radius;
     ts_double adhesion_scale;
     ts_double adhesion_factor;
     ts_double min_dihedral_angle_cosine; // prevent spikiness of triangles by imposing a minimum dihedral angle
-    ts_double d0; // spontaneous deviator
     ts_massive_idx mcsweeps;
     ts_ulong random_seed;
     ts_idx iterations;
     ts_idx inititer;
-    ts_idx number_of_vertices_with_c0;
     ts_uint nshell;
     ts_uint ncxmax;
     ts_uint ncymax;
     ts_uint nczmax;
+    ts_idx number_of_vertices_with_c0;
     ts_idx npoly;
     ts_idx nmono;
     ts_idx internal_poly;
@@ -463,9 +463,9 @@ typedef struct {
     ts_bool force_balance_along_z_axis;
     ts_flag adhesion_geometry; // geometry of adhesion (none, plane, sphere, cylinder)
     ts_flag adhesion_model; // adhesion (none, step potential, parabolic potential)
-    ts_flag type_of_bond_model;
-    ts_flag type_of_curvature_model;
-    ts_flag type_of_force_model;
+    ts_flag bond_model;
+    ts_flag curvature_model;
+    ts_flag force_model;
 } ts_tape;
 
 
@@ -540,6 +540,7 @@ extern ts_double V0;
 extern ts_double A0;
 extern ts_double epsvol;
 extern ts_double epsarea;
+
 /* FUNCTIONS */
 
 /** Non-fatal error function handler:

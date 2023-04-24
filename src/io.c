@@ -820,7 +820,7 @@ ts_bool fprint_bonds(FILE *fh,ts_vesicle *vesicle){
 
 //write adhesion surface position
 ts_bool write_adhesion_position(FILE *fh, ts_vesicle *vesicle){
-fprintf(fh,"\t%f\n",vesicle->tape->z_adhesion);
+fprintf(fh,"\t%f\n",vesicle->tape->adhesion_z);
 return TS_SUCCESS;
 }
 
@@ -1350,138 +1350,147 @@ ts_tape *parsetapebuffer(char *buffer){
     strcpy(tape->tape_text,buffer);
     
     cfg_opt_t opts[] = {
-        CFG_INT("nshell", 0, CFGF_NONE),
-        CFG_INT("npoly", 0, CFGF_NONE),
-        CFG_INT("nmono", 0, CFGF_NONE),
-        CFG_INT("nfil", 0, CFGF_NONE),
-        CFG_INT("nfono", 0, CFGF_NONE),
-        CFG_INT("internal_poly", 0, CFGF_NONE),
         CFG_FLOAT("R_nucleus", 0, CFGF_NONE),
         CFG_FLOAT("R_nucleusX", 0, CFGF_NONE),
         CFG_FLOAT("R_nucleusY", 0, CFGF_NONE),
         CFG_FLOAT("R_nucleusZ", 0, CFGF_NONE),
-        CFG_FLOAT("dmax", 1.7, CFGF_NONE),
-        CFG_FLOAT("dmin_interspecies", 1.2, CFGF_NONE),
-        CFG_FLOAT("xk0", 20, CFGF_NONE),
-        CFG_FLOAT("xk2", 0, CFGF_NONE),
-        CFG_INT("pressure_switch", 0, CFGF_NONE),
-        CFG_INT("volume_switch", 0, CFGF_NONE),
-        CFG_INT("area_switch", 0, CFGF_NONE),
-        CFG_FLOAT("constvolprecision", 0, CFGF_NONE),
         CFG_FLOAT("xkA0", 1.0, CFGF_NONE),
         CFG_FLOAT("xkV0", 1.0, CFGF_NONE),
         CFG_FLOAT("V0", 0.0, CFGF_NONE),
         CFG_FLOAT("A0", 0.0, CFGF_NONE),
         CFG_FLOAT("Vr", 1.0, CFGF_NONE),
-        CFG_FLOAT("pressure", 0, CFGF_NONE),
+        CFG_FLOAT("constvolprecision", 0, CFGF_NONE),
+        CFG_FLOAT("xk0", 20, CFGF_NONE),
+        CFG_FLOAT("xk2", 0, CFGF_NONE),
+        CFG_FLOAT("dmax", 1.7, CFGF_NONE),
+        CFG_FLOAT("dmin_interspecies", 1.2, CFGF_NONE),
+        CFG_FLOAT("stepsize", 0.15, CFGF_NONE),
         CFG_FLOAT("k_spring", 800, CFGF_NONE),
         CFG_FLOAT("xi", 100, CFGF_NONE),
-        CFG_FLOAT("stepsize", 0.15, CFGF_NONE),
+        CFG_FLOAT("pressure", 0, CFGF_NONE),
+        CFG_FLOAT("c0", 0.5, CFGF_NONE),
+        CFG_FLOAT("d0", 0.5, CFGF_NONE),
+        CFG_FLOAT("w", 1.5, CFGF_NONE),
+        CFG_FLOAT("F", 0.7, CFGF_NONE),
+
+        CFG_FLOAT("plane_d", 15, CFGF_NONE),
+        CFG_FLOAT("plane_F", 1000, CFGF_NONE),
+        CFG_FLOAT("vicsek_strength", 0.1, CFGF_NONE),
+        CFG_FLOAT("vicsek_radius", 1.0, CFGF_NONE),
+        CFG_FLOAT("adhesion_z", 0, CFGF_NONE),
+        CFG_FLOAT("adhesion_cutoff", 1, CFGF_NONE),
+        CFG_FLOAT("adhesion_strength", 1, CFGF_NONE),
+        CFG_FLOAT("adhesion_radius", 5, CFGF_NONE),
+        CFG_FLOAT("adhesion_scale", 5, CFGF_NONE),
+        CFG_FLOAT("adhesion_factor", 2, CFGF_NONE),
+        CFG_FLOAT("min_dihedral_angle_cosine",-1,CFGF_NONE),
+
+        CFG_INT("mcsweeps", 200000, CFGF_NONE),
+        CFG_INT("random_seed",0,CFGF_NONE),
+        CFG_INT("iterations", 100, CFGF_NONE),
+        CFG_INT("inititer", 0, CFGF_NONE),
+        CFG_INT("nshell", 0, CFGF_NONE),
         CFG_INT("nxmax", 100, CFGF_NONE),
         CFG_INT("nymax", 100, CFGF_NONE),
         CFG_INT("nzmax", 100, CFGF_NONE),
-        CFG_INT("iterations", 100, CFGF_NONE),
-        CFG_INT("mcsweeps", 200000, CFGF_NONE),
-        CFG_INT("inititer", 0, CFGF_NONE),
-        CFG_BOOL("quiet", 0, CFGF_NONE),
-        CFG_INT("spherical_harmonics_coefficients", 0, CFGF_NONE),
+
         CFG_INT("number_of_vertices_with_c0", 50, CFGF_NONE),
-        CFG_INT("adhesion_geometry", 1, CFGF_NONE),
+        CFG_INT("npoly", 0, CFGF_NONE),
+        CFG_INT("nmono", 0, CFGF_NONE),
+        CFG_INT("internal_poly", 0, CFGF_NONE),
+        CFG_INT("nfil", 0, CFGF_NONE),
+        CFG_INT("nfono", 0, CFGF_NONE),
+        CFG_INT("spherical_harmonics_coefficients", 0, CFGF_NONE),
+
+        CFG_INT("pressure_switch", 0, CFGF_NONE),
+        CFG_INT("volume_switch", 0, CFGF_NONE),
+        CFG_INT("area_switch", 0, CFGF_NONE),
+  
+        CFG_BOOL("quiet", 0, CFGF_NONE),
+        CFG_INT("plane_confinement_switch", 0, CFGF_NONE),
         CFG_INT("allow_center_mass_movement", 0, CFGF_NONE),
         CFG_INT("force_balance_along_z_axis", 0, CFGF_NONE),
-        CFG_FLOAT("c0", 0.5, CFGF_NONE),
-        CFG_FLOAT("w", 1.5, CFGF_NONE),
-        CFG_FLOAT("F", 0.7, CFGF_NONE),
-        /* Variables related to plane confinement */
-        CFG_INT("plane_confinement_switch", 0, CFGF_NONE),
-        CFG_FLOAT("plane_d", 15, CFGF_NONE),
-        CFG_FLOAT("plane_F", 1000, CFGF_NONE),
-        /* Variables related to adhesion */
+
+        CFG_INT("adhesion_geometry", 1, CFGF_NONE),
         CFG_INT("adhesion_model", 0, CFGF_NONE),
-        CFG_FLOAT("adhesion_cuttoff", 1, CFGF_NONE),
-        CFG_FLOAT("adhesion_strength", 1, CFGF_NONE),
-        CFG_FLOAT("adhesion_radius", 5, CFGF_NONE),
-        CFG_FLOAT("z_adhesion", 0, CFGF_NONE),
-        CFG_FLOAT("adhesion_scale", 5, CFGF_NONE),
-        CFG_FLOAT("adhesion_factor", 2, CFGF_NONE),
-        /* variables for Vicsek interaction and general interaction modification*/
-        CFG_INT("force_model", 0, CFGF_NONE),
-        CFG_FLOAT("vicsek_strength", 0.1, CFGF_NONE),
-        CFG_FLOAT("vicsek_radius", 1.0, CFGF_NONE),
         CFG_INT("bond_model", 0, CFGF_NONE),
         CFG_INT("curvature_model", 0, CFGF_NONE),
-        /* Dihedral angle cosine constraint*/
-        CFG_FLOAT("min_dihedral_angle_cosine",-1,CFGF_NONE),
-        CFG_FLOAT("d0", 0.5, CFGF_NONE),
-        /* random seed */
-        CFG_INT("random_seed",0,CFGF_NONE),
+        CFG_INT("force_model", 0, CFGF_NONE),
         CFG_END()
     };
     cfg_t *cfg;    
     ts_uint retval; // not int?
     cfg = cfg_init(opts, 256); //consider using CFGF_IGNORE_UNKNOWN
     retval = cfg_parse_buf(cfg, buffer);
-    tape->nshell = cfg_getint(cfg,"nshell");
-    tape->npoly = cfg_getint(cfg,"npoly");
-    tape->nmono = cfg_getint(cfg,"nmono");
-    tape->nfil = cfg_getint(cfg,"nfil");
-    tape->nshell = cfg_getint(cfg,"nshell");
-    tape->nfono = cfg_getint(cfg,"nfono");
-    tape->internal_poly = cfg_getint(cfg,"internal_poly");
-    tape->R_nucleus = cfg_getfloat(cfg,"R_nucleus");
+    // tape->tape_text is above
+    tape->R_nucleus = cfg_getfloat(cfg,"R_nucleus"); 
     tape->R_nucleusX = cfg_getfloat(cfg,"R_nucleusX");
     tape->R_nucleusY = cfg_getfloat(cfg,"R_nucleusY");
     tape->R_nucleusZ = cfg_getfloat(cfg,"R_nucleusZ");
-    tape->dmax = cfg_getfloat(cfg,"dmax");
-    tape->dmin_interspecies = cfg_getfloat(cfg,"dmin_interspecies");
-    tape->xk0 = cfg_getfloat(cfg,"xk0");
-    tape->xk2 = cfg_getfloat(cfg,"xk2");
-    tape->pressure_switch = cfg_getint(cfg,"pressure_switch");
-    tape->volume_switch = cfg_getint(cfg,"volume_switch");
-    tape->area_switch = cfg_getint(cfg,"area_switch");
-    tape->constvolprecision = cfg_getfloat(cfg,"constvolprecision");
     tape->xkA0 = cfg_getfloat(cfg,"xkA0");
     tape->xkV0 = cfg_getfloat(cfg,"xkV0");
     tape->V0 = cfg_getfloat(cfg,"V0");
     tape->A0 = cfg_getfloat(cfg,"A0");
     tape->Vfraction = cfg_getfloat(cfg,"Vr");
-    tape->pressure = cfg_getfloat(cfg,"pressure");
+    tape->constvolprecision = cfg_getfloat(cfg,"constvolprecision");
+
+    tape->xk0 = cfg_getfloat(cfg,"xk0");
+    tape->xk2 = cfg_getfloat(cfg,"xk2");
+    tape->dmax = cfg_getfloat(cfg,"dmax");
+    tape->dmin_interspecies = cfg_getfloat(cfg,"dmin_interspecies");
+    tape->stepsize = cfg_getfloat(cfg,"stepsize");
+
     tape->kspring = cfg_getfloat(cfg,"k_spring");
     tape->xi = cfg_getfloat(cfg,"xi");
-    tape->stepsize = cfg_getfloat(cfg,"stepsize");
-    tape->ncxmax = cfg_getint(cfg,"nxmax");
-    tape->ncymax = cfg_getint(cfg,"nymax");
-    tape->nczmax = cfg_getint(cfg,"nzmax");
-    tape->iterations = cfg_getint(cfg,"iterations");
-    tape->mcsweeps = cfg_getint(cfg,"mcsweeps");
-    tape->inititer = cfg_getint(cfg,"inititer");  
-    tape->quiet = cfg_getbool(cfg,"quiet"); 
-    tape->shc = cfg_getint(cfg,"spherical_harmonics_coefficients");
-    tape->number_of_vertices_with_c0 = cfg_getint(cfg,"number_of_vertices_with_c0");
-    tape->adhesion_geometry = cfg_getint(cfg,"adhesion_geometry");
-    tape->allow_center_mass_movement = cfg_getint(cfg,"allow_center_mass_movement");
-    tape->force_balance_along_z_axis = cfg_getint(cfg,"force_balance_along_z_axis");
+    tape->pressure = cfg_getfloat(cfg,"pressure");
     tape->c0 = cfg_getfloat(cfg,"c0");
+    tape->d0 = cfg_getfloat(cfg,"d0");
     tape->w = cfg_getfloat(cfg,"w");
     tape->F = cfg_getfloat(cfg,"F");
-    tape->plane_confinement_switch = cfg_getint(cfg, "plane_confinement_switch");
+
     tape->plane_d = cfg_getfloat(cfg, "plane_d");
     tape->plane_F = cfg_getfloat(cfg, "plane_F");
-    tape->type_of_force_model = cfg_getint(cfg, "force_model");
     tape->vicsek_strength = cfg_getfloat(cfg, "vicsek_strength");
     tape->vicsek_radius = cfg_getfloat(cfg, "vicsek_radius");
-    tape->adhesion_model = cfg_getint(cfg, "adhesion_model");
-    tape->adhesion_cuttoff = cfg_getfloat(cfg, "adhesion_cuttoff");
+    tape->adhesion_z = cfg_getfloat(cfg, "adhesion_z");
+    tape->adhesion_cutoff = cfg_getfloat(cfg, "adhesion_cutoff");
     tape->adhesion_strength = cfg_getfloat(cfg, "adhesion_strength");
     tape->adhesion_radius = cfg_getfloat(cfg, "adhesion_radius");
     tape->adhesion_scale = cfg_getfloat(cfg, "adhesion_scale");
     tape->adhesion_factor = cfg_getfloat(cfg, "adhesion_factor");
-    tape->z_adhesion = cfg_getfloat(cfg, "z_adhesion");
-    tape->random_seed = cfg_getint(cfg, "random_seed");
-    tape->type_of_bond_model = cfg_getint(cfg, "bond_model");
-    tape->type_of_curvature_model = cfg_getint(cfg, "curvature_model");
     tape->min_dihedral_angle_cosine = cfg_getfloat(cfg,"min_dihedral_angle_cosine");
-    tape->d0 = cfg_getfloat(cfg,"d0");
+    
+    tape->mcsweeps = cfg_getint(cfg,"mcsweeps");
+    tape->random_seed = cfg_getint(cfg, "random_seed");
+    tape->iterations = cfg_getint(cfg,"iterations");
+    tape->inititer = cfg_getint(cfg,"inititer");
+  
+    tape->nshell = cfg_getint(cfg,"nshell");
+    tape->ncxmax = cfg_getint(cfg,"nxmax");
+    tape->ncymax = cfg_getint(cfg,"nymax");
+    tape->nczmax = cfg_getint(cfg,"nzmax");
+
+    tape->number_of_vertices_with_c0 = cfg_getint(cfg,"number_of_vertices_with_c0");
+    tape->npoly = cfg_getint(cfg,"npoly");
+    tape->nmono = cfg_getint(cfg,"nmono");
+    tape->internal_poly = cfg_getint(cfg,"internal_poly");
+    tape->nfil = cfg_getint(cfg,"nfil");
+    tape->nfono = cfg_getint(cfg,"nfono");
+    tape->shc = cfg_getint(cfg,"spherical_harmonics_coefficients");
+
+    tape->pressure_switch = cfg_getint(cfg,"pressure_switch");
+    tape->volume_switch = cfg_getint(cfg,"volume_switch");
+    tape->area_switch = cfg_getint(cfg,"area_switch");
+
+    tape->quiet = cfg_getbool(cfg,"quiet");
+    tape->plane_confinement_switch = cfg_getint(cfg, "plane_confinement_switch");
+    tape->allow_center_mass_movement = cfg_getint(cfg,"allow_center_mass_movement");
+    tape->force_balance_along_z_axis = cfg_getint(cfg,"force_balance_along_z_axis");
+    tape->adhesion_geometry = cfg_getint(cfg,"adhesion_geometry");
+    tape->force_model = cfg_getint(cfg, "force_model");
+    tape->adhesion_model = cfg_getint(cfg, "adhesion_model");
+    tape->bond_model = cfg_getint(cfg, "bond_model");
+    tape->curvature_model = cfg_getint(cfg, "curvature_model");
 
     if (retval==CFG_FILE_ERROR){
         fatal("No tape file.", 100);
