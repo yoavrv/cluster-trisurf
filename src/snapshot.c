@@ -72,7 +72,7 @@ ts_bool xml_trisurf_header(FILE *fh, ts_vesicle *vesicle){
         npoly=0;
         nfono=0;
     }
-    fprintf(fh, "<trisurf nvtx=\"%u\" npoly=\"%u\" nmono=\"%u\" compressed=\"false\" seed=\"%lu\">\n", vesicle->vlist->n, npoly, nfono,vesicle->tape->random_seed);
+    fprintf(fh, "<trisurf nvtx=\"%u\" npoly=\"%u\" nmono=\"%u\" compressed=\"false\" version=\"%s\" seed=\"%lu\">\n", vesicle->vlist->n, npoly, nfono,TS_VERSION,vesicle->tape->random_seed);
     return TS_SUCCESS;
 }
 
