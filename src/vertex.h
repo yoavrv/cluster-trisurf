@@ -60,4 +60,5 @@ ts_bool vtx_insert_bond_at(ts_vertex *vtx, ts_bond *bondmem, ts_small_idx i);
 ts_bool vtx_remove_bond_at(ts_vertex *vtx, ts_small_idx i);
 ts_bool vtx_insert_at(ts_vertex *vtx, ts_vertex *vtx_add, ts_bond* bond_add, ts_triangle* tri_add, ts_small_idx i);
 ts_bool vtx_remove_at(ts_vertex *vtx, ts_small_idx i);
+ts_double area_vtx(ts_vertex* vtx);
 #endif

@@ -919,3 +919,40 @@ ts_bool vtx_remove_at(ts_vertex *vtx, ts_small_idx i){
     vtx_remove_bond_at(vtx, i);
     return TS_SUCCESS;
 }
+
+// debug: a separate calculation of the area of a vertex
+ts_double area_vtx(ts_vertex* vtx){
+    ts_double Av=0;
+    ts_idx ip, i=0;
+    ts_triangle* t;
+    ts_double l_m_x,l_m_y,l_m_z,l_p_x,l_p_y,l_p_z;
+    ts_double sigma_m_x,sigma_m_y,sigma_m_z,sigma_p_x,sigma_p_y,sigma_p_z;
+    ts_double cross_x, cross_y, cross_z,s;
+    for(i=0; i<vtx->tristar_no; i++){
+        ip = next_small(i, vtx->tristar_no);
+        t = vtx->tristar[i];
+        l_m_x = (vtx->neigh[i]->x - vtx->x)/2;
+        l_m_y = (vtx->neigh[i]->y - vtx->y)/2;
+        l_m_z = (vtx->neigh[i]->z - vtx->z)/2;
+        l_p_x = (vtx->neigh[ip]->x - vtx->x)/2;
+        l_p_y = (vtx->neigh[ip]->y - vtx->y)/2;
+        l_p_z = (vtx->neigh[ip]->z - vtx->z)/2;
+        sigma_m_x = t->xcirc - (vtx->neigh[i]->x + vtx->x)/2;
+        sigma_m_y = t->ycirc - (vtx->neigh[i]->y + vtx->y)/2;
+        sigma_m_z = t->zcirc - (vtx->neigh[i]->z + vtx->z)/2;
+        sigma_p_x = t->xcirc - (vtx->neigh[ip]->x + vtx->x)/2;
+        sigma_p_y = t->ycirc - (vtx->neigh[ip]->y + vtx->y)/2;
+        sigma_p_z = t->zcirc - (vtx->neigh[ip]->z + vtx->z)/2;
+        // here we do N*(lxsigma) on the left and N*(lxsigma) on the right
+        // which is N*(lxsigma - lxsigma)
+        cross_x = -( l_p_y*sigma_p_z - l_p_z*sigma_p_y ) + ( l_m_y*sigma_m_z - l_m_z*sigma_m_y );
+        cross_y = -( l_p_z*sigma_p_x - l_p_x*sigma_p_z ) + ( l_m_z*sigma_m_x - l_m_x*sigma_m_z );
+        cross_z = -( l_p_x*sigma_p_y - l_p_y*sigma_p_x ) + ( l_m_x*sigma_m_y - l_m_y*sigma_m_x );
+        s = 0.5 * (t->xnorm*cross_x + t->ynorm*cross_y + t->znorm*cross_z);
+        // vertex_normal_x -= t->xnorm*s;
+        // vertex_normal_y -= t->ynorm*s;
+        // vertex_normal_z -= t->znorm*s;
+        Av += s;
+    }
+    return Av;
+}
