@@ -264,8 +264,6 @@ struct ts_vertex {
         ts_double eig0[3]; // principal curvature direction (largest curvature)
         ts_double eig1[3]; // principal curvature direction (smallest curvature)
         ts_double eig2[3]; // shape tensor normal (0)
-        ts_double new_c1; // c1 from non-tensor mean curvature and gaussian
-        ts_double new_c2; // c2 from non-tensor mean curvature and gaussian
         ts_double eig_v0; // c1 from shape tensor (largest curvature)
         ts_double eig_v1; // c2 from shape tensor (smallest curvature)
         ts_double eig_v2; // 0 noraml eigenvalue: 3x3 shape tensor has 0 eigenvalue normal

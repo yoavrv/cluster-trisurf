@@ -339,8 +339,6 @@ ts_bool vtx_set_global_values(ts_vesicle *vesicle){
         vesicle->vlist->vtx[i]->mean_energy2=0;
         vesicle->vlist->vtx[i]->gaussian_energy=0;
         vesicle->vlist->vtx[i]->gaussian_energy2=0;
-        vesicle->vlist->vtx[i]->new_c1=0;
-        vesicle->vlist->vtx[i]->new_c2=0;
         vesicle->vlist->vtx[i]->type=is_adhesive_vtx; // nonbonding, passive, adhesive, isotropic, nonedge,
 		vesicle->vlist->vtx[i]->w=0;
 		vesicle->vlist->vtx[i]->c=0;
@@ -352,12 +350,28 @@ ts_bool vtx_set_global_values(ts_vesicle *vesicle){
 		vesicle->vlist->vtx[i]->nx=0; //normal
 		vesicle->vlist->vtx[i]->ny=0;
 		vesicle->vlist->vtx[i]->nz=0;
+        vesicle->vlist->vtx[i]->nx2=0; //normal
+		vesicle->vlist->vtx[i]->ny2=0;
+		vesicle->vlist->vtx[i]->nz2=0;
 		vesicle->vlist->vtx[i]->fx=0; //force
 		vesicle->vlist->vtx[i]->fy=0;
 		vesicle->vlist->vtx[i]->fz=0;
 		vesicle->vlist->vtx[i]->dx=0; //director
 		vesicle->vlist->vtx[i]->dy=0;
 		vesicle->vlist->vtx[i]->dz=0;
+        vesicle->vlist->vtx[i]->eig0[0]=0; // principal curvature direction (largest curvature)
+        vesicle->vlist->vtx[i]->eig0[1]=0;
+        vesicle->vlist->vtx[i]->eig0[2]=0;
+        vesicle->vlist->vtx[i]->eig1[0]=0; // principal curvature direction (smallest curvature)
+        vesicle->vlist->vtx[i]->eig1[1]=0; 
+        vesicle->vlist->vtx[i]->eig1[2]=0; 
+        vesicle->vlist->vtx[i]->eig2[0]=0; // shape tensor normal (0)
+        vesicle->vlist->vtx[i]->eig2[1]=0;
+        vesicle->vlist->vtx[i]->eig2[2]=0;
+        vesicle->vlist->vtx[i]->eig_v0=0; // c1 from shape tensor (largest curvature)
+        vesicle->vlist->vtx[i]->eig_v1=0; // c2 from shape tensor (smallest curvature)
+        vesicle->vlist->vtx[i]->eig_v2=0; // 0 noraml eigenvalue: 3x3 shape tensor has 0 eigenvalue normal
+
     }
     return TS_SUCCESS;
 }

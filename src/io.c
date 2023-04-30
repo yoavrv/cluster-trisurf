@@ -903,6 +903,7 @@ ts_bool write_vertex_xml_file(ts_vesicle *vesicle, ts_idx timestepno, ts_cluster
     ts_bond_list *blist=vesicle->blist;
     ts_vertex **vtx=vlist->vtx;
     ts_idx i,j;
+    ts_flag debug=1;
     //ts_double senergy=0.0;
     char filename[10000];
     char just_name[255];
@@ -1033,21 +1034,17 @@ ts_bool write_vertex_xml_file(ts_vesicle *vesicle, ts_idx timestepno, ts_cluster
     TS_WRITE_ITERATE_VTX("%.17e ",gaussian_curvature);
     fprintf(fh,"</DataArray>\n");
 
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"mean_curvature2\" format=\"ascii\">");
-    TS_WRITE_ITERATE_VTX("%.17e ",mean_curvature2);
-    fprintf(fh,"</DataArray>\n");
+    if (debug){
 
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"gaussian_curvature2\" format=\"ascii\">");
-    TS_WRITE_ITERATE_VTX("%.17e ",gaussian_curvature2);
-    fprintf(fh,"</DataArray>\n");
+        fprintf(fh,"<DataArray type=\"Float64\" Name=\"mean_curvature2\" format=\"ascii\">");
+        TS_WRITE_ITERATE_VTX("%.17e ",mean_curvature2);
+        fprintf(fh,"</DataArray>\n");
 
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"new_c1\" format=\"ascii\">");
-    TS_WRITE_ITERATE_VTX("%.17e ",new_c1);
-    fprintf(fh,"</DataArray>\n");
-
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"new_c2\" format=\"ascii\">");
-    TS_WRITE_ITERATE_VTX("%.17e ",new_c2);
-    fprintf(fh,"</DataArray>\n");
+        fprintf(fh,"<DataArray type=\"Float64\" Name=\"gaussian_curvature2\" format=\"ascii\">");
+        TS_WRITE_ITERATE_VTX("%.17e ",gaussian_curvature2);
+        fprintf(fh,"</DataArray>\n");
+    
+    }
 
     fprintf(fh,"<DataArray type=\"Float64\" Name=\"eigenvalue_0\" format=\"ascii\">");
     TS_WRITE_ITERATE_VTX("%.17e ",eig_v0);
@@ -1115,9 +1112,11 @@ ts_bool write_vertex_xml_file(ts_vesicle *vesicle, ts_idx timestepno, ts_cluster
     TS_WRITE_VECTOR_ITERATE_VTX("%.17e %.17e %.17e\n",nx,ny,nz);
     fprintf(fh,"</DataArray>\n");
 
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"normal_unused_debug\" NumberOfComponents=\"3\" format=\"ascii\">\n");
-    TS_WRITE_VECTOR_ITERATE_VTX("%.17e %.17e %.17e\n",nx2,ny2,nz2);
-    fprintf(fh,"</DataArray>\n");
+    if (debug) {
+        fprintf(fh,"<DataArray type=\"Float64\" Name=\"normal_unused_debug\" NumberOfComponents=\"3\" format=\"ascii\">\n");
+        TS_WRITE_VECTOR_ITERATE_VTX("%.17e %.17e %.17e\n",nx2,ny2,nz2);
+        fprintf(fh,"</DataArray>\n");
+    }
 
     // Vectors: force, director (currently has nothing)
     fprintf(fh,"<DataArray type=\"Float64\" Name=\"force\" NumberOfComponents=\"3\" format=\"ascii\">\n");

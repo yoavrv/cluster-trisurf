@@ -218,11 +218,6 @@ inline ts_bool laplace_beltrami_curvature_energy(ts_vesicle *vesicle, ts_vertex 
     // step 3.1 calculate gaussian curvature using sum angle formula
     if (do_angle_sum){
         vtx->gaussian_curvature = (2*M_PI- angle_sum)/s;
-
-        // step 3.2 save the curvatures using the gaussian and mean curvature
-        h = sqrt(pow(vtx->mean_curvature,2)-vtx->gaussian_curvature); // deltaC/2 in temp variable
-        vtx->new_c1 = vtx->mean_curvature + h;
-        vtx->new_c2 = vtx->mean_curvature - h;
     }
 
     //step 4: calculate the bending energy
@@ -344,9 +339,9 @@ inline ts_bool tensor_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // step 1.1: update vertex normal and director based, generates the director-tangent-normal frame
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    vtx->nx2 = vertex_normal_x;
-    vtx->ny2 = vertex_normal_y;
-    vtx->nz2 = vertex_normal_z;
+    vtx->nx = vertex_normal_x;
+    vtx->ny = vertex_normal_y;
+    vtx->nz = vertex_normal_z;
 
     // d = d - (d.n)n   [or -nx(nxd)]
     dot_product = (vtx->dx*vertex_normal_x)+(vtx->dy*vertex_normal_y)+(vtx->dz*vertex_normal_z);
@@ -594,8 +589,8 @@ inline ts_bool tensor_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
     tSt += 0.5*(vtx->c - vtx->d);
     tr = dSd + tSt;
     det = dSd*tSt - tSd * dSt;
-    vtx->mean_energy2 = vtx->xk*Av* pow(tr,2)/2;
-    vtx->gaussian_energy2 = vtx->xk2 * Av * det;
+    vtx->mean_energy = vtx->xk*Av* pow(tr,2)/2;
+    vtx->gaussian_energy = vtx->xk2 * Av * det;
 
 
     return TS_SUCCESS;
@@ -608,7 +603,7 @@ inline ts_bool tensor_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
  * @returns TS_SUCCESS on successful calculation.
 */
 inline ts_bool vertex_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
-    ts_double temp;
+    ts_double temp,nx,ny,nz,mean_curvature,gaussian_curvature,mean_energy,gaussian_energy;
     ts_flag model=vesicle->tape->curvature_model; // control how and what model we use to calculate energy: see enum curvature_model_type in general.h
     ts_bool do_calculate_shape_op=0, do_use_shape_op_e=0;
     do_calculate_shape_op = model&to_calculate_shape_operator 
@@ -626,6 +621,13 @@ inline ts_bool vertex_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
     // calculate the energy using the right model
     if (do_calculate_shape_op) {
         tensor_curvature_energy(vesicle, vtx);
+        nx = vtx->nx;
+        ny = vtx->ny;
+        nz = vtx->nz;
+        mean_curvature = vtx->mean_curvature;
+        mean_energy = vtx->mean_energy;
+        gaussian_curvature = vtx->gaussian_curvature;
+        gaussian_energy = vtx->gaussian_energy;
     }
     if (! (model&to_disable_calculate_laplace_beltrami)) {
         laplace_beltrami_curvature_energy(vesicle,vtx);
@@ -648,16 +650,29 @@ inline ts_bool vertex_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
 
     // use the new energy and new normals
     if (do_use_shape_op_e){
-        vtx->energy = vtx->mean_energy2 + vtx->gaussian_energy2;
-        temp=vtx->nx;
-        vtx->nx=vtx->nx2;
-        vtx->nx2=temp;
-        temp=vtx->ny;
-        vtx->ny=vtx->ny2;
-        vtx->ny2=temp;
-        temp=vtx->nz;
-        vtx->nz=vtx->nz2;
-        vtx->nz2=temp;
+        vtx->energy = mean_energy + gaussian_energy;
+        vtx->nx2 = vtx->nx;
+        vtx->nx = nx;
+        vtx->ny2 = vtx->ny;
+        vtx->ny = ny;
+        vtx->nz2 = vtx->nz;
+        vtx->nz = nz;
+        vtx->mean_curvature2 =vtx->mean_curvature;
+        vtx->mean_curvature = mean_curvature;
+        vtx->mean_energy2 =vtx->mean_energy;
+        vtx->mean_energy = mean_energy;
+        vtx->gaussian_curvature2 =vtx->gaussian_curvature;
+        vtx->gaussian_curvature = gaussian_curvature;
+        vtx->gaussian_energy2 =vtx->gaussian_energy;
+        vtx->gaussian_energy = gaussian_energy;
+    } else {
+        vtx->nx2 = nx;
+        vtx->ny2 = ny;
+        vtx->nz2 = nz;
+        vtx->mean_curvature2 = mean_curvature;
+        vtx->mean_energy2 = mean_energy;
+        vtx->gaussian_curvature2 = gaussian_curvature;
+        vtx->gaussian_energy2 = gaussian_energy;
     }
 
     return TS_SUCCESS;
