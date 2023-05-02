@@ -137,12 +137,24 @@ int lockRegion(int fd, int type, int whence, int start, int len)
 char *libVersion(){
     return TS_VERSION;
 }
+// global variables
 
 ts_bool quiet=0;
 ts_double V0=0;
 ts_double A0=0;
 ts_double epsvol=0;
 ts_double epsarea=0;
+// from io.c
+ts_args command_line_args = {.force_from_tape=0, 
+                             .reset_iteration_count=0, 
+                             .path = "./",
+                             .output_fullfilename="output.pvd",
+                             .dump_fullfilename="dump.bin",
+                             .tape_fullfilename="tape",
+                             .tape_templatefull="./tape",
+                             .tape_opts="",
+                             .dump_from_vtk="",
+                            };
 
 // next index after i in cyclic vector i==max? 0, i. fatal if i>max or i<0
 ts_small_idx next_small(ts_small_idx i, ts_small_idx max){

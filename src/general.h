@@ -539,6 +539,22 @@ extern ts_double A0;
 extern ts_double epsvol;
 extern ts_double epsarea;
 
+// global structure from io.h
+
+typedef struct{
+	ts_int force_from_tape;
+	ts_int reset_iteration_count;
+    char path[1024]; //path where all files should be added
+    char output_fullfilename[1024]; //name of the master file
+    char dump_fullfilename[1024]; //name of the dump file
+    char tape_fullfilename[1024]; //name of the tape file
+    char tape_templatefull[1024]; //name of the tape template file
+    char tape_opts[1024]; //commandline tape options
+    char dump_from_vtk[1024];
+} ts_args;
+
+extern ts_args command_line_args;
+
 /* FUNCTIONS */
 
 /** Non-fatal error function handler:
