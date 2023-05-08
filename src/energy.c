@@ -1098,11 +1098,11 @@ ts_bool adhesion_geometry_side(ts_vesicle *vesicle, ts_vertex *vtx){
     }
     //2 for spherical potential, surface facing into the sphere -x,-y,-(z+c0)
     else if(geometry==model_spherical_potential){
-        return (vtx->nx*vtx->x + vtx->ny*vtx->y + vtx->nz*(z+c0))<0; 
+        return (vtx->nx*vtx->x + vtx->ny*vtx->y + vtx->nz*(z-c0))<0; 
     }
     //3 for cylindrical adhesive substrate, surface facing the (-x,0,-(z+c0)) way
     else if(geometry==model_cylindrical_potential){
-        return (vtx->nx*vtx->x + vtx->nz*(z+c0))<0 ;
+        return (vtx->nx*vtx->x + vtx->nz*(z-c0))<0 ;
     } 
     else if(geometry==model_sinosoidal_potential){
         c0 = vesicle->tape->adhesion_scale;
