@@ -98,18 +98,19 @@ vicsek_radius=4.0
 ###### Adhesion to surface #######
 ######---------------------#######
 
-# $ Adhesion model (integer flag)
+# $ Adhesion model (8 bit flag)
 # energy of any adhesive vertex dx distance from the adhesion geometry 
 # as long as distance is less than the cutoff (dx0)
-#   1: step potential ad_w*(dx/dx0), 
-#   2: parabolic ad_w*(1-(dx/dx0)^2)
+#   0x01: step potential ad_w*(dx/dx0), 
+#   0x02: parabolic ad_w*(1-(dx/dx0)^2)
+#   0x04: y-anisotropy factor *(1-y/scale)
 adhesion_model=0
 # $ type of adhesion geometry do you want (integer flag)
-#   1: plane potential 
-#   2: spherical surface
-#   3: cylindrical surface
-#   4: plane-sinosoidal surface
-#   5: plane surface with adhesion spots
+#   1: plane surface               z<z0
+#   2: spherical surface           (x**2 + y**2 + (z-z0)**2)<r**2
+#   3: cylindrical surface         ((z-z0)**2 + x**2)<r**2
+#   4: plane-sinosoidal surface    z<(z0+rcos(x))
+#   5: plane surface with adhesion spots  E*=factor*([x/scale-0.5]**2+[y/scale - 0.5]**2<r**2)
 adhesion_geometry=0
 # $ potential range (float in lmin)
 adhesion_cutoff=1
@@ -118,9 +119,9 @@ adhesion_cutoff=1
 adhesion_z=-5
 # $ radius of the sphere or cylinder.
 adhesion_radius=5.0
-# $ for sinosoidal and adhesion spot lattice (float)
+# $ for sinosoidal, adhesion spot lattice, and y anisotropy (float)
 adhesion_scale=5.0
-# $ factor of adhesin on spots
+# $ factor of adhesion on spots (float)
 adhesion_factor=2.0
 # * adhesion energy per vertex (float)
 adhesion_strength=1.0

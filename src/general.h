@@ -191,9 +191,10 @@ enum force_model_type{
     model_vicsek_1overR=17, // use vicsek model with 1/R weights
 
 };
-enum adhesion_type{
+enum adhesion_model_type{
   adhesion_step_potential=1,
   adhesion_parabolic_potential=2,
+  adhesion_y_anisotropy=4,
 
 };
 enum adhesion_geometry_type{

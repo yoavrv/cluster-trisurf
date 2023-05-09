@@ -657,9 +657,9 @@ inline ts_bool vertex_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
         vtx->ny = ny;
         vtx->nz2 = vtx->nz;
         vtx->nz = nz;
-        vtx->mean_curvature2 =vtx->mean_curvature;
+        vtx->mean_curvature2 = vtx->mean_curvature;
         vtx->mean_curvature = mean_curvature;
-        vtx->mean_energy2 =vtx->mean_energy;
+        vtx->mean_energy2 = vtx->mean_energy;
         vtx->mean_energy = mean_energy;
         vtx->gaussian_curvature2 =vtx->gaussian_curvature;
         vtx->gaussian_curvature = gaussian_curvature;
@@ -1009,11 +1009,16 @@ ts_bool total_force_on_vesicle(ts_vesicle *vesicle){
 
 /** @brief return adhesion energy difference E_ad(vtx)-E_ad(vtx_old)
  *  
- *  functions differently depending on vesicle->adhesion_model:
+ *  functions differently depending on vesicle->tape->adhesion_model:
  *  1: step potential
  *  2: parabolic potential
- *  3: spherical substrate (parabolic)
- *  4: cylindrical substrate (parabolic)
+ *  4: with y anisotropy (parabolic)
+ *  and vesicle->tape->geometry
+ *  1: plane substrate
+ *  2: spherical substrate
+ *  3: cylindrical substrate
+ *  4: sinosoidal (x axis)
+ *  5: plane with adhesive points on a grid
  *  
  *  @param *vesicle: the vesicle (which includes model, adhesion substrate values)
  *  @param *vtx pointer to moved vertex
@@ -1021,34 +1026,32 @@ ts_bool total_force_on_vesicle(ts_vesicle *vesicle){
  *  @returns ts_double energy difference in state
 */
 ts_double adhesion_energy_diff(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *vtx_old){
+    ts_flag model = vesicle->tape->adhesion_model;
+    if (model==0) return 0;
     ts_double delta_energy=0;
     ts_double delta=0,delta_old=0;
     ts_bool oriented=0, oriented_old=0;
     ts_double dz=vesicle->tape->adhesion_cutoff;
     ts_double adhesion_factor=1,adhesion_factor_old=1;
-    ts_flag model = vesicle->tape->adhesion_model;
 
     delta = adhesion_geometry_distance(vesicle, vtx);
     oriented = adhesion_geometry_side(vesicle,vtx);
     delta_old = adhesion_geometry_distance(vesicle, vtx_old);
     oriented_old = adhesion_geometry_side(vesicle,vtx);
-
-    if (model==model_plane_potential_with_spots){
-        adhesion_factor=adhesion_geometry_factor(vesicle, vtx);
-        adhesion_factor_old=adhesion_geometry_factor(vesicle, vtx_old);
-    }
+    adhesion_factor=adhesion_geometry_factor(vesicle, vtx);
+    adhesion_factor_old=adhesion_geometry_factor(vesicle, vtx_old);
 
     if( (vtx->type&is_adhesive_vtx) && (oriented) && (delta<=dz) ){
-            if (model==adhesion_step_potential) {
+            if (model&adhesion_step_potential) {
                 delta_energy-=vtx->ad_w*adhesion_factor;
-            } else if (model==adhesion_parabolic_potential){
+            } else if (model&adhesion_parabolic_potential){
                 delta_energy-=vtx->ad_w*(1-pow(delta/dz,2))*adhesion_factor;
             }
     }
     if( (vtx_old->type&is_adhesive_vtx) && (oriented_old) &&  (delta_old<=dz) ){
-            if (model==adhesion_step_potential) {
+            if (model&adhesion_step_potential) {
                 delta_energy+=vtx_old->ad_w*adhesion_factor_old;
-            } else if (model==adhesion_parabolic_potential){
+            } else if (model&adhesion_parabolic_potential){
                 delta_energy+=vtx_old->ad_w*(1-pow(delta_old/dz,2)*adhesion_factor_old);
             }
     }
@@ -1079,7 +1082,7 @@ ts_double adhesion_geometry_distance(ts_vesicle *vesicle, ts_vertex *vtx){
     }
     else if(geometry==model_sinosoidal_potential){
         c0 = vesicle->tape->adhesion_scale;
-        return z-z0-r*cos(vtx->x/c0);
+        return z-(z0+r*cos(vtx->x/c0));
     }
 
     return 0;
@@ -1106,22 +1109,30 @@ ts_bool adhesion_geometry_side(ts_vesicle *vesicle, ts_vertex *vtx){
     } 
     else if(geometry==model_sinosoidal_potential){
         c0 = vesicle->tape->adhesion_scale;
-        return (vtx->nz + r*sin(vtx->x/c0)*vtx->x/c0) < 0;
+        return (vtx->nz + r*sin(vtx->x/c0)*vtx->nx/c0) < 0;
     }
     return 1;
 }
 
 // make spots that are more adhesive in a lattice
 ts_double adhesion_geometry_factor(ts_vesicle* vesicle, ts_vertex* vtx){
-    ts_double lattice=vesicle->tape->adhesion_scale;
-    ts_double throwaway;
-    ts_double dx = modf(vtx->x/lattice,&throwaway)-0.5;
-    ts_double dy = modf(vtx->y/lattice,&throwaway)-0.5;
-    if (dx*dx+dy*dy <= (1/(lattice*lattice))) {
-        return vesicle->tape->adhesion_factor;;
+    ts_flag model = vesicle->tape->adhesion_model;
+    ts_flag geometry = vesicle->tape->adhesion_geometry;
+    ts_double factor = 1;
+    if (model&adhesion_y_anisotropy){
+        ts_double scale = vesicle->tape->adhesion_scale;
+        factor *= 1-vtx->y/scale;
     }
-
-    return 1;
+    if (geometry==model_plane_potential_with_spots){
+        ts_double lattice = vesicle->tape->adhesion_scale;
+        ts_double throwaway;
+        ts_double dx = modf(vtx->x/lattice,&throwaway)-0.5;
+        ts_double dy = modf(vtx->y/lattice,&throwaway)-0.5;
+        if (dx*dx+dy*dy <= (1/(lattice*lattice))) {
+            factor *= vesicle->tape->adhesion_factor;
+        }
+    }
+    return factor;
 }
 
 /** @brief Calculate volume, pressure, and area constraints and energy, except triangle strech
