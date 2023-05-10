@@ -106,11 +106,11 @@ vicsek_radius=4.0
 #   0x04: y-anisotropy factor *(1-y/scale)
 adhesion_model=0
 # $ type of adhesion geometry do you want (integer flag)
-#   1: plane surface               z<z0
-#   2: spherical surface           (x**2 + y**2 + (z-z0)**2)<r**2
-#   3: cylindrical surface         ((z-z0)**2 + x**2)<r**2
-#   4: plane-sinosoidal surface    z<(z0+rcos(x))
-#   5: plane surface with adhesion spots  E*=factor*([x/scale-0.5]**2+[y/scale - 0.5]**2<r**2)
+#   1: plane surface               f(r)=z-z0
+#   2: spherical surface           f(r)=(x**2 + y**2 + (z-z0)**2)-r**2
+#   3: cylindrical surface         f(r)=((z-z0)**2 + x**2)-r**2
+#   4: plane-sinosoidal surface    f(r)=z-(z0+rcos(x))
+#   5: plane surface with adhesion spots  E*=factor*([x/scale-0.5]**2+[y/scale - 0.5]**2 less than r**2)
 adhesion_geometry=0
 # $ potential range (float in lmin)
 adhesion_cutoff=1
