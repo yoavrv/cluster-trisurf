@@ -35,7 +35,9 @@ ts_bool centermass(ts_vesicle *vesicle){
 	}
 
 	//center mass for z component does not change for plane substrate
-	if(vesicle->tape->adhesion_geometry==model_plane_potential){
+	if(vesicle->tape->adhesion_geometry==model_plane_potential 
+	|| vesicle->tape->adhesion_geometry==model_sinosoidal_potential
+	|| vesicle->tape->adhesion_geometry==model_plane_potential_with_spots){
 		temp_z_cm=vesicle->cm[2];
 		vesicle->cm[2]=0;
 	}

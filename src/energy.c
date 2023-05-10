@@ -493,8 +493,8 @@ inline ts_bool tensor_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
     // first, the primary matrix invariants, the trace and determinant
     tr  = dSd + tSt;
     det = dSd*tSt - dSt*tSd;
-    vtx->mean_curvature2 = -tr; // curvatures up to signs and factors of 2
-    vtx->gaussian_curvature2 = det;
+    vtx->mean_curvature = -tr; // curvatures up to signs and factors of 2
+    vtx->gaussian_curvature = det;
     // eigenvalues: trace determinant formula. We have real symmetric matrix, so positive discriminant
     discrim_sqrt = sqrt(tr*tr - 4*det);
     lambda1 = (tr + discrim_sqrt)/2;
@@ -661,7 +661,7 @@ inline ts_bool vertex_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
         vtx->mean_curvature = mean_curvature;
         vtx->mean_energy2 = vtx->mean_energy;
         vtx->mean_energy = mean_energy;
-        vtx->gaussian_curvature2 =vtx->gaussian_curvature;
+        vtx->gaussian_curvature2 = vtx->gaussian_curvature;
         vtx->gaussian_curvature = gaussian_curvature;
         vtx->gaussian_energy2 =vtx->gaussian_energy;
         vtx->gaussian_energy = gaussian_energy;
