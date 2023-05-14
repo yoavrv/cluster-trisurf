@@ -11,13 +11,6 @@
 #include "triangle.h"
 
 
-int cmpfunc(const void *x, const void *y)
-{
-    double diff = fabs(*(double*)x) - fabs(*(double*)y);
-    if(diff<0) return 1;
-    else return -1;
-}
-
 /** @brief Wrapper that calculates and saves energy of every vertex in vesicle
  *  
  *  Function calculated energy of every vertex in vesicle. It can be used in
@@ -591,7 +584,7 @@ inline ts_bool tensor_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
     det = dSd*tSt - tSd * dSt;
     vtx->mean_energy = vtx->xk*Av* pow(tr,2)/2;
     vtx->gaussian_energy = vtx->xk2 * Av * det;
-
+    vtx->energy = vtx->mean_energy + vtx->gaussian_energy;
 
     return TS_SUCCESS;
 }
@@ -611,11 +604,7 @@ inline ts_bool vertex_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
                                 && (vtx->type & is_anisotropic_vtx))
                             || (model&to_disable_calculate_laplace_beltrami);  
     do_use_shape_op_e = (model&to_use_shape_operator_energy 
-                            && !(model&to_use_shape_for_anisotropy_only))
-                        || (model&to_use_shape_operator_energy 
-                            && (model&to_use_shape_for_anisotropy_only  
-                            && (vtx->type & is_anisotropic_vtx)))
-                        || (model&to_disable_calculate_laplace_beltrami);    
+                            && do_calculate_shape_op);    
 
 
     // calculate the energy using the right model
@@ -650,22 +639,22 @@ inline ts_bool vertex_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
 
     // use the new energy and new normals
     if (do_use_shape_op_e){
-        vtx->energy = mean_energy + gaussian_energy;
-        vtx->nx2 = vtx->nx;
-        vtx->nx = nx;
-        vtx->ny2 = vtx->ny;
-        vtx->ny = ny;
-        vtx->nz2 = vtx->nz;
-        vtx->nz = nz;
-        vtx->mean_curvature2 = vtx->mean_curvature;
-        vtx->mean_curvature = mean_curvature;
-        vtx->mean_energy2 = vtx->mean_energy;
-        vtx->mean_energy = mean_energy;
-        vtx->gaussian_curvature2 = vtx->gaussian_curvature;
-        vtx->gaussian_curvature = gaussian_curvature;
-        vtx->gaussian_energy2 =vtx->gaussian_energy;
-        vtx->gaussian_energy = gaussian_energy;
-    } else {
+            vtx->nx2 = vtx->nx;
+            vtx->energy = mean_energy + gaussian_energy;
+            vtx->nx = nx;
+            vtx->ny2 = vtx->ny;
+            vtx->ny = ny;
+            vtx->nz2 = vtx->nz;
+            vtx->nz = nz;
+            vtx->mean_curvature2 = vtx->mean_curvature;
+            vtx->mean_curvature = mean_curvature;
+            vtx->mean_energy2 = vtx->mean_energy;
+            vtx->mean_energy = mean_energy;
+            vtx->gaussian_curvature2 = vtx->gaussian_curvature;
+            vtx->gaussian_curvature = gaussian_curvature;
+            vtx->gaussian_energy2 =vtx->gaussian_energy;
+            vtx->gaussian_energy = gaussian_energy;
+    } else if (do_calculate_shape_op) {
         vtx->nx2 = nx;
         vtx->ny2 = ny;
         vtx->nz2 = nz;
