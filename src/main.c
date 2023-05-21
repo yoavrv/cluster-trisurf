@@ -102,7 +102,7 @@ int main(int argv, char *argc[]){
         else start_iteration++;
 
         if(start_iteration>=tape->iterations){
-            ts_fprintf(stdout, "Simulation already completed. if you want to rerun it try with --force-from-tape or --reset-iteration-count\n\n");
+            ts_fprintf(stdout, "Simulation already completed. if you want to rerun it try with --force-from-tape or --reset-iteration-count, or update the tape with -c iterations=\n\n");
             return 0;
         }
 
