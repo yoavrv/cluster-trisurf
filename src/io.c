@@ -1011,6 +1011,10 @@ ts_bool write_vertex_xml_file(ts_vesicle *vesicle, ts_idx timestepno, ts_cluster
     TS_WRITE_ITERATE_VTX("%.17e ",d);
     fprintf(fh,"</DataArray>\n");
 
+    fprintf(fh,"<DataArray type=\"Float64\" Name=\"area\" format=\"ascii\">");
+    TS_WRITE_ITERATE_VTX("%.17e ",area);
+    fprintf(fh,"</DataArray>\n");
+
     fprintf(fh,"<DataArray type=\"Float64\" Name=\"mean_curvature\" format=\"ascii\">");
     TS_WRITE_ITERATE_VTX("%.17e ",mean_curvature);
     fprintf(fh,"</DataArray>\n");
@@ -1020,6 +1024,9 @@ ts_bool write_vertex_xml_file(ts_vesicle *vesicle, ts_idx timestepno, ts_cluster
     fprintf(fh,"</DataArray>\n");
 
     if (debug){
+        fprintf(fh,"<DataArray type=\"Float64\" Name=\"area2\" format=\"ascii\">");
+        TS_WRITE_ITERATE_VTX("%.17e ",area2);
+        fprintf(fh,"</DataArray>\n");
 
         fprintf(fh,"<DataArray type=\"Float64\" Name=\"mean_curvature2\" format=\"ascii\">");
         TS_WRITE_ITERATE_VTX("%.17e ",mean_curvature2);

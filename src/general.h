@@ -238,6 +238,8 @@ struct ts_vertex {
         ts_double x; /**< The x coordinate of vertex. */
         ts_double y; /**< The y coordinate of vertex. */
         ts_double z; /**< The z coordinate of vertex. */
+        ts_double area;
+        ts_double area2;
         ts_double mean_curvature;
         ts_double gaussian_curvature;
         ts_double mean_energy;

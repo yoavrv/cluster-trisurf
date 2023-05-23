@@ -194,6 +194,7 @@ inline ts_bool laplace_beltrami_curvature_energy(ts_vesicle *vesicle, ts_vertex 
 
     // step 2 calculate the curvatures from the xh voodoo formula
     // xh voodoo magic vector has the mean curvature times area as the magnitude and a direction roughly(?) towards the center of curvature
+    vtx->area = s;
     h=xh*xh + yh*yh + zh*zh; 
     ht=txn*xh + tyn*yh + tzn*zh; // direction of center of curvature with the normal i.e. convex or concave
     if(ht>=0.0) {
@@ -335,6 +336,7 @@ inline ts_bool tensor_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
     vtx->nx = vertex_normal_x;
     vtx->ny = vertex_normal_y;
     vtx->nz = vertex_normal_z;
+    vtx->area = Av;
 
     // d = d - (d.n)n   [or -nx(nxd)]
     dot_product = (vtx->dx*vertex_normal_x)+(vtx->dy*vertex_normal_y)+(vtx->dz*vertex_normal_z);
@@ -596,7 +598,7 @@ inline ts_bool tensor_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
  * @returns TS_SUCCESS on successful calculation.
 */
 inline ts_bool vertex_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
-    ts_double temp,nx,ny,nz,mean_curvature,gaussian_curvature,mean_energy,gaussian_energy;
+    ts_double temp,nx,ny,nz,mean_curvature,gaussian_curvature,mean_energy,gaussian_energy,area;
     ts_flag model=vesicle->tape->curvature_model; // control how and what model we use to calculate energy: see enum curvature_model_type in general.h
     ts_bool do_calculate_shape_op=0, do_use_shape_op_e=0;
     do_calculate_shape_op = model&to_calculate_shape_operator 
@@ -617,6 +619,7 @@ inline ts_bool vertex_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
         mean_energy = vtx->mean_energy;
         gaussian_curvature = vtx->gaussian_curvature;
         gaussian_energy = vtx->gaussian_energy;
+        area = vtx->area;
     }
     if (! (model&to_disable_calculate_laplace_beltrami)) {
         laplace_beltrami_curvature_energy(vesicle,vtx);
@@ -654,6 +657,8 @@ inline ts_bool vertex_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
             vtx->gaussian_curvature = gaussian_curvature;
             vtx->gaussian_energy2 =vtx->gaussian_energy;
             vtx->gaussian_energy = gaussian_energy;
+            vtx->area2 = vtx->area;
+            vtx->area=area;
     } else if (do_calculate_shape_op) {
         vtx->nx2 = nx;
         vtx->ny2 = ny;
@@ -662,6 +667,7 @@ inline ts_bool vertex_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
         vtx->mean_energy2 = mean_energy;
         vtx->gaussian_curvature2 = gaussian_curvature;
         vtx->gaussian_energy2 = gaussian_energy;
+        vtx->area2 = area;
     }
 
     return TS_SUCCESS;

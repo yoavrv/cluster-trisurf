@@ -330,6 +330,8 @@ ts_bool vtx_set_global_values(ts_vesicle *vesicle){
 
     // in case type and such lead to no curvature2, force, etc. being calculated
     for(i=0;i<vesicle->vlist->n;i++){
+        vesicle->vlist->vtx[i]->area=0;
+        vesicle->vlist->vtx[i]->area2=0;
         vesicle->vlist->vtx[i]->mean_curvature=0;
         vesicle->vlist->vtx[i]->mean_curvature2=0;
         vesicle->vlist->vtx[i]->gaussian_curvature=0;
