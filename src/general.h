@@ -201,8 +201,9 @@ enum adhesion_geometry_type{
   model_plane_potential=1,
   model_spherical_potential=2,
   model_cylindrical_potential=3,
-  model_sinosoidal_potential=4,
+  model_x_sinosoidal_potential=4,
   model_plane_potential_with_spots=5,
+  model_xy_sinosoidal_potential=6
 };
 
 
