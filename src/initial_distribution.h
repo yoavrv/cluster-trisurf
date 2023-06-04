@@ -23,7 +23,7 @@ ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape);
  *      @param *vlist is a pointer to list of vertices
  *      @returns TS_SUCCESS on success, TS_FAIL otherwise
  */
-ts_bool pentagonal_dipyramid_vertex_distribution(ts_vesicle *vesicle, ts_vertex_list *vlist);
+ts_bool pentagonal_dipyramid_vertex_distribution(ts_uint nshell, ts_vertex_list *vlist);
 
 /** Finds the neighbouring vertices and add them to a list of each vertex
  *

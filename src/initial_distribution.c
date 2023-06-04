@@ -22,7 +22,7 @@ ts_vesicle *initial_distribution_dipyramid(ts_uint nshell, ts_cell_idx ncmax1, t
     ts_idx i;
     ts_vesicle *vesicle=init_vesicle(no_vertices,ncmax1,ncmax2,ncmax3,stepsize);
     //retval = vtx_set_global_values(vesicle);
-    retval = pentagonal_dipyramid_vertex_distribution(vesicle, vesicle->vlist);
+    retval = pentagonal_dipyramid_vertex_distribution(nshell, vesicle->vlist);
     retval = init_vertex_neighbours(vesicle->vlist);
     vesicle->vlist = init_sort_neighbours(vesicle->blist,vesicle->vlist);
    // retval = init_vesicle_bonds(vesicle); // bonds are created in sort_neigh
@@ -256,7 +256,7 @@ ts_bool initial_population(ts_vesicle *vesicle, ts_tape *tape){
 }
 
 
-ts_bool pentagonal_dipyramid_vertex_distribution(ts_vesicle *vesicle, ts_vertex_list *vlist){
+ts_bool pentagonal_dipyramid_vertex_distribution(ts_uint nshell, ts_vertex_list *vlist){
     /* Some often used relations */
     const ts_double s1= sin(2.0*M_PI/5.0);
     const ts_double s2= sin(4.0*M_PI/5.0);
@@ -270,9 +270,7 @@ ts_bool pentagonal_dipyramid_vertex_distribution(ts_vesicle *vesicle, ts_vertex_
     //	const z0=sqrt(A0*A0 -xl0*xl0); /* I could use pow function but if pow is used make a check on the float type. If float then powf, if long double use powl */
 
     /*placeholder for the pointer to vertex datastructure list... DIRTY: actual pointer points towards invalid address, one position before actual beginning of the list... This is to solve the difference between 1 based indexing in original program in fortran and 0 based indexing in C. All algorithms remain unchanged because of this!*/
-    ts_vertex **vtx=vlist->vtx -1 ; 
-
-    ts_uint nshell=vesicle->tape->nshell;
+    ts_vertex **vtx=vlist->vtx -1 ;
 
     ts_uint i,n0; // some for loop prereq
     ts_int j,k;
