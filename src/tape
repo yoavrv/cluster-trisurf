@@ -33,7 +33,7 @@ inititer=0
 iterations=10
 
 
-# $ do not write "ts_fprintf" statesments to stdout (for use in cluster)
+# $ do not write "ts_fprintf" statements to stdout (for use in cluster)
 quiet=false
 
 
