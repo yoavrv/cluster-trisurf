@@ -21,7 +21,6 @@ ts_vesicle *initial_distribution_dipyramid(ts_uint nshell, ts_cell_idx ncmax1, t
     ts_idx no_vertices=(ts_idx) 5*nshell*nshell+2;	//unneccesary, ideological cast
     ts_idx i;
     ts_vesicle *vesicle=init_vesicle(no_vertices,ncmax1,ncmax2,ncmax3,stepsize);
-    vesicle->nshell=nshell;
     //retval = vtx_set_global_values(vesicle);
     retval = pentagonal_dipyramid_vertex_distribution(vesicle, vesicle->vlist);
     retval = init_vertex_neighbours(vesicle->vlist);
@@ -84,7 +83,6 @@ ts_bool set_vesicle_values_from_tape(ts_vesicle *vesicle){
 
     //Initialize grafted polymers (brush):
     //vesicle->poly_list=init_poly_list(tape->npoly,tape->nmono, vesicle->vlist, vesicle);
-    vesicle->spring_constant=tape->kspring;
     poly_assign_spring_const(vesicle);
 
     //Initialize filaments (polymers inside the vesicle):
@@ -113,11 +111,9 @@ ts_bool set_vesicle_values_from_tape(ts_vesicle *vesicle){
         vertex_list_assign_id(vesicle->filament_list->poly[i]->vlist,TS_ID_FILAMENT);
     }
 
-    // vesicle->spring_constant=tape->kspring;
     // poly_assign_spring_const(vesicle);
 
 
-    vesicle->nshell=tape->nshell;
     vesicle->dmax=tape->dmax*tape->dmax; /* dmax^2 in the vesicle dmax variable */
     vesicle->pressure= tape->pressure;
     vtx_set_global_values(vesicle); /* make xk0 xk2 default value for every vertex  */ 
@@ -276,7 +272,7 @@ ts_bool pentagonal_dipyramid_vertex_distribution(ts_vesicle *vesicle, ts_vertex_
     /*placeholder for the pointer to vertex datastructure list... DIRTY: actual pointer points towards invalid address, one position before actual beginning of the list... This is to solve the difference between 1 based indexing in original program in fortran and 0 based indexing in C. All algorithms remain unchanged because of this!*/
     ts_vertex **vtx=vlist->vtx -1 ; 
 
-    ts_uint nshell=vesicle->nshell;
+    ts_uint nshell=vesicle->tape->nshell;
 
     ts_uint i,n0; // some for loop prereq
     ts_int j,k;

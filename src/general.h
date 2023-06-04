@@ -481,7 +481,6 @@ typedef struct {
     ts_double fz;
     ts_double volume;
     ts_double area;
-    ts_double spring_constant;
     ts_double pressure;
     ts_double R_nucleus;
     ts_double R_nucleusX;
@@ -499,7 +498,6 @@ typedef struct {
     ts_triangle_list *tlist;
     ts_cell_list *clist;
     ts_confinement_plane confinement_plane;
-    ts_uint nshell;
 } ts_vesicle;
 
 

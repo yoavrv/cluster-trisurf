@@ -24,7 +24,7 @@ ts_bool poly_assign_spring_const(ts_vesicle *vesicle){
     ts_idx i;
 
     for(i=0;i<vesicle->poly_list->n;i++){
-         vesicle->poly_list->poly[i]->k = vesicle->spring_constant;
+         vesicle->poly_list->poly[i]->k = vesicle->tape->kspring;
     }
     
     return TS_SUCCESS;
@@ -199,8 +199,8 @@ ts_poly_list *init_poly_list(ts_idx n_poly, ts_idx n_mono, ts_vertex_list *vlist
         /* Make filaments inside the vesicle. Helix with radius... Dist. between poly vertices put to 1*/
         ts_double a,R,H,tantheta,h,r,phi,A0=1.2;
 
-        a = A0*(ts_double)vesicle->nshell;
-        R = A0*((ts_double)vesicle->nshell)/(2.0*sin(M_PI/5.0));
+        a = A0*(ts_double)vesicle->tape->nshell;
+        R = A0*((ts_double)vesicle->tape->nshell)/(2.0*sin(M_PI/5.0));
         H = sqrt(a*a - R*R);
         tantheta = sqrt(R*R - a*a/4.0)/H;
         
