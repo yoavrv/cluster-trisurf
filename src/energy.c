@@ -424,7 +424,8 @@ inline ts_bool tensor_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
         Se12=Se21; Se13=Se31; Se23=Se32; //symmetric matrix: hopefully the compiler gets rid of these
 
         // weight: edge normal . veretex normal / area (check if this is per edge?!)
-        We=vertex_normal_x*edge_normal_x[jj]+vertex_normal_y*edge_normal_y[jj]+vertex_normal_z*edge_normal_z[jj];
+        We=1;
+        // We=vertex_normal_x*edge_normal_x[jj]+vertex_normal_y*edge_normal_y[jj]+vertex_normal_z*edge_normal_z[jj];
         We_Av=We/Av;
 
 
