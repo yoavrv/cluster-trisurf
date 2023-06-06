@@ -213,7 +213,7 @@ c
     } 
     
     // part 1 of 2 of dihedral angle constraintt 
-    if(vesicle->tape->min_dihedral_angle_sine>-1){
+    if(vesicle->tape->max_dihedral_angle_cosine<1){
 		tri_normals_angle_cosine_old_min=triangle_dot_normals(lm,lp);
         if (lp1!=NULL) tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lm,lm1));
         if (lm1!=NULL) tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lm,lm2));
@@ -228,13 +228,13 @@ c
 
 
     // part 2 of 2 of dihedral angle constraint
-    if(vesicle->tape->min_dihedral_angle_sine>-1){
+    if(vesicle->tape->max_dihedral_angle_cosine<1){
         tri_normals_angle_cosine_new_min=triangle_dot_normals(lm,lp);
         if (lp1!=NULL) tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lm,lp1));
         if (lm1!=NULL) tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lm,lm1));
         if (lm2!=NULL) tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lp,lm2));
         if (lp2!=NULL) tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lp,lp2));
-        if( tri_normals_angle_cosine_new_min<vesicle->tape->min_dihedral_angle_sine && tri_normals_angle_cosine_new_min < tri_normals_angle_cosine_old_min){
+        if( tri_normals_angle_cosine_new_min<-vesicle->tape->max_dihedral_angle_cosine && tri_normals_angle_cosine_new_min < tri_normals_angle_cosine_old_min){
             //restore old state.
             for(i=0;i<4;i++){
                 free(orig_vtx[i]->neigh);
@@ -698,7 +698,7 @@ c
     } 
     
     // part 1 of 2 of dihedral angle constraint
-    if(vesicle->tape->min_dihedral_angle_sine>-1){
+    if(vesicle->tape->max_dihedral_angle_cosine<1){
         tri_normals_angle_cosine_old_min=triangle_dot_normals(lm,lp);
         tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lm,lm1));
         tri_normals_angle_cosine_old_min=fmin(tri_normals_angle_cosine_old_min,triangle_dot_normals(lm,lm2));
@@ -713,13 +713,13 @@ c
                          k, nei_kp_at_k, kp, nei_it_at_kp, lm, lp, lm2, lp1);
 
     // part 2 of 2 of dihedral angle constraint
-    if(vesicle->tape->min_dihedral_angle_sine>-1){
+    if(vesicle->tape->max_dihedral_angle_cosine<1){
         tri_normals_angle_cosine_new_min=triangle_dot_normals(lm,lp);
         tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lm,lp1));
         tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lm,lm1));
         tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lp,lm2));
         tri_normals_angle_cosine_new_min=fmin(tri_normals_angle_cosine_new_min,triangle_dot_normals(lp,lp2));
-        if( tri_normals_angle_cosine_new_min<vesicle->tape->min_dihedral_angle_sine && tri_normals_angle_cosine_new_min < tri_normals_angle_cosine_old_min){
+        if( tri_normals_angle_cosine_new_min<-vesicle->tape->max_dihedral_angle_cosine && tri_normals_angle_cosine_new_min < tri_normals_angle_cosine_old_min){
             //restore old state.
             for(i=0;i<4;i++){
                 free(orig_vtx[i]->neigh);

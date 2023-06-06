@@ -163,7 +163,7 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
     delta_energy=0;
 
 
-    if(vesicle->tape->min_dihedral_angle_sine>-1){
+    if(vesicle->tape->max_dihedral_angle_cosine<1){
         // vesicle_volume(vesicle);
         // fprintf(stderr,"Volume in the beginning=%1.16e\n", vesicle->volume);
 
@@ -203,7 +203,7 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
         }
 
         //accept or reject
-        if(  (tri_angle_new_min) < vesicle->tape->min_dihedral_angle_sine && tri_angle_new_min < tri_angle_old_min) {
+        if(  (tri_angle_new_min) < -vesicle->tape->max_dihedral_angle_cosine && tri_angle_new_min < tri_angle_old_min) {
                 // failure! too spiky (and step is not de-spiking)
                 vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
                 for(i=0;i<vtx->neigh_no;i++){

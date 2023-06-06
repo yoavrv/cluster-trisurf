@@ -1367,7 +1367,7 @@ ts_tape *parsetapebuffer(char *buffer){
         CFG_FLOAT("adhesion_radius", 5, CFGF_NONE),
         CFG_FLOAT("adhesion_scale", 5, CFGF_NONE),
         CFG_FLOAT("adhesion_factor", 2, CFGF_NONE),
-        CFG_FLOAT("min_dihedral_angle_sine",-1,CFGF_NONE),
+        CFG_FLOAT("max_dihedral_angle_cosine",1,CFGF_NONE),
 
         CFG_INT("mcsweeps", 200000, CFGF_NONE),
         CFG_INT("random_seed",0,CFGF_NONE),
@@ -1442,7 +1442,7 @@ ts_tape *parsetapebuffer(char *buffer){
     tape->adhesion_radius = cfg_getfloat(cfg, "adhesion_radius");
     tape->adhesion_scale = cfg_getfloat(cfg, "adhesion_scale");
     tape->adhesion_factor = cfg_getfloat(cfg, "adhesion_factor");
-    tape->min_dihedral_angle_sine = cfg_getfloat(cfg,"min_dihedral_angle_sine");
+    tape->max_dihedral_angle_cosine = cfg_getfloat(cfg,"max_dihedral_angle_cosine");
     
     tape->mcsweeps = cfg_getint(cfg,"mcsweeps");
     tape->random_seed = cfg_getint(cfg, "random_seed");

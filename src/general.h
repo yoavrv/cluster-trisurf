@@ -204,7 +204,6 @@ enum adhesion_geometry_type{
   model_x_sinosoidal_potential=4,
   model_plane_potential_with_spots=5,
   model_xy_sinosoidal_potential=6,
-  model_plane_and_sticky_sphere=7
 };
 
 
@@ -439,7 +438,7 @@ typedef struct {
     ts_double adhesion_radius;
     ts_double adhesion_scale;
     ts_double adhesion_factor;
-    ts_double min_dihedral_angle_sine; // prevent spikiness of triangles by imposing a minimum dihedral angle
+    ts_double max_dihedral_angle_cosine; // prevent spikiness of triangles by imposing a minimum dihedral angle
     ts_massive_idx mcsweeps;
     ts_ulong random_seed;
     ts_idx iterations;
