@@ -236,33 +236,36 @@ typedef struct {
  *  ts_vertex holds the data for one single point (bead, vertex). To understand how to use it
  *  here is a detailed description of the fields in the data structure. */
 struct ts_vertex {
-        ts_double x; /**< The x coordinate of vertex. */
-        ts_double y; /**< The y coordinate of vertex. */
-        ts_double z; /**< The z coordinate of vertex. */
-        ts_double mean_curvature;
-        ts_double gaussian_curvature;
-        ts_double mean_energy;
-        ts_double gaussian_energy;
-        ts_double energy;
-        ts_double xk; //bending rigidity
-        ts_double xk2; //second bending modulus (Gaussian/ deviatoric?)
-        ts_double w;
+        // degrees of freedom
+        ts_double x; // position
+        ts_double y; 
+        ts_double z;
+        ts_double dx; // director vector
+        ts_double dy;
+        ts_double dz;
+        // innate properties (except type, at the bottom)
+        ts_double xk;  //bending modulus \kappa
+        ts_double xk2; //Gaussian bending modulus \kappa_G
         ts_double c;
+        ts_double d;    // spontaneous curvature deviator
+        ts_double w;    //binding
+        ts_double ad_w; // adhesive surface bonding
+        ts_double f;    // force magnitude
+        // calculated properties (dynamical)
         ts_double nx; // normal vector
         ts_double ny;
         ts_double nz;
         ts_double nx2; // normal vector
         ts_double ny2;
         ts_double nz2;
-        ts_double f;  // force
         ts_double fx; // force vector
         ts_double fy;
         ts_double fz;
-        ts_double ad_w; // adhesive surface bonding
-        ts_double d;  // spontaneous curvature deviator
-        ts_double dx; // director vector
-        ts_double dy; // director vector
-        ts_double dz; // director vector
+        ts_double mean_curvature;
+        ts_double gaussian_curvature;
+        ts_double mean_energy;
+        ts_double gaussian_energy;
+        ts_double energy;
         ts_double eig0[3]; // principal curvature direction (largest curvature)
         ts_double eig1[3]; // principal curvature direction (smallest curvature)
         ts_double eig2[3]; // shape tensor normal (0)
@@ -273,6 +276,7 @@ struct ts_vertex {
         ts_double gaussian_curvature2; // from shape tensor
         ts_double mean_energy2; // from shape tensor
         ts_double gaussian_energy2; // from shape tensor
+        // graph
         struct ts_vertex **neigh; /**< The pointer that holds neigh_no pointers to this structure. */
         struct ts_triangle **tristar; /**< The list of triangles this vertex belongs to. This is an array of pointers to ts_triangle structure of tristar_no length */
         struct ts_bond **bond; /**< Array of pointers of lenght bond_no that stores information on bonds. */
@@ -282,8 +286,7 @@ struct ts_vertex {
         ts_idx idx; //vertex index
         ts_idx id;	//filament index
         // number of neighbors, of all types
-        // these never really go beyond even 12, so
-        // we can squeeze to char
+        // these never really go beyond even 12, so we can squeeze to char
         // (n.n is capped at 19 at vertexmove backup[], 10 at (currently broken) constvol)
         ts_small_idx neigh_no; /**< The number of neighbours. */
         ts_small_idx tristar_no; //number of triangle-neighbors
@@ -293,10 +296,6 @@ struct ts_vertex {
         5th bit: reserved, 6th bit: vicsek 
         7th bit: edge, 8th bit: ghost*/
         ts_flag type; 
-
-        // apparently using a bool for the type flag does nothing, but I don't want to reserve 
-        // flags for all 32 bytes of an int
-
 };
 
 typedef struct ts_vertex ts_vertex;
@@ -330,8 +329,8 @@ struct ts_triangle {
     ts_double xcirc;
     ts_double ycirc;
     ts_double zcirc;
-    ts_double area; // firstly needed for sh.c
-    ts_double volume; // firstly needed for sh.c
+    ts_double area; 
+    ts_double volume; // tetrahedron frrom (0,0,0)
     ts_double energy;
     ts_vertex *vertex[3];
     struct ts_triangle **neigh;
@@ -472,22 +471,26 @@ typedef struct {
 
 
 typedef struct {
-    //ts_double bending_rigidity;
+    // tape
+    ts_tape *tape;
+    // degrees of freedom
+    ts_double R_nucleusX;
+    ts_double R_nucleusY;
+    ts_double R_nucleusZ;
+    // innate properties
     ts_double dmax;
     ts_double stepsize;
+    ts_double pressure;
+    ts_double R_nucleus;
+    // calculated properties (dynamical)
     ts_double cm[3];
     ts_double fx;
     ts_double fy;
     ts_double fz;
     ts_double volume;
     ts_double area;
-    ts_double pressure;
-    ts_double R_nucleus;
-    ts_double R_nucleusX;
-    ts_double R_nucleusY;
-    ts_double R_nucleusZ;
     ts_double nucleus_center[3];
-    ts_tape *tape;
+    // secondary structs
     ts_spharm *sphHarmonics;
     // Polymers outside the vesicle and attached to the vesicle membrane (polymer brush):
     ts_poly_list *poly_list;
