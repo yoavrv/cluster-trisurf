@@ -671,7 +671,7 @@ ts_bool print_help(FILE *fd){
     fprintf(fd,"--version (or -v)\t\t Prints version information.\n");
     fprintf(fd,"--output-file (or -o)\t\t Specifies filename of .PVD file. Defaults to 'output.pvd'\n");
     fprintf(fd,"--dump-filename (or -f)\t\t specifies filename for binary dump&restore. Defaults to 'dump.bin'\n");
-    fprintf(fd,"--tape-options (or -c)\t\t specifies replacement options by 'opt1=val1,opt2=val2''\n\n\n");
+    fprintf(fd,"--tape-options (or -c)\t\t specifies replacement options, remove options, and add comments by 'opt1=val1,opt2=val2,-opt3,#comment''\n\n\n");
     fprintf(fd,"Examples:\n\n");
     fprintf(fd,"trisurf --force-from-tape\n");
     fprintf(fd,"trisurf --reset-iteration-count\n");
@@ -1621,44 +1621,89 @@ ts_bool update_tapetxt(char* tape_txt, char* cmd_line_tape_args){
     step 5: copy the new tape buffer to the tape and cleanup
     */
 
-    char tapetxt_2[128000]; //tmp buffer, used to rebuild text file of the tape
+    char tapetxt_2[52000]; //tmp buffer, used to rebuild text file of the tape
     char* arg_str=cmd_line_tape_args; //hold the new options
     char* tape_p=tape_txt;      //pointer tracing the reading of tape_txt
     char* new_tape_p=tapetxt_2; //pointer tracing the writing of tape_txt_2
 
     ts_uint i=0;
     ts_uint num_opts=0; // number of options
-    ts_bool *is_opt_transfered;  // hold which options have been transfered to tape
+    ts_bool *is_opt_transfered=NULL;  // hold which options have been transfered to tape
+    ts_uint *opt_name_start=NULL;   // name of each option
+    ts_uint *opt_name_len=NULL;   // name of each option
+    ts_uint *opt_value_start=NULL;  // value of each option
+    ts_uint *opt_value_len=NULL;  // value of each option
+    ts_uint *opt_type=NULL;  // option type: 0=unfinished,1=replace,2=comment,3=remove
     ts_bool keep_old=0;  // no update, keep the old option
-    ts_uint option_name_len; // length of the option name in the string "opt=1"=>3
-    ts_uint option_value_len; // length of option name and the value part of the string "opt=1"=>5
+
     ts_uint line_len; // length of current line of tape being read
 
     // step 1: check if there are tape arguments
-    if (arg_str!=NULL && arg_str[0]!='\0'){
-        num_opts++; // assume there is at least one option
+    if (arg_str!=NULL){
+        for ( ; arg_str[i] == ',' ;  i++ ); // skip any initial ','
     }
     else { //null pointer or zero length string
         return TS_SUCCESS;
     }
 
-    //step 2: find number of options in ,,x=1,y=2,,z,
-    // we start assuming there is 1 option
-    // we count how many blocks of ',' are
-    // we discard the last block of ,,, if it's at the end
-    // x => +. => 1
-    // x=1,y=2 => +...+... => 2
-    // ,x=1,,y=2,, => +...+....+- => 2
-    for ( i=1  ; arg_str[i] != '\0' ;  i++ ) { //string iterations
-        if (arg_str[i]==',' && arg_str[i-1]!=','){
-            num_opts++;
+    //step 2: find number of options in x=1,y=2,,z,
+    // we check type: option=value, #comment, -remove_me
+    // we add the loctions in arg_str of the 
+    for ( ; arg_str[i] != '\0' ; ) { //string iterations
+        if (i>1024) {
+            fatal("passed 1024 chars in  --tape-options. giving up!\n",100);
         }
-        if (i>100000) {
-            fatal("passed 100,000 chars in  --tape-options. giving up!\n",100);
+        num_opts++;
+        is_opt_transfered = (ts_bool*) realloc(is_opt_transfered,num_opts*sizeof(ts_bool));
+        is_opt_transfered[num_opts-1]=0;
+        opt_name_start = (ts_uint*) realloc(opt_name_start,num_opts*sizeof(ts_uint));
+        opt_name_len = (ts_uint*) realloc(opt_name_len,num_opts*sizeof(ts_uint));
+        opt_value_start = (ts_uint*) realloc(opt_value_start,num_opts*sizeof(ts_uint));
+        opt_value_len = (ts_uint*) realloc(opt_value_len,num_opts*sizeof(ts_uint));
+        opt_type = (ts_uint*) realloc(opt_type,num_opts*sizeof(ts_uint));
+        if (is_opt_transfered==NULL || opt_name_start==NULL || opt_name_len==NULL
+            || opt_value_start==NULL || opt_value_len==NULL || opt_type==NULL){
+                fatal("NULL pointer in allocation of options for parsing --tape-option\n",100);
+            }
+        opt_name_start[num_opts-1]=0; 
+        opt_name_len[num_opts-1]=0; 
+        opt_value_start[num_opts-1]=0; 
+        opt_value_len[num_opts-1]=0;
+        if (arg_str[i]=='#'){
+            // comment
+            opt_type[num_opts-1]=2;
+            i++;
+            opt_name_start[num_opts-1]=i;
+            for (;arg_str[i]!='\0' && arg_str[i]!=','; i++);
+            opt_name_len[num_opts-1]=i-opt_name_start[num_opts-1];
+            for (;arg_str[i]==','; i++);
+        } else if (arg_str[i]=='-'){
+            // remove option or line
+            opt_type[num_opts-1]=3;
+            i++;
+            opt_name_start[num_opts-1]=i;
+            for (;arg_str[i]!='\0' && arg_str[i]!=','; i++);
+            opt_name_len[num_opts-1]=i-opt_name_start[num_opts-1];
+            for (;arg_str[i]==','; i++);
+        } else {
+            // change option
+            opt_type[num_opts-1]=1;
+            opt_name_start[num_opts-1]=i;
+            for (;arg_str[i]!='\0' 
+                    && arg_str[i]!='=' && arg_str[i]!=','; i++);
+            opt_name_len[num_opts-1]=i-opt_name_start[num_opts-1];
+            opt_value_start[num_opts-1]=i;
+            opt_value_len[num_opts-1]=0;
+            if (arg_str[i]=='=') {
+                i++;
+                opt_value_start[num_opts-1]=i;
+                for (;arg_str[i]!='\0' && arg_str[i]!=','; i++);
+                opt_value_len[num_opts-1]=i-opt_value_start[num_opts-1];
+            }
+            for (;arg_str[i]==','; i++);
         }
+ 
     }
-    if (arg_str[i-1]==',') num_opts--; // if last character is a separator, we had a final ,,,, run, so we ignore it
-    is_opt_transfered = (char*) calloc(num_opts,sizeof(char));
 
     // step 3: copy the tape to the temporary new tape buffer line by line, replace any option with the updated one
     for (tape_p = tape_txt; *tape_p != '\0' ; tape_p += line_len+1){
@@ -1675,28 +1720,37 @@ ts_bool update_tapetxt(char* tape_txt, char* cmd_line_tape_args){
         // go over the new options in args and see if this can be replaced
         arg_str = cmd_line_tape_args;
         for (i=0; i<num_opts; i++){
-            while(*arg_str==',') arg_str++; // skip ','
-            option_name_len=strcspn(arg_str,"=,");
-            option_value_len=strcspn(arg_str,",");
 
+            if (opt_type[i]==1 || opt_type[i]==3) {
             // if the line is one of the options to replace, write from cmd_options
-            if (strncmp(tape_p, arg_str, option_name_len)==0                                            // start with option name
-                && option_name_len!=0                                                                   // and the option is not empty 
-                && (tape_p[option_name_len]==' ' || tape_p[option_name_len]=='=' || tape_p[option_name_len]=='\n') // and not the start of something else
-                ){
-                strncpy(new_tape_p, arg_str, option_value_len);
-                new_tape_p[option_value_len]='\n';
-                // move pointer of new tape to the end (and end the string)
-                new_tape_p += option_value_len+1;
-                is_opt_transfered[i]=1;
-                new_tape_p[0]='\0';
+                if (strncmp(tape_p, arg_str+opt_name_start[i], opt_name_len[i])==0    // start with option name
+                    && opt_name_len[i]!=0                                             // and the option is not empty 
+                    && (tape_p[opt_name_len[i]]==' ' 
+                        || tape_p[opt_name_len[i]]=='=' || tape_p[opt_name_len[i]]=='\n') // and not the start of something else
+                    ){
 
-                keep_old = 0;
-                break;
+                    if (opt_type[i]==1) {
+                        // add new option to tape
+                        strncpy(new_tape_p, arg_str+opt_name_start[i], opt_name_len[i]);
+                        new_tape_p+=opt_name_len[i];
+                        *new_tape_p='=';
+                        new_tape_p++;
+                        strncpy(new_tape_p, arg_str+opt_value_start[i], opt_value_len[i]);
+                        new_tape_p+=opt_value_len[i];
+                    }
+                    // note that the option was transfered and we don't need to write the tape option
+                    is_opt_transfered[i]=1;
+                    keep_old = 0;
+                    // go to next line and move pointer of new tape to the end
+                    *new_tape_p='\n';
+                    new_tape_p++;
+                    new_tape_p[0]='\0';
+                    break;
+                }
             }
-            if (i<num_opts-1) arg_str += option_value_len+1; // move to next option
         }
-        // if we didn't replace, keep the old option
+
+        // if we didn't replace, copy the old option
         if (keep_old){
             strncpy(new_tape_p, tape_p, line_len+1);
             new_tape_p += line_len;
@@ -1704,33 +1758,54 @@ ts_bool update_tapetxt(char* tape_txt, char* cmd_line_tape_args){
             new_tape_p[0]='\0';
         }
     }
+    
 
     // step 4: add all remaining new options in cmd_line at the end
-    arg_str = cmd_line_tape_args;
-    for (i=0; i<num_opts; i++){ // i=0, arg_str = cmd_line_tape_options...
-        while(*arg_str==',') arg_str++; // skip ','
-        option_name_len=strcspn(arg_str,"=,");
-        option_value_len=strcspn(arg_str,",");
-    
-        if (is_opt_transfered[i] || option_value_len==0) {
-            arg_str += option_value_len+1; // skip options that were already trasfered
+    for (i=0; i<num_opts; i++) {
+        if ( (opt_type[i]==1 && !is_opt_transfered[i]) || opt_type[i]==2 || opt_type[i]==3) {
+            strcpy(new_tape_p,"\n\n#--tape-options\n");
+            new_tape_p += 18; // length of that ^
+            *new_tape_p='\0';
+            break;
+        }
+    }
+    for (i=0; i<num_opts; i++){
+
+        if (opt_type[i]==2) {
+            *new_tape_p='#';
+            new_tape_p++;
+            strncpy(new_tape_p, arg_str+opt_name_start[i], opt_name_len[i]);
+            new_tape_p+=opt_name_len[i];
+        } else if (opt_type[i]==1 && !is_opt_transfered[i]) {
+            strncpy(new_tape_p, arg_str+opt_name_start[i], opt_name_len[i]);
+            new_tape_p+=opt_name_len[i];
+            *new_tape_p='=';
+            new_tape_p++;
+            strncpy(new_tape_p, arg_str+opt_value_start[i], opt_value_len[i]);
+            new_tape_p+=opt_value_len[i];
+        } else if (opt_type[i]==3 && is_opt_transfered[i]) {
+            strcpy(new_tape_p,"#removed ");
+            new_tape_p += 9; // length of that ^
+            strncpy(new_tape_p, arg_str+opt_name_start[i], opt_name_len[i]);
+            new_tape_p+=opt_name_len[i];
+        } else {
+            // entirely skip this option
             continue;
         }
-        else {
-            strcpy(new_tape_p,"\n#--tape-options added\n");
-            new_tape_p += 23; // length of that ^
-            strncpy(new_tape_p, arg_str, option_value_len);
-            new_tape_p[option_value_len]='\n';
-            new_tape_p += option_value_len+1;
-            arg_str += option_value_len+1;
-            is_opt_transfered[i]=1;
-        }  
+        *new_tape_p='\n';
+        new_tape_p += 1;
+        new_tape_p[0]='\0';
     }
     *new_tape_p = '\0'; // end string
 
     // step 5: copy the new tape buffere on the tape and cleanup
     strcpy(tape_txt,tapetxt_2);
     free(is_opt_transfered);
+    free(opt_type);
+    free(opt_name_start);
+    free(opt_name_len);
+    free(opt_value_start);
+    free(opt_value_len);
 
     return TS_SUCCESS;
 }
