@@ -6,6 +6,7 @@ ts_bool sweep_vertex_curvature_energy(ts_vesicle *vesicle);
 ts_bool sweep_vertex_forces(ts_vesicle *vesicle);
 ts_bool laplace_beltrami_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx);
 ts_bool tensor_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx);
+ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx);
 inline ts_bool vertex_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx);
 inline ts_bool bond_energy(ts_bond *bond,ts_poly *poly);
 
