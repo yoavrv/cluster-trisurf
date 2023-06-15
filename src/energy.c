@@ -231,6 +231,8 @@ inline ts_bool laplace_beltrami_curvature_energy(ts_vesicle *vesicle, ts_vertex 
  *  This function is experimental, branch from vertex_energy for anisotropic proteins 
  *  to calculate the tensor-based curvature values c1,c2 and principle directions,
  *  calculate the energy, and save it all on the vertex
+ * 
+ *  vertex must remain ordered through initial_dist and through bondflips
  *
  *  @returns TS_SUCCESS on successful calculation
 */
@@ -308,11 +310,27 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
     // ################################################
     // step 1. prepare all vectors and arrays we need #
     // ################################################
-    ts_double Av=0;
 
-    if(vtx->neigh_no!=vtx->tristar_no) {
-        return TS_FAIL; // we don't know how to do this curvature on edge vertices
-    }
+    /* We have a vertex, and the edges are ordered clockwise
+    
+        i---------------------ip
+        \ \                 / /  \
+         \   \     t      /  /     \
+          \    \        /   /         \
+           \     \   /     /            \
+            \     _O_     /               \
+             \ _-^ | ^-_ /        tp        \
+              \    |    /                     \
+               \ L | S /                        \
+          e[i]  \  |  /  e[ip]                    \
+                 \ | /                      ____-ipp
+                  \|/          ____-----^^^^
+                  vtx -----^^^^
+    
+    
+    */
+
+    ts_double Av=0;
 
     // edge vectors
     for(i=0; i<vtx->neigh_no; i++){
@@ -326,29 +344,30 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
     }
 
     // sigma and vertex normal
+    // notice everything is ordered clockwise from outside perspective
     for (i=0; i<vtx->tristar_no; i++) {
         ip = next_small(i,vtx->tristar_no);
         t = vtx->tristar[i];
-        sigma_L_x[i] = t->xcirc - edge_middle_x[i]/2;
-        sigma_L_y[i] = t->ycirc - edge_middle_x[i]/2;
-        sigma_L_z[i] = t->zcirc - edge_middle_x[i]/2;
-        sigma_R_x[i] = t->xcirc - edge_middle_x[ip]/2;
-        sigma_R_y[i] = t->ycirc - edge_middle_x[ip]/2;
-        sigma_R_z[i] = t->zcirc - edge_middle_x[ip]/2;
-        // here we do N*(lxsigma) on the left and N*(lxsigma) on the right
-        // which is N*(lxsigma - lxsigma)
-        cross_x = sigma_L_y[i]*edge_middle_z[i] - sigma_L_z[i]*edge_middle_y[i];
-        cross_y = sigma_L_z[i]*edge_middle_x[i] - sigma_L_x[i]*edge_middle_z[i];
-        cross_z = sigma_L_x[i]*edge_middle_y[i] - sigma_L_y[i]*edge_middle_x[i];
+        sigma_L_x[i] = t->xcirc - edge_middle_x[i];
+        sigma_L_y[i] = t->ycirc - edge_middle_y[i];
+        sigma_L_z[i] = t->zcirc - edge_middle_z[i];
+        sigma_R_x[i] = t->xcirc - edge_middle_x[ip];
+        sigma_R_y[i] = t->ycirc - edge_middle_y[ip];
+        sigma_R_z[i] = t->zcirc - edge_middle_z[ip];
+
+        cross_x = edge_e_y[i]*sigma_L_z[i] - edge_e_z[i]*sigma_L_y[i];
+        cross_y = edge_e_z[i]*sigma_L_x[i] - edge_e_x[i]*sigma_L_z[i];
+        cross_z = edge_e_x[i]*sigma_L_y[i] - edge_e_y[i]*sigma_L_x[i];
         area_L[i] = -0.5 * (t->xnorm*cross_x + t->ynorm*cross_y + t->znorm*cross_z); // t->norm points inwards!
-        cross_x = edge_middle_y[i]*sigma_R_z[i] - edge_middle_z[i]*sigma_R_y[i];
-        cross_y = edge_middle_z[i]*sigma_R_x[i] - edge_middle_x[i]*sigma_R_z[i];
-        cross_z = edge_middle_x[i]*sigma_R_y[i] - edge_middle_y[i]*sigma_R_x[i];
+        cross_x = sigma_R_y[i]*edge_e_z[ip] - sigma_R_z[i]*edge_e_y[ip];
+        cross_y = sigma_R_z[i]*edge_e_x[ip] - sigma_R_x[i]*edge_e_z[ip];
+        cross_z = sigma_R_x[i]*edge_e_y[ip] - sigma_R_y[i]*edge_e_x[ip];
         area_R[i] = -0.5 * (t->xnorm*cross_x + t->ynorm*cross_y + t->znorm*cross_z); // t->norm points inwards!
+        s = area_R[i] + area_L[i];
         vertex_normal_x -= t->xnorm*s; // t->norm points inwards!
         vertex_normal_y -= t->ynorm*s;
         vertex_normal_z -= t->znorm*s;
-        Av += area_R[i] + area_L[i];
+        Av += s;
     }
 
     // edge normals
@@ -366,7 +385,7 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
             edge_normal_z[ip] /= temp_length;
         }
     } else if ((vtx->type & is_edge_vtx) && vtx->neigh_no==vtx->tristar_no+1) {
-        // if we have an edge: pretend the fisrt and final edges go right out
+        // if we have an edge: pretend the first and final edges go right out
         edge_normal_x[0] = -sigma_L_x[0];
         edge_normal_y[0] = -sigma_L_y[0];
         edge_normal_z[0] = -sigma_L_z[0];
@@ -416,8 +435,6 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
     director_x = vtx->dx - dot_product*vertex_normal_x;
     director_y = vtx->dy - dot_product*vertex_normal_y;
     director_z = vtx->dz - dot_product*vertex_normal_z;
-    // !!! this operation exclusively lowers |t|: if we do manage to avoid using the size (always taking d*A*(nxd)/d^2) we can avoid the normalization
-    // and just periodically make sure the size is large enough if (d^2<0.5) d=2d
     temp_length=sqrt((director_x*director_x)+(director_y*director_y)+(director_z*director_z)); // should be the same as sqrt(1-*(normal . director)^2)
     director_x = director_x / temp_length;
     director_y = director_y / temp_length;
@@ -436,9 +453,6 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
     // ###############################################
 
     for(i=0;i<vtx->tristar_no;i++){
-        // !!! We start a VERY long loop over i !!!
-        // vertex must remain ordered through initial_dist and through bondflips
-
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         // step 2.1: compute curvature contribution on the left 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -461,7 +475,6 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
         sigma_square = pow(sigma_L_x[i],2)+ pow(sigma_L_y[i],2)+ pow(sigma_L_z[i],2);
         // edge_square[i]
         
-
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         // step 2.5: get the edge shape operator Se and edge 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -645,9 +658,9 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
     // step 3.3: get energy information from the 2x2 shape difference
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // spontaneous curvature and isotropy go here!
-    // curvature is flipped due to normals
-    dSd += 0.5*(vtx->c + vtx->d);
-    tSt += 0.5*(vtx->c - vtx->d);
+
+    dSd -= 0.5*(vtx->c + vtx->d);
+    tSt -= 0.5*(vtx->c - vtx->d);
     tr = dSd + tSt;
     det = dSd*tSt - tSd * dSt;
     vtx->mean_energy = vtx->xk*Av* pow(tr,2)/2;
