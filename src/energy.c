@@ -348,7 +348,7 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
         vertex_normal_x -= t->xnorm*s; // t->norm points inwards!
         vertex_normal_y -= t->ynorm*s;
         vertex_normal_z -= t->znorm*s;
-        Av += s;
+        Av += area_R[i] + Area_L[i];
     }
 
     // edge normals
@@ -1035,7 +1035,7 @@ inline ts_bool vertex_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
 
     // calculate the energy using the right model
     if (do_calculate_shape_op) {
-        tensor_curvature_energy(vesicle, vtx);
+        tensor_curvature_energy2(vesicle, vtx);
         nx = vtx->nx;
         ny = vtx->ny;
         nz = vtx->nz;
