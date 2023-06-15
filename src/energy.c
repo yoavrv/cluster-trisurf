@@ -386,7 +386,7 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
             edge_normal_y[ip] /= temp_length;
             edge_normal_z[ip] /= temp_length;
             }
-        i = vtx->tristar;
+        i = vtx->tristar_no;
         ip = vtx->neigh_no;
         edge_normal_x[ip] = -sigma_R_x[i];
         edge_normal_y[ip] = -sigma_R_y[i];
