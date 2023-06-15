@@ -348,7 +348,7 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
         vertex_normal_x -= t->xnorm*s; // t->norm points inwards!
         vertex_normal_y -= t->ynorm*s;
         vertex_normal_z -= t->znorm*s;
-        Av += area_R[i] + Area_L[i];
+        Av += area_R[i] + area_L[i];
     }
 
     // edge normals
