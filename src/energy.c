@@ -1066,7 +1066,7 @@ inline ts_bool tensor_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
  * @returns TS_SUCCESS on successful calculation.
 */
 inline ts_bool vertex_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
-    ts_double temp,nx,ny,nz,mean_curvature,gaussian_curvature,mean_energy,gaussian_energy;
+    ts_double temp,nx,ny,nz,mean_curvature,gaussian_curvature,mean_energy,gaussian_energy,dx,dy,dz;
     ts_flag model=vesicle->tape->curvature_model; // control how and what model we use to calculate energy: see enum curvature_model_type in general.h
     ts_bool do_calculate_shape_op=0, do_use_shape_op_e=0;
     do_calculate_shape_op = model&to_calculate_shape_operator 
@@ -1087,6 +1087,9 @@ inline ts_bool vertex_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
         mean_energy = vtx->mean_energy;
         gaussian_curvature = vtx->gaussian_curvature;
         gaussian_energy = vtx->gaussian_energy;
+        dx = vtx->dx;
+        dy = vtx->dy;
+        dz = vtx->dz;
     }
     if (! (model&to_disable_calculate_laplace_beltrami)) {
         laplace_beltrami_curvature_energy(vesicle,vtx);
@@ -1124,6 +1127,9 @@ inline ts_bool vertex_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
             vtx->gaussian_curvature = gaussian_curvature;
             vtx->gaussian_energy2 =vtx->gaussian_energy;
             vtx->gaussian_energy = gaussian_energy;
+            vtx->dx=dx;
+            vtx->dy=dy;
+            vtx->dz=dz;
     } else if (do_calculate_shape_op) {
         vtx->nx2 = nx;
         vtx->ny2 = ny;
