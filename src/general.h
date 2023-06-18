@@ -269,6 +269,8 @@ struct ts_vertex {
         ts_double eig_v0; // c1 from shape tensor (largest curvature)
         ts_double eig_v1; // c2 from shape tensor (smallest curvature)
         ts_double eig_v2; // 0 noraml eigenvalue: 3x3 shape tensor has 0 eigenvalue normal
+        ts_double area; // DEBUG
+        ts_double S[4]; //DEBUG
         ts_double mean_curvature2; // from shape tensor
         ts_double gaussian_curvature2; // from shape tensor
         ts_double mean_energy2; // from shape tensor

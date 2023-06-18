@@ -10,6 +10,10 @@
 #include "vertex.h"
 #include "triangle.h"
 
+// DEBUG
+#include "io.h"
+#include <string.h>
+
 
 /** @brief Wrapper that calculates and saves energy of every vertex in vesicle
  *  
@@ -224,7 +228,10 @@ inline ts_bool laplace_beltrami_curvature_energy(ts_vesicle *vesicle, ts_vertex 
     return TS_SUCCESS;
 }
 
+ts_bool error_correction_scheme(ts_vertex *vtx, ts_double H, ts_double Kg){
+    ts_double e00=0,e01=0,e11=0;
 
+}
 
 /** @brief anisotropic subfunction of vertex_curvature_energy.
  *
@@ -263,7 +270,7 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
     ts_double edge_middle_x[10]={0,0,0,0,0,0,0,0,0,0};
     ts_double edge_middle_y[10]={0,0,0,0,0,0,0,0,0,0};
     ts_double edge_middle_z[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double edge_square[10]={0,0,0,0,0,0,0,0,0,0};
+    ts_double edge_len[10]={0,0,0,0,0,0,0,0,0,0};
 
     ts_double edge_normal_x[10]={0,0,0,0,0,0,0,0,0,0};
     ts_double edge_normal_y[10]={0,0,0,0,0,0,0,0,0,0};
@@ -274,10 +281,12 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
     ts_double sigma_L_x[10]={0,0,0,0,0,0,0,0,0,0};
     ts_double sigma_L_y[10]={0,0,0,0,0,0,0,0,0,0};
     ts_double sigma_L_z[10]={0,0,0,0,0,0,0,0,0,0};
+    ts_double sigma_L_len[10]={0,0,0,0,0,0,0,0,0,0};
     ts_double area_L[10]={0,0,0,0,0,0,0,0,0,0};
     ts_double sigma_R_x[10]={0,0,0,0,0,0,0,0,0,0};
     ts_double sigma_R_y[10]={0,0,0,0,0,0,0,0,0,0};
     ts_double sigma_R_z[10]={0,0,0,0,0,0,0,0,0,0};
+    ts_double sigma_R_len[10]={0,0,0,0,0,0,0,0,0,0};
     ts_double area_R[10]={0,0,0,0,0,0,0,0,0,0};
 
     ts_double vertex_normal_x=0.0;
@@ -292,9 +301,8 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
 
     ts_double temp_length; // length of a vector for normalization
     ts_double dot_product; 
-    ts_double cross_x, cross_y, cross_z; // temporary variable to hold (lm->normal) x (edge_normal)
 
-    ts_double sigma_Ne_sigma, sigma_Ni_sigma, e_Ni_e, sigma_square;
+    ts_double Ne_sigma, Ni_sigma, Ni_e;
 
     ts_double Se11=0, Se21=0, Se22=0; // Edgewise shape operator
     ts_double Se12; //alias for clarity of symmetric matrices: hopefully the compiler removes them
@@ -340,36 +348,57 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
         edge_middle_x[i] = (vtx->x + vtx->neigh[i]->x)/2;
         edge_middle_y[i] = (vtx->y + vtx->neigh[i]->y)/2;
         edge_middle_z[i] = (vtx->z + vtx->neigh[i]->z)/2;
-        edge_square[i] = pow(edge_e_x[i],2) + pow(edge_e_y[i],2) + pow(edge_e_z[i],2);
+        edge_len[i] = sqrt(pow(edge_e_x[i],2) + pow(edge_e_y[i],2) + pow(edge_e_z[i],2));
+        edge_e_x[i] /= edge_len[i];
+        edge_e_y[i] /= edge_len[i];
+        edge_e_z[i] /= edge_len[i];
     }
 
     // sigma and vertex normal
     // notice everything is ordered clockwise from outside perspective
     for (i=0; i<vtx->tristar_no; i++) {
-        ip = next_small(i,vtx->tristar_no);
+        ip = next_small(i,vtx->neigh_no);
         t = vtx->tristar[i];
         sigma_L_x[i] = t->xcirc - edge_middle_x[i];
         sigma_L_y[i] = t->ycirc - edge_middle_y[i];
         sigma_L_z[i] = t->zcirc - edge_middle_z[i];
+        sigma_L_len[i] = sqrt(pow(sigma_L_x[i],2)+pow(sigma_L_y[i],2)+pow(sigma_L_z[i],2));
+        sigma_L_x[i] /= sigma_L_len[i];
+        sigma_L_y[i] /= sigma_L_len[i];
+        sigma_L_z[i] /= sigma_L_len[i];
         sigma_R_x[i] = t->xcirc - edge_middle_x[ip];
         sigma_R_y[i] = t->ycirc - edge_middle_y[ip];
         sigma_R_z[i] = t->zcirc - edge_middle_z[ip];
+        sigma_R_len[i] = sqrt(pow(sigma_R_x[i],2)+pow(sigma_R_y[i],2)+pow(sigma_R_z[i],2));
+        sigma_R_x[i] /= sigma_R_len[i];
+        sigma_R_y[i] /= sigma_R_len[i];
+        sigma_R_z[i] /= sigma_R_len[i];
 
-        cross_x = edge_e_y[i]*sigma_L_z[i] - edge_e_z[i]*sigma_L_y[i];
-        cross_y = edge_e_z[i]*sigma_L_x[i] - edge_e_x[i]*sigma_L_z[i];
-        cross_z = edge_e_x[i]*sigma_L_y[i] - edge_e_y[i]*sigma_L_x[i];
-        area_L[i] = -0.5 * (t->xnorm*cross_x + t->ynorm*cross_y + t->znorm*cross_z); // t->norm points inwards!
-        cross_x = sigma_R_y[i]*edge_e_z[ip] - sigma_R_z[i]*edge_e_y[ip];
-        cross_y = sigma_R_z[i]*edge_e_x[ip] - sigma_R_x[i]*edge_e_z[ip];
-        cross_z = sigma_R_x[i]*edge_e_y[ip] - sigma_R_y[i]*edge_e_x[ip];
-        area_R[i] = -0.5 * (t->xnorm*cross_x + t->ynorm*cross_y + t->znorm*cross_z); // t->norm points inwards!
+        if (sigma_L_x[i]*edge_e_x[i]+sigma_L_y[i]*edge_e_y[i]+sigma_L_z[i]*edge_e_z[i]>0.00001){
+            ts_fprintf(stdout,"Sigma L: %f,%f,%f e: %f,%f,%f\n",sigma_L_x[i],sigma_L_y[i],sigma_L_z[i],
+                                                              edge_e_x[i],edge_e_y[i],edge_e_z[i]);
+            strcat(command_line_args.dump_fullfilename,"ary_emergency.bin");
+            dump_state(vesicle,0);
+            fatal("bad sigma calculation\n",231);
+        }
+        if (sigma_R_x[i]*edge_e_x[ip]+sigma_R_y[i]*edge_e_y[ip]+sigma_R_z[i]*edge_e_z[ip]>0.00001){
+            ts_fprintf(stdout,"Sigma R: %f,%f,%f e: %f,%f,%f\n",sigma_R_x[i],sigma_R_y[i],sigma_R_z[i],
+                                                              edge_e_x[ip],edge_e_y[ip],edge_e_z[ip]);
+            strcat(command_line_args.dump_fullfilename,"ary_emergency.bin");
+            dump_state(vesicle,0);
+            fatal("bad sigma calculation\n",231);
+        }
+
+        area_L[i] = 0.5 * sigma_L_len[i]*edge_len[i];
+        area_R[i] = 0.5 * sigma_R_len[i]*edge_len[ip]; 
         s = area_R[i] + area_L[i];
         vertex_normal_x -= t->xnorm*s; // t->norm points inwards!
         vertex_normal_y -= t->ynorm*s;
         vertex_normal_z -= t->znorm*s;
         Av += s;
     }
-
+    //DEBUG
+    vtx->area = Av;
     // edge normals
     if (! (vtx->type & is_edge_vtx) || vtx->neigh_no==vtx->tristar_no) {
         for (i=0; i<vtx->neigh_no; i++) {
@@ -419,9 +448,9 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
     }
 
     temp_length=sqrt(pow(vertex_normal_x,2)+pow(vertex_normal_y,2)+pow(vertex_normal_z,2));
-    vertex_normal_x=vertex_normal_x/temp_length;
-    vertex_normal_y=vertex_normal_y/temp_length;
-    vertex_normal_z=vertex_normal_z/temp_length;
+    vertex_normal_x/=temp_length;
+    vertex_normal_y/=temp_length;
+    vertex_normal_z/=temp_length;
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // step 1.1: update vertex normal and director based, generates the director-tangent-normal frame
@@ -451,7 +480,6 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
     // ###############################################
     // step 2. calculate the shape operator per edge #
     // ###############################################
-
     for(i=0;i<vtx->tristar_no;i++){
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         // step 2.1: compute curvature contribution on the left 
@@ -468,19 +496,16 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
         // \end{equation}
         // note that we didn't normalize the sigmas and es, so we need to modify our equation with "neat tricks", using the area 0.5|s||e| and the squares
 
-        t = vtx->tristar[i];
-        sigma_Ne_sigma = edge_normal_x[i]*sigma_L_x[i] + edge_normal_y[i]*sigma_L_y[i] + edge_normal_z[i]*sigma_L_z[i];
-        sigma_Ni_sigma = vertex_normal_x*sigma_L_x[i]  + vertex_normal_y*sigma_L_y[i]  + vertex_normal_z*sigma_L_z[i];
-        e_Ni_e = vertex_normal_x*edge_e_x[i]   +  vertex_normal_y*edge_e_y[i]  + vertex_normal_z*edge_e_z[i];
-        sigma_square = pow(sigma_L_x[i],2)+ pow(sigma_L_y[i],2)+ pow(sigma_L_z[i],2);
-        // edge_square[i]
+        Ne_sigma = edge_normal_x[i]*sigma_L_x[i] + edge_normal_y[i]*sigma_L_y[i] + edge_normal_z[i]*sigma_L_z[i];
+        Ni_sigma = vertex_normal_x*sigma_L_x[i]  + vertex_normal_y*sigma_L_y[i]  + vertex_normal_z*sigma_L_z[i];
+        Ni_e = vertex_normal_x*edge_e_x[i]       + vertex_normal_y*edge_e_y[i]   + vertex_normal_z*edge_e_z[i];
         
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         // step 2.5: get the edge shape operator Se and edge 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        Se11=area_L[i]*sigma_Ne_sigma/pow(sigma_square,2);
-        Se21=(sigma_Ne_sigma-sigma_Ni_sigma/8)/area_L[i];
-        Se22=-area_L[i]*e_Ni_e/pow(edge_square[i],2);
+        Se11=0.5*edge_len[i]*Ne_sigma;
+        Se21=0.25*sigma_L_len[i]*(Ne_sigma-Ni_sigma);
+        Se22=-0.5*sigma_L_len[i]*Ni_e;
         Se12=Se21; //symmetric matrix: hopefully the compiler gets rid of these
 
         Sv11 += Se11*sigma_L_x[i]*sigma_L_x[i] + Se12*sigma_L_x[i]*edge_e_x[i] + Se21*edge_e_x[i]*sigma_L_x[i] + Se22*edge_e_x[i]*edge_e_x[i];
@@ -498,19 +523,17 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         ip = next_small(i,vtx->neigh_no);
-        sigma_Ne_sigma = edge_normal_x[ip]*sigma_R_x[i] + edge_normal_y[ip]*sigma_R_y[i] + edge_normal_z[ip]*sigma_R_z[i];
-        sigma_Ni_sigma = vertex_normal_x*sigma_R_x[i]   + vertex_normal_y*sigma_R_y[i]   + vertex_normal_z*sigma_R_z[i];
-        e_Ni_e = vertex_normal_x*edge_e_x[ip]           + vertex_normal_y*edge_e_y[ip]   + vertex_normal_z*edge_e_z[ip];
-        sigma_square = pow(sigma_R_x[i],2)+ pow(sigma_R_y[i],2)+ pow(sigma_R_z[i],2);
-        // edge_square[i]
+        Ne_sigma = edge_normal_x[ip]*sigma_R_x[i] + edge_normal_y[ip]*sigma_R_y[i] + edge_normal_z[ip]*sigma_R_z[i];
+        Ni_sigma = vertex_normal_x*sigma_R_x[i]   + vertex_normal_y*sigma_R_y[i]   + vertex_normal_z*sigma_R_z[i];
+        Ni_e = vertex_normal_x*edge_e_x[ip]       + vertex_normal_y*edge_e_y[ip]   + vertex_normal_z*edge_e_z[ip];
         
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         // step 2.5: get the edge shape operator Se and edge 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        Se11=area_R[i]*sigma_Ne_sigma/pow(sigma_square,2);
-        Se21=(sigma_Ne_sigma-sigma_Ni_sigma/8)/area_R[i];
-        Se22=-area_R[i]*e_Ni_e/pow(edge_square[ip],2);
+        Se11=0.5*edge_len[ip]*Ne_sigma;
+        Se21=0.25*sigma_R_len[i]*(Ne_sigma-Ni_sigma);
+        Se22=-0.5*sigma_R_len[i]*Ni_e;
         Se12=Se21; //symmetric matrix: hopefully the compiler gets rid of these
 
         Sv11 += Se11*sigma_R_x[i]*sigma_R_x[i] + Se12*sigma_R_x[i]*edge_e_x[ip] + Se21*edge_e_x[ip]*sigma_R_x[i] + Se22*edge_e_x[ip]*edge_e_x[ip];
@@ -559,6 +582,12 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
            +tangent_y *Sv21*tangent_x  + tangent_y *Sv22*tangent_y  + tangent_y *Sv23*tangent_z
            +tangent_z *Sv31*tangent_x  + tangent_z *Sv32*tangent_y  + tangent_z *Sv33*tangent_z ; 
     tSd = dSt; // symmetric tensor
+
+    //DEBUG
+    vtx->S[0] = dSd;
+    vtx->S[1] = tSd;
+    vtx->S[2] = dSt;
+    vtx->S[3] = tSt;
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // step 3.2: get curvature information from the 2x2 shape operator
