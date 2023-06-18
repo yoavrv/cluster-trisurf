@@ -34,6 +34,7 @@ c
     ts_small_idx i,j;
     ts_double oldenergy, delta_energy, dvol=0.0, darea=0.0;
     ts_double tri_normals_angle_cosine_old_min=1,tri_normals_angle_cosine_new_min=1;
+    ts_double side_0,side_1,side_2;
     ts_triangle *lm=NULL,*lp=NULL, *lp1=NULL, *lm2=NULL;
     ts_triangle *lm1=NULL, *lp2=NULL;
 
@@ -91,6 +92,22 @@ c
     if(vtx_distance_sq(km,kp) > vesicle->dmax ) return TS_FAIL;
     //   fprintf(stderr,"Bond will not be too long.. Continue.\n");
 
+    // we have enough information to check for obtuseness
+    // check acute triangles
+    side_0 = pow(k->x - km->x,2) + pow(k->y - km->y,2) + pow(k->z - km->z,2);
+    side_1 = pow(k->x - kp->x,2) + pow(k->y - kp->y,2) + pow(k->z - kp->z,2);
+    side_2 = pow(kp->x - km->x,2) + pow(kp->y - km->y,2) + pow(kp->z - km->z,2);
+    if (side_0+side_1<=side_2 || side_1+side_2<=side_0 || side_2+side_0<=side_1){
+            // failure! obtuse/right triangle!
+            return TS_FAIL;
+    }
+    side_0 = pow(it->x - km->x,2) + pow(it->y - km->y,2) + pow(it->z - km->z,2);
+    side_1 = pow(it->x - kp->x,2) + pow(it->y - kp->y,2) + pow(it->z - kp->z,2);
+    side_2 = pow(kp->x - km->x,2) + pow(kp->y - km->y,2) + pow(kp->z - km->z,2);
+    if (side_0+side_1<=side_2 || side_1+side_2<=side_0 || side_2+side_0<=side_1){
+            // failure! obtuse/right triangle!
+            return TS_FAIL;
+    }
     
     /* we make a bond flip. this is different than in original fortran */
     // find lm, lp
@@ -112,6 +129,7 @@ c
         }
     }
     if(lm==NULL || lp==NULL) fatal("ts_flip_bond: Cannot find triangles lm and lp!",999);
+    
 
     //we look for important triangles lp1 and lm2.
 
@@ -546,6 +564,7 @@ c
     ts_small_idx i;
     ts_double oldenergy, delta_energy, dvol=0.0, darea=0.0;
     ts_double tri_normals_angle_cosine_old_min=1, tri_normals_angle_cosine_new_min=1;
+    ts_double side_0,side_1,side_2;
     ts_triangle *lm=NULL,*lp=NULL, *lp1=NULL, *lm2=NULL;
     ts_triangle *lm1=NULL,*lp2=NULL;
 
@@ -574,6 +593,25 @@ c
     if(km==NULL || kp==NULL){
         fatal("In bondflip, cannot determine km and kp!",999);
     }
+
+    // we have enough information to check for obtuseness
+    // check acute triangles
+    side_0 = pow(k->x - km->x,2) + pow(k->y - km->y,2) + pow(k->z - km->z,2);
+    side_1 = pow(k->x - kp->x,2) + pow(k->y - kp->y,2) + pow(k->z - kp->z,2);
+    side_2 = pow(kp->x - km->x,2) + pow(kp->y - km->y,2) + pow(kp->z - km->z,2);
+    if (side_0+side_1<=side_2 || side_1+side_2<=side_0 || side_2+side_0<=side_1){
+            // failure! obtuse/right triangle!
+            return TS_FAIL;
+    }
+    side_0 = pow(it->x - km->x,2) + pow(it->y - km->y,2) + pow(it->z - km->z,2);
+    side_1 = pow(it->x - kp->x,2) + pow(it->y - kp->y,2) + pow(it->z - kp->z,2);
+    side_2 = pow(kp->x - km->x,2) + pow(kp->y - km->y,2) + pow(kp->z - km->z,2);
+    if (side_0+side_1<=side_2 || side_1+side_2<=side_0 || side_2+side_0<=side_1){
+            // failure! obtuse/right triangle!
+            return TS_FAIL;
+    }
+    
+
     if (km->type==is_ghost_vtx && kp->type==is_ghost_vtx) return TS_FAIL; // ghost bonds do not move!
 
     if(it->type & is_edge_vtx || km->type & is_edge_vtx || k->type & is_edge_vtx || kp->type & is_edge_vtx){

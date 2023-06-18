@@ -375,6 +375,7 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
         sigma_R_z[i] /= sigma_R_len[i];
 
         if (sigma_L_x[i]*edge_e_x[i]+sigma_L_y[i]*edge_e_y[i]+sigma_L_z[i]*edge_e_z[i]>0.00001){
+            ts_fprintf(stdout,"At vertex %d neighbor %d",vtx->idx, i);
             ts_fprintf(stdout,"Sigma L: %f,%f,%f e: %f,%f,%f\n",sigma_L_x[i],sigma_L_y[i],sigma_L_z[i],
                                                               edge_e_x[i],edge_e_y[i],edge_e_z[i]);
             strcat(command_line_args.dump_fullfilename,"ary_emergency.bin");
@@ -382,6 +383,7 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
             fatal("bad sigma calculation\n",231);
         }
         if (sigma_R_x[i]*edge_e_x[ip]+sigma_R_y[i]*edge_e_y[ip]+sigma_R_z[i]*edge_e_z[ip]>0.00001){
+            ts_fprintf(stdout,"At vertex %d neighbor %d",vtx->idx, i);
             ts_fprintf(stdout,"Sigma R: %f,%f,%f e: %f,%f,%f\n",sigma_R_x[i],sigma_R_y[i],sigma_R_z[i],
                                                               edge_e_x[ip],edge_e_y[ip],edge_e_z[ip]);
             strcat(command_line_args.dump_fullfilename,"ary_emergency.bin");
