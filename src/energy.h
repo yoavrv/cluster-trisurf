@@ -5,8 +5,14 @@
 ts_bool sweep_vertex_curvature_energy(ts_vesicle *vesicle);
 ts_bool sweep_vertex_forces(ts_vesicle *vesicle);
 ts_bool laplace_beltrami_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx);
+ts_bool update_vertex_from_curvature_tensor(ts_vertex* vtx, ts_double Av,
+                             ts_double s00,ts_double s01,ts_double s10,ts_double s11,
+                             ts_double nx,ts_double ny,ts_double nz,
+                             ts_double dx,ts_double dy,ts_double dz,
+                             ts_double tx,ts_double ty,ts_double tz);
 ts_bool tensor_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx);
 ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx);
+ts_bool tensor_curvature_energy_original(ts_vesicle *vesicle, ts_vertex *vtx);
 inline ts_bool vertex_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx);
 inline ts_bool bond_energy(ts_bond *bond,ts_poly *poly);
 
