@@ -201,9 +201,9 @@ inline ts_bool laplace_beltrami_curvature_energy(ts_vesicle *vesicle, ts_vertex 
     h=xh*xh + yh*yh + zh*zh; 
     ht=txn*xh + tyn*yh + tzn*zh; // direction of center of curvature with the normal i.e. convex or concave
     if(ht>=0.0) {
-        vtx->mean_curvature= sqrt(h)/s;
+        vtx->mean_curvature= (sqrt(h)/s)/2;
     } else {
-        vtx->mean_curvature=-sqrt(h)/s;
+        vtx->mean_curvature=-(sqrt(h)/s)/2;
     }
     norml=sqrt(txn*txn+tyn*tyn+tzn*tzn); //also great point to update the vertex normal
     vtx->nx=-txn/norml;
@@ -220,7 +220,7 @@ inline ts_bool laplace_beltrami_curvature_energy(ts_vesicle *vesicle, ts_vertex 
     //step 4: calculate the bending energy
     // step 4.1 isotropic curvature energies
     /* the following statement is an expression for $\frac{1}{2}\int(c_1+c_2-c_0^\prime)^2\mathrm{d}A$, where $c_0^\prime=2c_0$ (twice the spontaneous curvature)  */
-    vtx->mean_energy=vtx->xk* 0.5*s*(vtx->mean_curvature-vtx->c)*(vtx->mean_curvature-vtx->c);
+    vtx->mean_energy=vtx->xk* 0.5*s*(2*vtx->mean_curvature-vtx->c)*(2*vtx->mean_curvature-vtx->c);
     vtx->gaussian_energy = do_angle_sum ? vtx->xk2 * s * vtx->gaussian_curvature : 0;
     vtx->energy = vtx->mean_energy + vtx->gaussian_energy;
     
@@ -250,7 +250,7 @@ ts_bool update_vertex_from_curvature_tensor(ts_vertex* vtx, ts_double Av,
     tSt=s11;
     tr  = dSd + tSt;
     det = dSd*tSt - dSt*tSd;
-    vtx->mean_curvature = tr; // curvatures up to signs and factors of 2
+    vtx->mean_curvature = tr/2; // curvatures up to signs and factors of 2
     vtx->gaussian_curvature = det;
     // eigenvalues: trace determinant formula. We have real symmetric matrix, so positive discriminant
     discrim_sqrt = sqrt(tr*tr - 4*det);
@@ -361,7 +361,8 @@ ts_bool error_correction_scheme(ts_double *s00, ts_double *s01, ts_double *s11, 
     d = (*s00-*s11)/2;
     kg = *s00*(*s11)-(*s01)*(*s01);
     delta = H-h;
-    a_d = sqrt(d*d*(1-(Kg-kg+h*h-H*H)/(d*d+pow(*s01,2))));
+    a_d = d*d*(1-(Kg-kg+h*h-H*H)/(d*d+pow(*s01,2)));
+    // a_d = a_d>0? sqrt(a_d) : 0;
     a = (abs(a_d-d)<=abs(-a_d-d))? a_d-d : -a_d-d;
     beta = a*(*s01)/d;
     *s00 += delta+a;
@@ -706,7 +707,8 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
            +director_z*Sv31*tangent_x  + director_z*Sv32*tangent_y  + director_z*Sv33*tangent_z ; 
     tSt =   tangent_x *Sv11*tangent_x  + tangent_x *Sv12*tangent_y  + tangent_x *Sv13*tangent_z
            +tangent_y *Sv21*tangent_x  + tangent_y *Sv22*tangent_y  + tangent_y *Sv23*tangent_z
-           +tangent_z *Sv31*tangent_x  + tangent_z *Sv32*tangent_y  + tangent_z *Sv33*tangent_z ; 
+           +tangent_z *Sv31*tangent_x  + tangent_z *Sv32*tangent_y  + tangent_z *Sv33*tangent_z ;
+    error_correction_scheme(&dSd,&dSt,&tSt,vtx->mean_curvature, vtx->gaussian_curvature);
     tSd = dSt; // symmetric tensor
 
     //DEBUG
@@ -811,6 +813,9 @@ inline ts_bool tensor_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
         vertex_normal_z -= t->znorm*s;
         Av += s;
     }
+    //DEBUG
+    vtx->area = Av;
+
     temp_length=sqrt(pow(vertex_normal_x,2)+pow(vertex_normal_y,2)+pow(vertex_normal_z,2));
     vertex_normal_x=vertex_normal_x/temp_length;
     vertex_normal_y=vertex_normal_y/temp_length;
@@ -964,6 +969,7 @@ inline ts_bool tensor_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
     tSt =   tangent_x *Se11*tangent_x  + tangent_x *Se12*tangent_y  + tangent_x *Se13*tangent_z
            +tangent_y *Se21*tangent_x  + tangent_y *Se22*tangent_y  + tangent_y *Se23*tangent_z
            +tangent_z *Se31*tangent_x  + tangent_z *Se32*tangent_y  + tangent_z *Se33*tangent_z ; 
+    error_correction_scheme(&dSd,&dSt,&tSt,vtx->mean_curvature, vtx->gaussian_curvature);
     tSd = dSt; // symmetric tensor
 
     //DEBUG
@@ -972,7 +978,7 @@ inline ts_bool tensor_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
     vtx->S[2] = dSt;
     vtx->S[3] = tSt;
 
-    return update_vertex_from_curvature_tensor(vtx,Av,-dSd,-dSt,-tSd,-tSt,
+    return update_vertex_from_curvature_tensor(vtx,Av,dSd,dSt,tSd,tSt,
         vertex_normal_x, vertex_normal_y, vertex_normal_z,
         director_x,director_y,director_z,
         tangent_x, tangent_y, tangent_z);
@@ -1028,7 +1034,7 @@ inline ts_bool vertex_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
     } 
 
     if (do_calculate_shape_op) {
-        tensor_curvature_energy2(vesicle, vtx);
+        tensor_curvature_energy(vesicle, vtx);
         // use the old energy and old normals
         if (!do_use_shape_op_e){
             vtx->nx2 = vtx->nx;
@@ -1063,368 +1069,6 @@ inline ts_bool vertex_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
 
     return TS_SUCCESS;
 }
-
-inline ts_bool tensor_curvature_energy_original(ts_vesicle *vesicle, ts_vertex *vtx){
-    //  step 1. calculate the area assigned to the vertex and the vertex normal
-    //      step 1.1: update vertex normal and director, create normal-director-tangent frame
-    //  step 2. calculate and accumulate the shape operator per edge
-    //      step 2.1: calculate the normalized edge vector and edge length
-    //      step 2.2: get the edge adjacent triangles lm and lp
-    //      step 2.3: get the edge normal and edge binormal
-    //      step 2.4: get the dihedral curvature weight he[jj]
-    //      step 2.5: get the edge shape operator Se and edge weight We_Av
-    //      step 2.6: accumulate contribution to the vertex shape operator
-    //  step 3. use vertex shape operator to obtain energy and curvature information
-    //      step 3.1: project to a 2x2 matrix in the surface tangent plane
-    //      step 3.2: get curvature information from the 2x2 shape operator
-    //          step 3.2.1: get eigenvectors in the director-tangent directions
-    //          step 3.2.2: get eigenvectors in real space
-    //      step 3.3: get energy information from the 2x2 shape difference
-
-    // we hardcoded 10 neighbor limit!
-    ts_small_idx jj, i, ip;
-    ts_double edge_vector_x[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double edge_vector_y[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double edge_vector_z[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double edge_normal_x[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double edge_normal_y[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double edge_normal_z[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double edge_binormal_x[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double edge_binormal_y[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double edge_binormal_z[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double vertex_normal_x=0.0;
-    ts_double vertex_normal_y=0.0;
-    ts_double vertex_normal_z=0.0;
-    ts_double director_x=0.0; // vertex director
-    ts_double director_y=0.0;
-    ts_double director_z=0.0;
-    ts_double tangent_x=0.0; // tangent vector in director-tangent-normal axis
-    ts_double tangent_y=0.0;
-    ts_double tangent_z=0.0;
-    ts_double edge_length=0.0;
-
-    ts_triangle *lm=NULL, *lp=NULL; // counter-clockwise and clockwise trianlges
-
-    ts_double temp_length; // length of a vector for normalization
-    ts_double dot_product; 
-    ts_double cross_x, cross_y, cross_z; // temporary variable to hold (lm->normal) x (edge_normal)
-
-    ts_double Se11=0, Se21=0, Se22=0, Se31=0, Se32=0, Se33=0; // Edgewise shape operator
-    ts_double Se12, Se13, Se23; //alias for clarity of symmetric matrices: hopefully the compiler removes them
-    ts_double dSd,dSt,tSt,tSd; // vertex shape operator in the director-tangent plane
-    ts_double tr, det, lambda1, lambda2, discrim_sqrt;
-    ts_double eigen_vec1d, eigen_vec1t, eigen_vec2d, eigen_vec2t;
-
-    ts_triangle *t;
-    ts_double s, l_m_x,l_m_y,l_m_z,l_p_x,l_p_y,l_p_z, sigma_m_x, sigma_m_y,sigma_m_z, sigma_p_x, sigma_p_y,sigma_p_z;
-
-    ts_double We;
-    ts_double Av, We_Av;
-
-    ts_double he[10];
-    ts_double Sv[3][3]={{0,0,0},{0,0,0},{0,0,0}};
-
-    // #########################################################################
-    // step 1. calculate the area assigned to the vertex and the vertex normal #
-    // #########################################################################
-    Av=0;
-    for(i=0; i<vtx->tristar_no; i++){
-        ip = next_small(i, vtx->tristar_no);
-        t = vtx->tristar[i];
-        l_m_x = (vtx->neigh[i]->x - vtx->x)/2;
-        l_m_y = (vtx->neigh[i]->y - vtx->y)/2;
-        l_m_z = (vtx->neigh[i]->z - vtx->z)/2;
-        l_p_x = (vtx->neigh[ip]->x - vtx->x)/2;
-        l_p_y = (vtx->neigh[ip]->y - vtx->y)/2;
-        l_p_z = (vtx->neigh[ip]->z - vtx->z)/2;
-        sigma_m_x = t->xcirc - (vtx->neigh[i]->x + vtx->x)/2;
-        sigma_m_y = t->ycirc - (vtx->neigh[i]->y + vtx->y)/2;
-        sigma_m_z = t->zcirc - (vtx->neigh[i]->z + vtx->z)/2;
-        sigma_p_x = t->xcirc - (vtx->neigh[ip]->x + vtx->x)/2;
-        sigma_p_y = t->ycirc - (vtx->neigh[ip]->y + vtx->y)/2;
-        sigma_p_z = t->zcirc - (vtx->neigh[ip]->z + vtx->z)/2;
-        // here we do N*(lxsigma) on the left and N*(lxsigma) on the right
-        // which is N*(lxsigma - lxsigma)
-        cross_x = -( l_p_y*sigma_p_z - l_p_z*sigma_p_y ) + ( l_m_y*sigma_m_z - l_m_z*sigma_m_y );
-        cross_y = -( l_p_z*sigma_p_x - l_p_x*sigma_p_z ) + ( l_m_z*sigma_m_x - l_m_x*sigma_m_z );
-        cross_z = -( l_p_x*sigma_p_y - l_p_y*sigma_p_x ) + ( l_m_x*sigma_m_y - l_m_y*sigma_m_x );
-        s = 0.5 * (t->xnorm*cross_x + t->ynorm*cross_y + t->znorm*cross_z);
-        vertex_normal_x -= t->xnorm*s;
-        vertex_normal_y -= t->ynorm*s;
-        vertex_normal_z -= t->znorm*s;
-        Av += s;
-    }
-    temp_length=sqrt(pow(vertex_normal_x,2)+pow(vertex_normal_y,2)+pow(vertex_normal_z,2));
-    vertex_normal_x=vertex_normal_x/temp_length;
-    vertex_normal_y=vertex_normal_y/temp_length;
-    vertex_normal_z=vertex_normal_z/temp_length;
-
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // step 1.1: update vertex normal and director based, generates the director-tangent-normal frame
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    vtx->nx = vertex_normal_x;
-    vtx->ny = vertex_normal_y;
-    vtx->nz = vertex_normal_z;
-
-    // d = d - (d.n)n   [or -nx(nxd)]
-    dot_product = (vtx->dx*vertex_normal_x)+(vtx->dy*vertex_normal_y)+(vtx->dz*vertex_normal_z);
-    director_x = vtx->dx - dot_product*vertex_normal_x;
-    director_y = vtx->dy - dot_product*vertex_normal_y;
-    director_z = vtx->dz - dot_product*vertex_normal_z;
-    // !!! this operation exclusively lowers |t|: if we do manage to avoid using the size (always taking d*A*(nxd)/d^2) we can avoid the normalization
-    // and just periodically make sure the size is large enough if (d^2<0.5) d=2d
-    temp_length=sqrt((director_x*director_x)+(director_y*director_y)+(director_z*director_z)); // should be the same as sqrt(1-*(normal . director)^2)
-    director_x = director_x / temp_length;
-    director_y = director_y / temp_length;
-    director_z = director_z / temp_length;
-    vtx->dx = director_x; // update the vertex director
-    vtx->dy = director_y;
-    vtx->dz = director_z;
-    // calculate the third axis tangent = normal x director
-    tangent_x = vertex_normal_y*director_z - vertex_normal_z*director_y;
-    tangent_y = vertex_normal_z*director_x - vertex_normal_x*director_z;
-    tangent_z = vertex_normal_x*director_y - vertex_normal_y*director_x;
-
-    
-    // ###############################################
-    // step 2. calculate the shape operator per edge #
-    // ###############################################
-
-    for(jj=0;jj<vtx->neigh_no;jj++){
-        // !!! We start a VERY long loop over jj !!!
-        // vertex must remain ordered through initial_dist and through bondflips
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        // step 2.1: calculate the normalized edge vector and edge length
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        edge_vector_x[jj]=vtx->neigh[jj]->x - vtx->x;
-        edge_vector_y[jj]=vtx->neigh[jj]->y - vtx->y;
-        edge_vector_z[jj]=vtx->neigh[jj]->z - vtx->z;
-
-        edge_length=sqrt(edge_vector_x[jj]*edge_vector_x[jj]+edge_vector_y[jj]*edge_vector_y[jj]+edge_vector_z[jj]*edge_vector_z[jj]);
-        edge_vector_x[jj]=edge_vector_x[jj]/edge_length;
-        edge_vector_y[jj]=edge_vector_y[jj]/edge_length;
-        edge_vector_z[jj]=edge_vector_z[jj]/edge_length;
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        // step 2.2: get the edge adjacent triangles lm and lp
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        // We can get the two triangles since everything is ordered: 
-        // for edge v->i, the previous triangle lm={v,i-1,i} is in position i-1 and the next triangle lp={v,i,i+1} is in position i
-        lp = vtx->tristar[jj];
-        lm = vtx->tristar[prev_small(jj, vtx->tristar_no)];
-
-        // Triangle normals are NORMALIZED!
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        // step 2.3: get the edge normal and edge binormal
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        // we want to get the edge normal is the average of the normal of the two adjacent triangles ne = nf1+nf2
-        temp_length=sqrt( pow((lm->xnorm + lp->xnorm),2) + pow((lm->ynorm + lp->ynorm), 2) + pow((lm->znorm + lp->znorm), 2));
-
-        edge_normal_x[jj]=-(lm->xnorm + lp->xnorm)/temp_length;
-        edge_normal_y[jj]=-(lm->ynorm + lp->ynorm)/temp_length;
-        edge_normal_z[jj]=-(lm->znorm + lp->znorm)/temp_length;
-        // edge binormal is normal x edge vector
-        edge_binormal_x[jj]= (edge_normal_y[jj]*edge_vector_z[jj])-(edge_normal_z[jj]*edge_vector_y[jj]);
-        edge_binormal_y[jj]=-(edge_normal_x[jj]*edge_vector_z[jj])+(edge_normal_z[jj]*edge_vector_x[jj]);
-        edge_binormal_z[jj]= (edge_normal_x[jj]*edge_vector_y[jj])-(edge_normal_y[jj]*edge_vector_x[jj]);
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        // step 2.4: get the dihedral curvature weight he[jj]
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        cross_x = lm->ynorm*edge_normal_z[jj] - lm->znorm*edge_normal_y[jj];
-        cross_y = lm->znorm*edge_normal_x[jj] - lm->xnorm*edge_normal_z[jj];
-        cross_z = lm->xnorm*edge_normal_y[jj] - lm->ynorm*edge_normal_x[jj];
-
-        he[jj]=edge_length*(cross_x*edge_vector_x[jj] + cross_y*edge_vector_y[jj] + cross_z*edge_vector_z[jj] );
-        
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        // step 2.5: get the edge shape operator Se and edge weight We_Av
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        Se11=edge_binormal_x[jj]*edge_binormal_x[jj]*he[jj];
-        Se21=edge_binormal_x[jj]*edge_binormal_y[jj]*he[jj];
-        Se22=edge_binormal_y[jj]*edge_binormal_y[jj]*he[jj];
-        Se31=edge_binormal_x[jj]*edge_binormal_z[jj]*he[jj];
-        Se32=edge_binormal_y[jj]*edge_binormal_z[jj]*he[jj];
-        Se33=edge_binormal_z[jj]*edge_binormal_z[jj]*he[jj];
-        Se12=Se21; Se13=Se31; Se23=Se32; //symmetric matrix: hopefully the compiler gets rid of these
-
-        // weight: edge normal . veretex normal / area (check if this is per edge?!)
-        We=vertex_normal_x*edge_normal_x[jj]+vertex_normal_y*edge_normal_y[jj]+vertex_normal_z*edge_normal_z[jj];
-        We_Av=We/Av;
-
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        // step 2.6: accumulate contribution to shape operator
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        Sv[0][0]+=We_Av* Se11;
-        Sv[0][1]+=We_Av* Se12;
-        Sv[0][2]+=We_Av* Se13;
-        
-        Sv[1][0]+=We_Av* Se21;
-        Sv[1][1]+=We_Av* Se22;
-        Sv[1][2]+=We_Av* Se23;
-
-        Sv[2][0]+=We_Av* Se31;
-        Sv[2][1]+=We_Av* Se32;
-        Sv[2][2]+=We_Av* Se33;
-
-    } // END FOR JJ
-
-
-    // ##############################################################################
-    // step 3. use vertex shape operator to obtain energy and curvature information #
-    // ##############################################################################
-
-
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // step 3.1: project to a 2x2 matrix in the surface tangent plane
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // splat the shape operator back into separate variables
-    Se11=Sv[0][0];
-    Se12=Sv[0][1];
-    Se13=Sv[0][2];
-    Se21=Sv[1][0];
-    Se22=Sv[1][1];
-    Se23=Sv[1][2];
-    Se31=Sv[2][0];
-    Se32=Sv[2][1];
-    Se33=Sv[2][2];
-
-    // project shape operator to the director-tangent plane
-    // [a b] = [ dSd dSt ]
-    // [b d]   [ tSd tSt ]
-    dSd =   director_x*Se11*director_x + director_x*Se12*director_y + director_x*Se13*director_z
-           +director_y*Se21*director_x + director_y*Se22*director_y + director_y*Se23*director_z
-           +director_z*Se31*director_x + director_z*Se32*director_y + director_z*Se33*director_z; 
-    dSt =   director_x*Se11*tangent_x  + director_x*Se12*tangent_y  + director_x*Se13*tangent_z
-           +director_y*Se21*tangent_x  + director_y*Se22*tangent_y  + director_y*Se23*tangent_z
-           +director_z*Se31*tangent_x  + director_z*Se32*tangent_y  + director_z*Se33*tangent_z ; 
-    tSt =   tangent_x *Se11*tangent_x  + tangent_x *Se12*tangent_y  + tangent_x *Se13*tangent_z
-           +tangent_y *Se21*tangent_x  + tangent_y *Se22*tangent_y  + tangent_y *Se23*tangent_z
-           +tangent_z *Se31*tangent_x  + tangent_z *Se32*tangent_y  + tangent_z *Se33*tangent_z ; 
-    tSd = dSt; // symmetric tensor
-
-    //DEBUG
-    vtx->S[0] = dSd;
-    vtx->S[1] = tSd;
-    vtx->S[2] = dSt;
-    vtx->S[3] = tSt;
-
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // step 3.2: get curvature information from the 2x2 shape operator
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    // first, the primary matrix invariants, the trace and determinant
-    tr  = dSd + tSt;
-    det = dSd*tSt - dSt*tSd;
-    vtx->mean_curvature = -tr; // curvatures up to signs and factors of 2
-    vtx->gaussian_curvature = det;
-    // eigenvalues: trace determinant formula. We have real symmetric matrix, so positive discriminant
-    discrim_sqrt = sqrt(tr*tr - 4*det);
-    lambda1 = (tr + discrim_sqrt)/2;
-    lambda2 = (tr - discrim_sqrt)/2;
-    // ---------------------------------------------------------------
-    // step 3.2.1: get eigenvectors in the director-tangent directions
-    // ---------------------------------------------------------------
-    // construct eigenvectors in the director-tangent plane: make sure we don't have any 0 vectors!
-    // based on https://math.stackexchange.com/questions/4103294/is-there-a-closed-form-expression-for-the-eigenvectors-of-a-2x2-matrix
-    //      for [ a b ], we use  v+ = [l1 - d]  v- =  [  -b  ]  vectors if a>d 
-    //          [ b d ]               [   b  ],       [a - l2]    
-    //                    and    v+ = [   b  ]   v- = [l2 - d]  if d>a
-    //                                [l1 - a],       [   b  ]
-    //      with the v+, v- making a left handed xy plane 
-    //      playing in Mathematica shows switching these combinations lead to larger eigenvectors
-    //      in the [ a 0 ]  b=0 case, this also assures we have ~[1,0] and ~[0,1] vectors
-    //             [ 0 d ]
-    //      ( since lambda1 = max[a,d] and lambda2 = min[a,d])
-    //      for dSd==tSt and tSd==dSt!=0 i.e. [ [a,b],[b,a] ], mathematica shows both work
-    //      the only problematic case is dSd==tSt and tSd==dSt==0 [[a,0],[0,a]]=aI, which is the degenerate case
-    //
-    // To order the eigenvalues by magnitude and keep the orientation, we can always take v+ and construct v- out of it
-    // v- = [ -v+[1] , 
-    //         v+[0]  ]
-    // and only later 
-
-    // a. degenerate case
-    if(lambda1==lambda2){
-        eigen_vec1d = 1; // we pick the director and tangent vectors as the eigenvectors
-        eigen_vec1t = 0;
-    }
-    else{
-        // b. nondegenerate case
-        if(dSd>=tSt){  // a>d
-            eigen_vec1d = lambda1-tSt;  //tSd==0 -> lambda1=dSd, eigen_vec1d!=0
-            eigen_vec1t = tSd;
-        }
-        else { // dSd<tSt, d<a
-            eigen_vec1d = dSt;
-            eigen_vec1t = lambda1-dSd;; //tSd==0 -> lambda1=tSt, eigen_vec1t!=0
-        }
-        // normalize the eigenvectors
-        temp_length = sqrt(eigen_vec1d*eigen_vec1d + eigen_vec1t*eigen_vec1t);
-        eigen_vec1d/=temp_length;
-        eigen_vec1t/=temp_length;
-    }
-
-    // ----------------------------------------------------------
-    // step 3.2.2: get eigenvalues and eigenvectors in real space
-    // ----------------------------------------------------------
-
-    //sort eigenvalues by absolute value
-    if(abs(lambda1)>=abs(lambda2)){
-        vtx->eig_v0 = lambda1;
-        vtx->eig_v1 = lambda2;
-
-        // lambda2's eigenvector is second
-        eigen_vec2d = -eigen_vec1t;
-        eigen_vec2t = eigen_vec1d;
-
-    } else {
-        vtx->eig_v0 = lambda2;
-        vtx->eig_v1 = lambda1;
-
-        // lambda2's eigenvector is first
-        eigen_vec2d = eigen_vec1d;
-        eigen_vec2t = eigen_vec1t;
-        eigen_vec1d = eigen_vec2t;
-        eigen_vec1t = -eigen_vec2d;
-
-    }
-    vtx->eig0[0] = eigen_vec1d*director_x + eigen_vec1t*tangent_x;
-    vtx->eig0[1] = eigen_vec1d*director_y + eigen_vec1t*tangent_y;
-    vtx->eig0[2] = eigen_vec1d*director_z + eigen_vec1t*tangent_z;
-
-    vtx->eig1[0] = eigen_vec2d*director_x + eigen_vec2t*tangent_x;
-    vtx->eig1[1] = eigen_vec2d*director_y + eigen_vec2t*tangent_y;
-    vtx->eig1[2] = eigen_vec2d*director_z + eigen_vec2t*tangent_z;
-
-    vtx->eig_v2 = 0; // we annihilate the shape operator in the normal direction
-    
-    vtx->eig2[0] = vertex_normal_x;
-    vtx->eig2[1] = vertex_normal_y;
-    vtx->eig2[2] = vertex_normal_z;
-
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // step 3.3: get energy information from the 2x2 shape difference
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // spontaneous curvature and isotropy go here!
-    // curvature is flipped due to normals
-    dSd += 0.5*(vtx->c + vtx->d);
-    tSt += 0.5*(vtx->c - vtx->d);
-    tr = dSd + tSt;
-    det = dSd*tSt - tSd * dSt;
-    vtx->mean_energy = vtx->xk*Av* pow(tr,2)/2;
-    vtx->gaussian_energy = vtx->xk2 * Av * det;
-    vtx->energy = vtx->mean_energy + vtx->gaussian_energy;
-
-    return TS_SUCCESS;
-}
-
 
 ts_bool sweep_attraction_bond_energy(ts_vesicle *vesicle){
     ts_idx i;
