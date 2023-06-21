@@ -354,20 +354,44 @@ ts_bool update_vertex_from_curvature_tensor(ts_vertex* vtx, ts_double Av,
 
 
 ts_bool error_correction_scheme(ts_double *s00, ts_double *s01, ts_double *s11, ts_double H, ts_double Kg){
-    ts_double delta=0,a=0,beta=0;
-    ts_double a_d=0;
-    ts_double h,d, kg;
-    h = (*s00+*s11)/2;
-    d = (*s00-*s11)/2;
-    kg = *s00*(*s11)-(*s01)*(*s01);
-    delta = H-h;
-    a_d = d*d*(1-(Kg-kg+h*h-H*H)/(d*d+pow(*s01,2)));
-    // a_d = a_d>0? sqrt(a_d) : 0;
-    a = (abs(a_d-d)<=abs(-a_d-d))? a_d-d : -a_d-d;
-    beta = a*(*s01)/d;
+    ts_double delta=0, a=0, beta=0, a2=0, beta2=0;
+    ts_double hkg=0, factor=0;
+    ts_double h=0, S00=*s00, S01=*s01, S11=*s11;
+    hkg=H*H-Kg;
+    if (hkg<=0) {
+        h = copysign(sqrt(fabs(Kg)),H); // problematic value of H
+        hkg= h*h-Kg;
+    } else {
+        h = H;
+    }
+    factor = sqrt( hkg*(pow(S00-S11,2)+4*pow(S01,2)) );
+    delta = h-(S00+S11)/2;
+    a = -(S00-S11)*(2*factor+pow(S00-S11,2)+4*pow(S01,2))
+        /(2*pow(S00-S11,2)+8*pow(S01,2));
+    a2 = -(S00-S11)*(-2*factor+pow(S00-S11,2)+4*pow(S01,2))
+        /(2*pow(S00-S11,2)+8*pow(S01,2));
+    if (factor==0) {
+        beta=-S01;;
+        beta2=-S01;
+    } else {
+        beta=S01*( 2*(-hkg)/factor - 1);
+        beta2=S01*( 2*(hkg)/factor - 1);
+    }
+
+    if (pow(a,2)+pow(beta,2) > pow(a2,2)+pow(beta2,2)){
+        a = a2;
+        beta=beta2;
+    }
+
     *s00 += delta+a;
     *s01 += beta;
     *s11 += delta-a;
+    // ts_fprintf(stdout,"we are on S=%f,%f,%f, and we want H=%f,KG=%f\n",S00,S01,S11,H,Kg);
+    // ts_fprintf(stdout,"correct by %f,%f,%f, new thing is %f,%f,%f\n",delta,a,beta,
+    //                                                                  *s00,*s01,*s11);
+    // ts_fprintf(stdout,"new H=%f,KG=%f\n",(*s00+*s11)/2,(*s00)*(*s11)-(*s01)*(*s01));
+    // fatal("DEGBU",100);
+    
     return TS_SUCCESS;
 }
 
@@ -725,7 +749,7 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
 
 
 
-inline ts_bool tensor_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
+inline ts_bool tensor_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_double mean_curvature,ts_double gaussian_curvature){
     //  step 1. calculate the area assigned to the vertex and the vertex normal
     //      step 1.1: update vertex normal and director, create normal-director-tangent frame
     //  step 2. calculate and accumulate the shape operator per edge
@@ -969,14 +993,15 @@ inline ts_bool tensor_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
     tSt =   tangent_x *Se11*tangent_x  + tangent_x *Se12*tangent_y  + tangent_x *Se13*tangent_z
            +tangent_y *Se21*tangent_x  + tangent_y *Se22*tangent_y  + tangent_y *Se23*tangent_z
            +tangent_z *Se31*tangent_x  + tangent_z *Se32*tangent_y  + tangent_z *Se33*tangent_z ; 
-    error_correction_scheme(&dSd,&dSt,&tSt,vtx->mean_curvature, vtx->gaussian_curvature);
-    tSd = dSt; // symmetric tensor
-
     //DEBUG
     vtx->S[0] = dSd;
-    vtx->S[1] = tSd;
+    vtx->S[1] = dSt;
     vtx->S[2] = dSt;
     vtx->S[3] = tSt;
+    error_correction_scheme(&dSd,&dSt,&tSt,mean_curvature,gaussian_curvature);
+    tSd = dSt; // symmetric tensor
+
+
 
     return update_vertex_from_curvature_tensor(vtx,Av,dSd,dSt,tSd,tSt,
         vertex_normal_x, vertex_normal_y, vertex_normal_z,
@@ -1034,7 +1059,7 @@ inline ts_bool vertex_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
     } 
 
     if (do_calculate_shape_op) {
-        tensor_curvature_energy(vesicle, vtx);
+        tensor_curvature_energy(vesicle, vtx, mean_curvature, gaussian_curvature);
         // use the old energy and old normals
         if (!do_use_shape_op_e){
             vtx->nx2 = vtx->nx;
