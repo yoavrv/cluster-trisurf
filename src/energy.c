@@ -352,7 +352,20 @@ ts_bool update_vertex_from_curvature_tensor(ts_vertex* vtx, ts_double Av,
     return TS_SUCCESS;
 }
 
-
+/** @brief Update the shape tensor s00,s01,s11 from the mean curvature H and gaussian curvature kG
+ * 
+ * Correct the shape tensor S_new = S+E where the correction E is obtained from minimizing the frobenius norm
+ * ||E||^2 = E_00^2+E_01^2+E_10^2+E_11^2
+ * subject to three constraints: E is symmetric, S2 has mean curvature H, and S2 has gaussian curvature Kg
+ * 
+ * Ultimately, this just keeps the old directions while setting the mean and gaussian curvature
+ * 
+ * Important caveat: the isotropic calculation from which we obtain H is not perfect, and we can get unphysical
+ * values: H^2 must be larger the Kg from their definitions as trace and determinant.
+ * H^2-Kg = (1/4)(s00+s11)^2-s00s11+s01^2 = 0.25(s00-s11)^2+s01^2 >=0
+ * 
+ * If H is too small, we correct it to sqrt(Kg),
+*/
 ts_bool error_correction_scheme(ts_double *s00, ts_double *s01, ts_double *s11, ts_double H, ts_double Kg){
     ts_double delta=0, a=0, beta=0, a2=0, beta2=0;
     ts_double hkg=0, factor=0;
@@ -364,33 +377,38 @@ ts_bool error_correction_scheme(ts_double *s00, ts_double *s01, ts_double *s11, 
     } else {
         h = H;
     }
-    factor = sqrt( hkg*(pow(S00-S11,2)+4*pow(S01,2)) );
+    // E matrix is represented by [[delta+a,beta],[beta,delta-a]]
+    // delta is just the mean curvature difference
     delta = h-(S00+S11)/2;
+    // The rest gets a somplicated form which was checked in mathematica to work
+    // beta is related to a by the minimization beta=C*a.
+    // we get two results, because this ultimately solves a quadratic equation from the gaussian curvature
+    // (a-something)^2=something
+    factor = sqrt( hkg*(pow(S00-S11,2)+4*pow(S01,2)) );
     a = -(S00-S11)*(2*factor+pow(S00-S11,2)+4*pow(S01,2))
         /(2*pow(S00-S11,2)+8*pow(S01,2));
     a2 = -(S00-S11)*(-2*factor+pow(S00-S11,2)+4*pow(S01,2))
         /(2*pow(S00-S11,2)+8*pow(S01,2));
-    if (factor==0) {
-        beta=-S01;;
-        beta2=-S01;
-    } else {
+    if (factor!=0) {
         beta=S01*( 2*(-hkg)/factor - 1);
         beta2=S01*( 2*(hkg)/factor - 1);
+    } else { 
+        // factor is only zero from sqrt(hkg), so in the limit that part is 0
+        // this is, essentially, because h^2=Kg is isotropic c1==c2, so the matrix is diagonalized
+        beta=-S01;
+        beta2=-S01;
     }
 
+    // check which solution actually minimize the correction size
     if (pow(a,2)+pow(beta,2) > pow(a2,2)+pow(beta2,2)){
         a = a2;
         beta=beta2;
     }
 
+    // update the matrix
     *s00 += delta+a;
     *s01 += beta;
     *s11 += delta-a;
-    // ts_fprintf(stdout,"we are on S=%f,%f,%f, and we want H=%f,KG=%f\n",S00,S01,S11,H,Kg);
-    // ts_fprintf(stdout,"correct by %f,%f,%f, new thing is %f,%f,%f\n",delta,a,beta,
-    //                                                                  *s00,*s01,*s11);
-    // ts_fprintf(stdout,"new H=%f,KG=%f\n",(*s00+*s11)/2,(*s00)*(*s11)-(*s01)*(*s01));
-    // fatal("DEGBU",100);
     
     return TS_SUCCESS;
 }
@@ -402,6 +420,9 @@ ts_bool error_correction_scheme(ts_double *s00, ts_double *s01, ts_double *s11, 
  *  calculate the energy, and save it all on the vertex
  * 
  *  vertex must remain ordered through initial_dist and through bondflips
+ * 
+ *  This variant is based on the interpolation of the normal vector across each triangle
+ *  Which so far did not work!
  *
  *  @returns TS_SUCCESS on successful calculation
 */
@@ -523,6 +544,7 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
         sigma_R_y[i] /= sigma_R_len[i];
         sigma_R_z[i] /= sigma_R_len[i];
 
+        //DEBUG
         if (sigma_L_x[i]*edge_e_x[i]+sigma_L_y[i]*edge_e_y[i]+sigma_L_z[i]*edge_e_z[i]>0.00001){
             ts_fprintf(stdout,"At vertex %d neighbor %d",vtx->idx, i);
             ts_fprintf(stdout,"Sigma L: %f,%f,%f e: %f,%f,%f\n",sigma_L_x[i],sigma_L_y[i],sigma_L_z[i],
@@ -548,8 +570,9 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
         vertex_normal_z -= t->znorm*s;
         Av += s;
     }
-    //DEBUG
+
     vtx->area = Av;
+
     // edge normals
     if (! (vtx->type & is_edge_vtx) || vtx->neigh_no==vtx->tristar_no) {
         for (i=0; i<vtx->neigh_no; i++) {
@@ -565,7 +588,8 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
             edge_normal_z[ip] /= temp_length;
         }
     } else if ((vtx->type & is_edge_vtx) && vtx->neigh_no==vtx->tristar_no+1) {
-        // if we have an edge: pretend the first and final edges go right out
+        // if we have an edge vertex (edge of the surface): pretend the first and final bonds 
+        // have normals that right out ("between" the upside and the downside of the surface)
         edge_normal_x[0] = -sigma_L_x[0];
         edge_normal_y[0] = -sigma_L_y[0];
         edge_normal_z[0] = -sigma_L_z[0];
@@ -697,8 +721,7 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
         Sv32 += Se11*sigma_R_z[i]*sigma_R_y[i] + Se12*sigma_R_z[i]*edge_e_y[ip] + Se21*edge_e_z[ip]*sigma_R_y[i] + Se22*edge_e_z[ip]*edge_e_y[ip];
         Sv33 += Se11*sigma_R_z[i]*sigma_R_z[i] + Se12*sigma_R_z[i]*edge_e_z[ip] + Se21*edge_e_z[ip]*sigma_R_z[i] + Se22*edge_e_z[ip]*edge_e_z[ip];
 
-
-    } // END FOR JJ
+    }
 
 
     // ##############################################################################
@@ -732,14 +755,15 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
     tSt =   tangent_x *Sv11*tangent_x  + tangent_x *Sv12*tangent_y  + tangent_x *Sv13*tangent_z
            +tangent_y *Sv21*tangent_x  + tangent_y *Sv22*tangent_y  + tangent_y *Sv23*tangent_z
            +tangent_z *Sv31*tangent_x  + tangent_z *Sv32*tangent_y  + tangent_z *Sv33*tangent_z ;
-    error_correction_scheme(&dSd,&dSt,&tSt,vtx->mean_curvature, vtx->gaussian_curvature);
-    tSd = dSt; // symmetric tensor
-
     //DEBUG
     vtx->S[0] = dSd;
     vtx->S[1] = dSt;
-    vtx->S[2] = tSd;
+    vtx->S[2] = dSt;
     vtx->S[3] = tSt;
+
+    error_correction_scheme(&dSd,&dSt,&tSt,vtx->mean_curvature, vtx->gaussian_curvature);
+    tSd = dSt; // symmetric tensor
+
 
     return update_vertex_from_curvature_tensor(vtx,Av,dSd,dSt,tSd,tSt,
         vertex_normal_x, vertex_normal_y, vertex_normal_z,
@@ -748,7 +772,16 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
 }
 
 
-
+/** @brief anisotropic subfunction of vertex_curvature_energy.
+ *
+ *  This function is experimental, branch from vertex_energy for anisotropic proteins 
+ *  to calculate the tensor-based curvature values c1,c2 and principle directions,
+ *  calculate the energy, and save it all on the vertex
+ * 
+ *  vertex must remain ordered through initial_dist and through bondflips
+ *
+ *  @returns TS_SUCCESS on successful calculation
+*/
 inline ts_bool tensor_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_double mean_curvature,ts_double gaussian_curvature){
     //  step 1. calculate the area assigned to the vertex and the vertex normal
     //      step 1.1: update vertex normal and director, create normal-director-tangent frame
@@ -1120,7 +1153,7 @@ ts_bool sweep_attraction_bond_energy(ts_vesicle *vesicle){
  *   w: bonding strength. currently used as if universal, so for now just set to mean
  *       energy = -(w1+w2)/2
  *   orientation: anisotropic vertices have direction vtx->dx,dy,dz
- *         bond_model&2: should have nematic order E~(d1*d2)^2
+ *         bond_model&2: add nematic order E~(d1*d2)^2
  * 
  * @param vesicle pointer to primary simulation data structure, had bond model
  * @param bond pointer to bond containng two vertices
@@ -1454,7 +1487,7 @@ ts_double adhesion_energy_diff(ts_vesicle *vesicle, ts_vertex *vtx, ts_vertex *v
     oriented = adhesion_geometry_side(vesicle,vtx);
     adhesion_factor=adhesion_geometry_factor(vesicle, vtx);
     delta_old = adhesion_geometry_distance(vesicle, vtx_old);
-    oriented_old = adhesion_geometry_side(vesicle,vtx);
+    oriented_old = adhesion_geometry_side(vesicle,vtx_old);
     adhesion_factor_old=adhesion_geometry_factor(vesicle, vtx_old);
 
     if( (vtx->type&is_adhesive_vtx) && (oriented) && (delta<=dz) ){
