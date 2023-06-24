@@ -722,11 +722,14 @@ ts_bool vtx_insert_tristar_at(ts_vertex *vtx, ts_triangle *tristarmem, ts_small_
     if (i > vtx->tristar_no){
         fatal("attempt to add tristar above tristar_no",3);
     }
+    if (vtx->tristar_no==TS_MAX_NEIGH){
+        fatal("attempt to add triangle neighbor beyond TS_MAX_NEIGHBOR in vtx_insert_tristar_at",100);
+    }
 	vtx->tristar_no++;
-	vtx->tristar=(ts_triangle **)realloc(vtx->tristar,vtx->tristar_no*sizeof(ts_triangle *));
-	if(vtx->tristar==NULL){
-			fatal("Reallocation of memory while adding tristar failed.",3);
-	}
+	// vtx->tristar=(ts_triangle **)realloc(vtx->tristar,vtx->tristar_no*sizeof(ts_triangle *));
+	// if(vtx->tristar==NULL){
+	// 		fatal("Reallocation of memory while adding tristar failed.",3);
+	// }
     if (i+1 != vtx->tristar_no){ //no need to shift, don't want to tempt memmove(outside, edge, 0)
         memmove(vtx->tristar+i+1, vtx->tristar+i,(vtx->tristar_no-i-1)*sizeof(ts_triangle*));
     }
@@ -744,10 +747,10 @@ ts_bool vtx_remove_tristar_at(ts_vertex *vtx, ts_small_idx i){
         memmove(vtx->tristar+i, vtx->tristar+i+1, (vtx->tristar_no-i-1)*sizeof(ts_triangle*));
     }
     vtx->tristar_no--;
-    vtx->tristar=(ts_triangle **)realloc(vtx->tristar,vtx->tristar_no*sizeof(ts_triangle *));
-    if(vtx->tristar == NULL){
-            fatal("Reallocation of memory failed during removal of tristar",3);
-        }
+    // vtx->tristar=(ts_triangle **)realloc(vtx->tristar,vtx->tristar_no*sizeof(ts_triangle *));
+    // if(vtx->tristar == NULL){
+    //         fatal("Reallocation of memory failed during removal of tristar",3);
+    //     }
     return TS_SUCCESS;
 }
 

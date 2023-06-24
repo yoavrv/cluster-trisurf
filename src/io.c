@@ -342,7 +342,7 @@ ts_vesicle *restore_state(ts_idx *iteration, ts_tape* tape){
         retval=fread(&idx,sizeof(ts_idx),1,fh);
         vesicle->tlist->tria[i]->vertex[2]=vesicle->vlist->vtx[idx];
         /* restore pointers for neigh */
-     vesicle->tlist->tria[i]->neigh=(ts_triangle **)malloc(vesicle->tlist->tria[i]->neigh_no*sizeof(ts_triangle *));
+        // vesicle->tlist->tria[i]->neigh=(ts_triangle **)malloc(vesicle->tlist->tria[i]->neigh_no*sizeof(ts_triangle *));
         for(j=0;j<vesicle->tlist->tria[i]->neigh_no;j++){
             retval=fread(&idx,sizeof(ts_idx),1,fh);
             vesicle->tlist->tria[i]->neigh[j]=vesicle->tlist->tria[idx];
