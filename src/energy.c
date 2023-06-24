@@ -262,7 +262,7 @@ ts_bool update_vertex_from_curvature_tensor(ts_vertex* vtx, ts_double Av,
     vtx->mean_curvature = tr/2; // curvatures up to signs and factors of 2
     vtx->gaussian_curvature = det;
     // eigenvalues: trace determinant formula. We have real symmetric matrix, so positive discriminant
-    discrim_sqrt = sqrt(tr*tr - 4*det);
+    discrim_sqrt = sqrt(fabs(tr*tr - 4*det)); // in cases of error where we have -0
     lambda1 = (tr + discrim_sqrt)/2;
     lambda2 = (tr - discrim_sqrt)/2;
     // ----------------------------------------------------
