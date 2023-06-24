@@ -126,8 +126,9 @@ inline ts_bool laplace_beltrami_curvature_energy(ts_vesicle *vesicle, ts_vertex 
     ts_double a_dot_b, a_cross_b_x, a_cross_b_y, a_cross_b_z, mag_a_cross_b;
     ts_flag model=vesicle->tape->curvature_model; // control how and what model we use to calculate energy: see enum curvature_model_type in general.h
     ts_bool do_angle_sum=0;
-    do_angle_sum=(model&to_calculate_sum_angle 
-                  && (!(model&to_use_sum_angle_for_kx2_only) || (model&to_use_sum_angle_for_kx2_only && vtx->xk2!=0))
+    do_angle_sum=(model&to_debug_all 
+                  || (model&to_calculate_normal_from_angles)
+                  || (!(model&to_use_only_when_needed) || (model&to_use_only_when_needed && vtx->type&is_anisotropic_vtx))
                  );
 
     // we have 4 steps:
@@ -149,9 +150,6 @@ inline ts_bool laplace_beltrami_curvature_energy(ts_vesicle *vesicle, ts_vertex 
         // txn normal points inwards!!
         tp=vtx->tristar[jj]; 
         tm=vtx->tristar[jjm]; 
-        txn+=tp->xnorm;
-        tyn+=tp->ynorm;
-        tzn+=tp->znorm;
     
         // step 1.2 calculate cotangent of the edge, dual lattice edge triangles (vertex, edge middle, circumcenter-m), (vertex, edge middle, circumcenter-p)
         // These have the same angle as the opposing angle (half of a central angle = inscribed angle)
@@ -177,6 +175,10 @@ inline ts_bool laplace_beltrami_curvature_energy(ts_vesicle *vesicle, ts_vertex 
         yh += sigl*(ly)/l_sqr;
         zh += sigl*(lz)/l_sqr;
 
+        txn+=tp->xnorm*s;
+        tyn+=tp->ynorm*s;
+        tzn+=tp->znorm*s;
+
         // step 1.4 angle calculation for gaussian curvature
         // angle_sum += atan(ctp) + atan(ctm); // simple but slow!
         // instead: get the angle m-vtx-j
@@ -191,7 +193,13 @@ inline ts_bool laplace_beltrami_curvature_energy(ts_vesicle *vesicle, ts_vertex 
             a_cross_b_y = (jm->z-vtx->z)*(j->x-vtx->x)-(jm->x-vtx->x)*(j->z-vtx->z);
             a_cross_b_z = (jm->x-vtx->x)*(j->y-vtx->y)-(jm->y-vtx->y)*(j->x-vtx->x);
             mag_a_cross_b = sqrt(pow(a_cross_b_x,2)+pow(a_cross_b_y,2)+pow(a_cross_b_z,2));
-            angle_sum += atan2(mag_a_cross_b, a_dot_b);
+            s=atan2(mag_a_cross_b, a_dot_b);
+            angle_sum += s;
+            if (model&to_calculate_normal_from_angles) {
+                txn+=tp->xnorm*s;
+                tyn+=tp->ynorm*s;
+                tzn+=tp->znorm*s;
+            }
         }
 
     } // end for jj neighbors
@@ -228,8 +236,9 @@ inline ts_bool laplace_beltrami_curvature_energy(ts_vesicle *vesicle, ts_vertex 
     return TS_SUCCESS;
 }
 
-// Function that update the vertex with the tensor
-// make sure that the curvature is on the right side!
+/* @brief Update the vertex energy, curvature, and principle curvature directions from the shape tensor
+* shape tensor should be correctly aligned!
+*/
 ts_bool update_vertex_from_curvature_tensor(ts_vertex* vtx, ts_double Av,
                              ts_double s00,ts_double s01,ts_double s10,ts_double s11,
                              ts_double nx,ts_double ny,ts_double nz,
@@ -630,9 +639,22 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // step 1.1: update vertex normal and director based, generates the director-tangent-normal frame
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    vtx->nx = vertex_normal_x;
-    vtx->ny = vertex_normal_y;
-    vtx->nz = vertex_normal_z;
+    if (!(vesicle->tape->curvature_model&to_calculate_normal_from_angles)){
+        vtx->nx2 = vtx->nx;
+        vtx->ny2 = vtx->ny;
+        vtx->nz2 = vtx->nz;
+        vtx->nx = vertex_normal_x;
+        vtx->ny = vertex_normal_y;
+        vtx->nz = vertex_normal_z;
+    } else {
+        // we calculated that back in isotropic laplace beltrami energy
+        vtx->nx2 = vertex_normal_x;
+        vtx->ny2 = vertex_normal_y;
+        vtx->nz2 = vertex_normal_z;
+        vertex_normal_x = vtx->nx;
+        vertex_normal_y = vtx->ny;
+        vertex_normal_z = vtx->nz;
+    }
 
     // d = d - (d.n)n   [or -nx(nxd)]
     dot_product = (vtx->dx*vertex_normal_x)+(vtx->dy*vertex_normal_y)+(vtx->dz*vertex_normal_z);
@@ -761,7 +783,7 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
     vtx->S[2] = dSt;
     vtx->S[3] = tSt;
 
-    error_correction_scheme(&dSd,&dSt,&tSt,vtx->mean_curvature, vtx->gaussian_curvature);
+    // error_correction_scheme(&dSd,&dSt,&tSt,vtx->mean_curvature, vtx->gaussian_curvature);
     tSd = dSt; // symmetric tensor
 
 
@@ -782,7 +804,7 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
  *
  *  @returns TS_SUCCESS on successful calculation
 */
-inline ts_bool tensor_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_double mean_curvature,ts_double gaussian_curvature){
+inline ts_bool tensor_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
     //  step 1. calculate the area assigned to the vertex and the vertex normal
     //      step 1.1: update vertex normal and director, create normal-director-tangent frame
     //  step 2. calculate and accumulate the shape operator per edge
@@ -881,24 +903,42 @@ inline ts_bool tensor_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_d
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // step 1.1: update vertex normal and director based, generates the director-tangent-normal frame
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    vtx->nx = vertex_normal_x;
-    vtx->ny = vertex_normal_y;
-    vtx->nz = vertex_normal_z;
+    
+    if (!(vesicle->tape->curvature_model&to_calculate_normal_from_angles)){
+        // we use the new normal and save the old in the nx2
+        vtx->nx2 = vtx->nx;
+        vtx->ny2 = vtx->ny;
+        vtx->nz2 = vtx->nz;
+        vtx->nx = vertex_normal_x;
+        vtx->ny = vertex_normal_y;
+        vtx->nz = vertex_normal_z;
+            // d = d - (d.n)n   [or -nx(nxd)]
+        dot_product = (vtx->dx*vertex_normal_x)+(vtx->dy*vertex_normal_y)+(vtx->dz*vertex_normal_z);
+        director_x = vtx->dx - dot_product*vertex_normal_x;
+        director_y = vtx->dy - dot_product*vertex_normal_y;
+        director_z = vtx->dz - dot_product*vertex_normal_z;
+        // !!! this operation exclusively lowers |t|: if we do manage to avoid using the size (always taking d*A*(nxd)/d^2) we can avoid the normalization
+        // and just periodically make sure the size is large enough if (d^2<0.5) d=2d
+        temp_length=sqrt((director_x*director_x)+(director_y*director_y)+(director_z*director_z)); // should be the same as sqrt(1-*(normal . director)^2)
+        director_x = director_x / temp_length;
+        director_y = director_y / temp_length;
+        director_z = director_z / temp_length;
+        vtx->dx = director_x; // update the vertex director
+        vtx->dy = director_y;
+        vtx->dz = director_z;
+    } else {
+        // we calculated that back in isotropic laplace beltrami energy
+        vtx->nx2 = vertex_normal_x;
+        vtx->ny2 = vertex_normal_y;
+        vtx->nz2 = vertex_normal_z;
+        vertex_normal_x = vtx->nx;
+        vertex_normal_y = vtx->ny;
+        vertex_normal_z = vtx->nz;
+        director_x = vtx->dx; // update the vertex director
+        director_y = vtx->dy;
+        director_z = vtx->dz;
+    }
 
-    // d = d - (d.n)n   [or -nx(nxd)]
-    dot_product = (vtx->dx*vertex_normal_x)+(vtx->dy*vertex_normal_y)+(vtx->dz*vertex_normal_z);
-    director_x = vtx->dx - dot_product*vertex_normal_x;
-    director_y = vtx->dy - dot_product*vertex_normal_y;
-    director_z = vtx->dz - dot_product*vertex_normal_z;
-    // !!! this operation exclusively lowers |t|: if we do manage to avoid using the size (always taking d*A*(nxd)/d^2) we can avoid the normalization
-    // and just periodically make sure the size is large enough if (d^2<0.5) d=2d
-    temp_length=sqrt((director_x*director_x)+(director_y*director_y)+(director_z*director_z)); // should be the same as sqrt(1-*(normal . director)^2)
-    director_x = director_x / temp_length;
-    director_y = director_y / temp_length;
-    director_z = director_z / temp_length;
-    vtx->dx = director_x; // update the vertex director
-    vtx->dy = director_y;
-    vtx->dz = director_z;
     // calculate the third axis tangent = normal x director
     tangent_x = vertex_normal_y*director_z - vertex_normal_z*director_y;
     tangent_y = vertex_normal_z*director_x - vertex_normal_x*director_z;
@@ -1031,7 +1071,7 @@ inline ts_bool tensor_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_d
     vtx->S[1] = dSt;
     vtx->S[2] = dSt;
     vtx->S[3] = tSt;
-    error_correction_scheme(&dSd,&dSt,&tSt,mean_curvature,gaussian_curvature);
+    error_correction_scheme(&dSd,&dSt,&tSt,vtx->mean_curvature,vtx->gaussian_curvature);
     tSd = dSt; // symmetric tensor
 
 
@@ -1050,58 +1090,54 @@ inline ts_bool tensor_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx, ts_d
  * @returns TS_SUCCESS on successful calculation.
 */
 inline ts_bool vertex_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
-    ts_double temp,nx,ny,nz,mean_curvature,gaussian_curvature,mean_energy,gaussian_energy,dx,dy,dz;
+    ts_double temp,mean_curvature,gaussian_curvature,mean_energy,gaussian_energy;
     ts_flag model=vesicle->tape->curvature_model; // control how and what model we use to calculate energy: see enum curvature_model_type in general.h
     ts_bool do_calculate_shape_op=0, do_use_shape_op_e=0;
-    do_calculate_shape_op = model&to_calculate_shape_operator 
-                            || (model&to_use_shape_for_anisotropy_only 
-                                && (vtx->type & is_anisotropic_vtx))
-                            || (model&to_disable_calculate_laplace_beltrami);  
-    do_use_shape_op_e = (model&to_use_shape_operator_energy 
-                            && do_calculate_shape_op);    
+    do_calculate_shape_op = model&to_use_new_curvature 
+                            || (model&to_use_in_progress_methods);  
+    do_calculate_shape_op = do_calculate_shape_op
+                            && ( (model&to_debug_all)
+                                || !(model&to_use_only_when_needed)
+                                || (model&to_use_only_when_needed
+                                && (vtx->type & is_anisotropic_vtx)));
+    do_use_shape_op_e = model&to_use_new_curvature
+                        && do_calculate_shape_op;
 
 
+    laplace_beltrami_curvature_energy(vesicle,vtx);
     // calculate the energy using the right model
-    if (! (model&to_disable_calculate_laplace_beltrami)) {
-        laplace_beltrami_curvature_energy(vesicle,vtx);
-        
-        if (model&to_update_director_shapeless){
-            // t = t - (t.n)n   (or -nx(nxt)
-            temp = (vtx->dx*vtx->nx)+(vtx->dy*vtx->ny)+(vtx->dz*vtx->nz);
-            vtx->dx = vtx->dx - temp*vtx->nx;
-            vtx->dy = vtx->dy - temp*vtx->ny;
-            vtx->dz = vtx->dz - temp*vtx->nz;
+    if (!(model&to_use_only_when_needed) 
+        || (model&to_use_only_when_needed && vtx->type&is_anisotropic_vtx)){
+        // t = t - (t.n)n   (or -nx(nxt)
+        temp = (vtx->dx*vtx->nx)+(vtx->dy*vtx->ny)+(vtx->dz*vtx->nz);
+        vtx->dx = vtx->dx - temp*vtx->nx;
+        vtx->dy = vtx->dy - temp*vtx->ny;
+        vtx->dz = vtx->dz - temp*vtx->nz;
 
-            // this operation exclusively lowers |t|: if we do manage to avoid using the size (always taking t*A*(nxt)/t^2) we can avoid the normalization
-            // and just periodically make sure the size is large enough if (t^2<0.5) t=2t
-            temp=sqrt((vtx->dx*vtx->dx)+(vtx->dy*vtx->dy)+(vtx->dz*vtx->dz)); // should be the same as sqrt(1-*(n.t)^2)
-            vtx->dx=vtx->dx/temp;
-            vtx->dy=vtx->dy/temp;
-            vtx->dz=vtx->dz/temp;
-        }
-        nx = vtx->nx;
-        ny = vtx->ny;
-        nz = vtx->nz;
-        mean_curvature = vtx->mean_curvature;
-        mean_energy = vtx->mean_energy;
-        gaussian_curvature = vtx->gaussian_curvature;
-        gaussian_energy = vtx->gaussian_energy;
-        dx = vtx->dx;
-        dy = vtx->dy;
-        dz = vtx->dz;
-    } 
+        // this operation exclusively lowers |t|: if we do manage to avoid using the size (always taking t*A*(nxt)/t^2) we can avoid the normalization
+        // and just periodically make sure the size is large enough if (t^2<0.5) t=2t
+        temp=sqrt((vtx->dx*vtx->dx)+(vtx->dy*vtx->dy)+(vtx->dz*vtx->dz)); // should be the same as sqrt(1-*(n.t)^2)
+        vtx->dx=vtx->dx/temp;
+        vtx->dy=vtx->dy/temp;
+        vtx->dz=vtx->dz/temp;
+    }
+
+    mean_curvature = vtx->mean_curvature;
+    mean_energy = vtx->mean_energy;
+    gaussian_curvature = vtx->gaussian_curvature;
+    gaussian_energy = vtx->gaussian_energy;
+
+    
 
     if (do_calculate_shape_op) {
-        tensor_curvature_energy(vesicle, vtx, mean_curvature, gaussian_curvature);
+        if (model&to_use_in_progress_methods) {
+            tensor_curvature_energy2(vesicle, vtx);
+        } else {
+            tensor_curvature_energy(vesicle, vtx);
+        }
         // use the old energy and old normals
         if (!do_use_shape_op_e){
-            vtx->nx2 = vtx->nx;
             vtx->energy = mean_energy + gaussian_energy;
-            vtx->nx = nx;
-            vtx->ny2 = vtx->ny;
-            vtx->ny = ny;
-            vtx->nz2 = vtx->nz;
-            vtx->nz = nz;
             vtx->mean_curvature2 = vtx->mean_curvature;
             vtx->mean_curvature = mean_curvature;
             vtx->mean_energy2 = vtx->mean_energy;
@@ -1110,14 +1146,8 @@ inline ts_bool vertex_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
             vtx->gaussian_curvature = gaussian_curvature;
             vtx->gaussian_energy2 =vtx->gaussian_energy;
             vtx->gaussian_energy = gaussian_energy;
-            vtx->dx=dx;
-            vtx->dy=dy;
-            vtx->dz=dz;
         } else {
             // use the new version, write values in debug mode
-            vtx->nx2 = nx;
-            vtx->ny2 = ny;
-            vtx->nz2 = nz;
             vtx->mean_curvature2 = mean_curvature;
             vtx->mean_energy2 = mean_energy;
             vtx->gaussian_curvature2 = gaussian_curvature;

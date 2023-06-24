@@ -57,30 +57,27 @@ xk2=-20
 number_of_vertices_with_c0=50
 # * c0/2 is spontaneous curvature. c0 is used as (c1+c1-c0)^2 in energy term (float)
 c0=0.5
-# * d0/2 is spontaneous deviator. d0 is used in shape tensor only (float)
-# Mismatch = Curvature - c0/2*I - d0/2 sigma_z (i.e. the 1st and 2nd intrinsic curvatures are half the sum and half the difference )
+# * d0/2 is spontaneous deviator in mismatch (c1-c2)d0cos(omega). d0 is used in shape tensor only (float)
 d0=0.5
 
 # $ curvature model (8 bit flag)
-#   0x01 : calculate angle-sum gaussian curvature,  0x02 : calculate shape operator, 
-#   0x04 : update director even in the old method.  0x08 : use shape operator energy rather than just save it
-#   0x10 : use shape, but only for anisotropic.     0x20 : do not rotate director as a MC step
-#   0x40 : disable old method (use shape op only)   0x80 : calculate angle sum only if kx2!=0
-# example of important models: 
-# 0: old method. 7: debug, save everything but use energy from old method. 35: parallel transport of directors only
-curvature_model=15
+#   0x01 : use new method                    0x02 : apply methods to anisotropic only (type is 0x08) 
+#   0x04 : debug: calculate both methods     0x08 : use in-progress methods
+#   0x10 : no director MC step               0x20 : calculate vertex normal from angles
+#   0x40 : reserved                          0x80 : reserved
+# 0: old method. 4: debug, save everything but use energy from old method. 17: parallel transport of directors only
+curvature_model=37
 # $ limit sharp edges by imposing the dihedral angle between triangle obeys cos(phi_ab) larger than X.
-# 1 means no limit, -1 means perfectly flat, 0 means limited up to 90 degrees. (float)
+# 1 means no limit (0 degrees), -1 means perfectly flat, 0 means limited up to 90 degrees. (float)
 max_dihedral_angle_cosine=-0.1
 
-# * energy of bond between bonding vertices (float, positive value for attraction)
-w=1.0
+
 # $ bond model- vertex of bonding type bind with mean(w). (flag)
 # 0x1: require type identity.   0x2: nematic interaction between anisotropic vtx
 bond_model=0
+# * energy of bond between bonding vertices (float, positive value for attraction)
+w=1.0
 
-# * direct force on active vertices (float)
-F=1.0
 # $ force_model- force on active type vertices. (integer flag)
 #   0: force in normal direction
 #   1: F proportional nonactive neigh, 2: F proportional nonconcave neigh
@@ -88,6 +85,8 @@ F=1.0
 #   16: Vicsek, direction aligend with connected neighbors up to radius,
 #   17: 16, with weight 1/neighbor accoding to distance
 force_model=0
+# * direct force on active vertices (float)
+F=1.0
 # $ Vicsek: force direction is sum of own normal + (nearest neighbor normals * vicsek_strength)
 # interaction strength parameter: Vicsek: weight of neighbors (float)
 vicsek_strength=0.1
@@ -140,27 +139,28 @@ force_balance_along_z_axis=0
 
 # all of these are program control (# $)
 
-# $ Calculate p*dV energy contribution (bool)
-pressure_switch=0
-# $ pressure difference: p_inside - p_outside (in units kT/l_min^3):
-pressure=0.0
-
 # $ Volume constraint/energy (integer flag) 
 #   0: disable constant volume
-#   1: enable with additional vertex move {broken}
+#   1: enable with additional vertex move {broken!}
 #   2: enable with epsvol range
 #   3: enable parabolic potential (xkV0/2V0 (V-V0)^2)
 #   4: enable reduced volume parabolic potential (xkV0/2 (V_red_eq-V/Vsph)^2)
 volume_switch=0
-constvolprecision=1e-14
 # $ Rest volume. Set V0 less than 1 to determine volume from initial conditions (see constant_volume tag in .vtu files) (float)
 V0=0
+# $ volume tolerance fir constant volume mode
+constvolprecision=1e-14
 # $ volume modulus (float)
 # needs some thinking: reasonable values depends on number of vertices N!
 # reduced volume scaling is between 1/(N Sqrt(N)) and 1/N
 xkV0=1.0
 # $ reduce volume at equilibrium (between 0 and 1) (float)
 Vr=1.0
+
+# $ Calculate p*dV energy contribution (bool)
+pressure_switch=0
+# $ pressure difference: p_inside - p_outside (in units kT/l_min^3):
+pressure=0.0
 
 # $ Area constraint/energy (integer flag) 
 #   0: disable constant area, 

@@ -164,22 +164,16 @@ enum bond_model_type {
     is_anisotropic_bonding_nematic=2,
 };
 enum curvature_model_type{
-    to_disable_calculate_laplace_beltrami=64, // The original isotropic mean curvature calculation
-    to_calculate_sum_angle=1, // "isotropic" gaussian curvature calculation
-    to_calculate_shape_operator=2, // new anisotropic calculation. if to_use is not enabled, this is saved but not used!
-    to_update_director_shapeless=4, // update director without shape operator
-    to_use_shape_operator_energy=8, // actually use the new energy, rather than just calculate and save.
-    to_use_shape_for_anisotropy_only=16, // use the shape method, but only for anisotropic vertices
-    to_not_rotate_directors=32, // do not rotate directro as a monte carlo step
-    to_use_sum_angle_for_kx2_only=128, // only calculate the sum angle formula for vtx with kx2!=0
-    
-    model_laplace_beltrami_only=0, // the original method
-    model_isotropic=1, // calculate gaussian curvature energy
-    model_shape_operator_only=74, // use shape operator only
-    model_debug_old_energy=7, // calculate everything but use old energy
-    model_debug_new_energy=15, // calculate everything but use new shape operator energy
-    model_debug_parallerl_transport_directors=35, // prevent director random move
-    model_debug_assumed_final=146, // anisotropic shape method only for anisotropic vertices, old method otherwise
+    to_use_new_curvature=1, // use new tensor method
+    to_use_only_when_needed=2, // un-debug mode where only anisoropic vertices calculate everything
+    to_debug_all=4, // calculate both methods
+    to_use_in_progress_methods=8, // use the linear interpolation in testing (23/6/23)
+    to_disable_director_step=16, // disable director rotation step
+    to_calculate_normal_from_angles=32, // calculate vertex normal from triangle normal weighted by angles
+
+    model_curvature_debug=4, // debug everything but use old method
+    model_curvature_parallel_transport=17, //
+    model_sharp=37, // do as much as possible
     
 };
 enum force_model_type{

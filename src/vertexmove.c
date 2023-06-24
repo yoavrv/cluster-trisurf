@@ -244,7 +244,10 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
     }
 
     // rotate director
-    if (vtx->type & is_anisotropic_vtx && !(vesicle->tape->curvature_model&to_not_rotate_directors)){
+    if (!(vesicle->tape->curvature_model&to_disable_director_step) 
+        || !(vesicle->tape->curvature_model&to_use_only_when_needed)
+        || (vesicle->tape->curvature_model&to_use_only_when_needed 
+            && vtx->type & is_anisotropic_vtx) ){
         // we do this before the parallel transport, because the new normal calculation is fused in the energy calculation
         // we may want to bias to the original direction
         omega=(2*drand48()-1)*M_PI;
@@ -356,13 +359,10 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
     // change in energy due to adhesion
     delta_energy+=adhesion_energy_diff(vesicle, vtx, backupvtx);
 
-    // fprintf(stderr, "DE=%f\n",delta_energy);
-    //MONTE CARLOOOOOOOO
-    // if(vtx->c!=0.0) printf("DE=%f\n",delta_energy);
+    //MONTE CARLOOOOOOOO;
     if(delta_energy>=0){
         if(exp(-delta_energy)< drand48()) { 
             //not accepted, reverting changes
-            // fprintf(stderr,"MC failed\n");
             // Fz balance
             if (vesicle->tape->force_balance_along_z_axis==1) direct_force_from_Fz_balance(vesicle,backupvtx,vtx);
 
