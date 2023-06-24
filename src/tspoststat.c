@@ -124,15 +124,7 @@ inline ts_bool is_active(ts_vertex *vtx){
 
 inline ts_double vtx_distance_sq(ts_vertex *vtx1, ts_vertex *vtx2){
     ts_double dist;
-#ifdef TS_DOUBLE_DOUBLE
     dist=pow(vtx1->x-vtx2->x,2) + pow(vtx1->y-vtx2->y,2) + pow(vtx1->z-vtx2->z,2);
-#endif
-#ifdef TS_DOUBLE_LONGDOUBLE
-    dist=powl(vtx1->x-vtx2->x,2) + powl(vtx1->y-vtx2->y,2) + powl(vtx1->z-vtx2->z,2);
-#endif
-#ifdef TS_DOUBLE_FLOAT
-    dist=powf(vtx1->x-vtx2->x,2) + powf(vtx1->y-vtx2->y,2) + powf(vtx1->z-vtx2->z,2);
-#endif
     return(dist);
 }
 

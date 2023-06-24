@@ -88,29 +88,13 @@ ts_double plgndr(ts_int l, ts_int m, ts_double x){
     ts_double fact, pll, pmm, pmmp1, somx2;
     ts_int i,ll;
 
-#ifdef TS_DOUBLE_DOUBLE
+
     if(m<0 || m>l || fabs(x)>1.0)
         fatal("Bad arguments in routine plgndr",1);
-#endif
-#ifdef TS_DOUBLE_FLOAT
-    if(m<0 || m>l || fabsf(x)>1.0)
-        fatal("Bad arguments in routine plgndr",1);
-#endif
-#ifdef TS_DOUBLE_LONGDOUBLE
-    if(m<0 || m>l || fabsl(x)>1.0)
-        fatal("Bad arguments in routine plgndr",1);
-#endif
+
     pmm=1.0;
     if (m>0) {
-#ifdef TS_DOUBLE_DOUBLE
         somx2=sqrt((1.0-x)*(1.0+x));
-#endif
-#ifdef TS_DOUBLE_FLOAT
-        somx2=sqrtf((1.0-x)*(1.0+x));
-#endif
-#ifdef TS_DOUBLE_LONGDOUBLE
-        somx2=sqrtl((1.0-x)*(1.0+x));
-#endif
         fact=1.0;
         for (i=1; i<=m;i++){
             pmm *= -fact*somx2;
@@ -206,24 +190,10 @@ ts_double shY(ts_int l,ts_int m,ts_double theta,ts_double fi){
  * (r,phi, theta). */
 ts_bool *cart2sph(ts_coord *coord, ts_double x, ts_double y, ts_double z){
     coord->coord_type=TS_COORD_SPHERICAL;
-#ifdef TS_DOUBLE_DOUBLE
     coord->e1=sqrt(x*x+y*y+z*z);
     if(z==0) coord->e3=M_PI/2.0;
     else coord->e3=atan2(sqrt(x*x+y*y),z);
     coord->e2=atan2(y,x);
-#endif
-#ifdef TS_DOUBLE_FLOAT
-    coord->e1=sqrtf(x*x+y*y+z*z);
-    if(z==0) coord->e3=M_PI/2.0;
-    else coord->e3=atanf(sqrtf(x*x+y*y)/z);
-    coord->e2=atan2f(y,x);
-#endif
-#ifdef TS_DOUBLE_LONGDOUBLE
-    coord->e1=sqrtl(x*x+y*y+z*z);
-    if(z==0) coord->e3=M_PI/2.0;
-    else coord->e3=atanl(sqrtl(x*x+y*y)/z);
-    coord->e2=atan2l(y,x);
-#endif
 
     return TS_SUCCESS;
 }
@@ -248,15 +218,7 @@ ts_bool sph2cart(ts_coord *coord){
 /* Function returns radius of the sphere with the same volume as vesicle (r0) */
 ts_double getR0(ts_vesicle *vesicle){
     ts_double r0;
- #ifdef TS_DOUBLE_DOUBLE
-   r0=pow(vesicle->volume*3.0/4.0/M_PI,1.0/3.0);
-#endif
-#ifdef TS_DOUBLE_FLOAT
-   r0=powf(vesicle->volume*3.0/4.0/M_PI,1.0/3.0);
-#endif
-#ifdef TS_DOUBLE_LONGDOUBLE
-   r0=powl(vesicle->volume*3.0/4.0/M_PI,1.0/3.0);
-#endif
+    r0=pow(vesicle->volume*3.0/4.0/M_PI,1.0/3.0);
     return r0;
 }
 
@@ -284,29 +246,16 @@ ts_bool preparationSh(ts_vesicle *vesicle, ts_double r0){
             centroid[1]=(ctri->vertex[0]->y + ctri->vertex[1]->y + ctri->vertex[2]->y)/3.0;
             centroid[2]=(ctri->vertex[0]->z + ctri->vertex[1]->z + ctri->vertex[2]->z)/3.0;
         /* calculating projArea+= area(triangle)*cos(theta) */
-#ifdef TS_DOUBLE_DOUBLE
-            projArea = projArea + ctri->area*(-centroid[0]*ctri->xnorm - centroid[1]*ctri->ynorm - centroid[2]*ctri->znorm)/ sqrt(centroid[0]*centroid[0]+centroid[1]*centroid[1]+centroid[2]*centroid[2]);
-#endif
-#ifdef TS_DOUBLE_FLOAT
-            projArea = projArea + ctri->area*(-centroid[0]*ctri->xnorm - centroid[1]*ctri->ynorm - centroid[2]*ctri->znorm)/ sqrtf(centroid[0]*centroid[0]+centroid[1]*centroid[1]+centroid[2]*centroid[2]);
-#endif
-#ifdef TS_DOUBLE_LONGDOUBLE
-            projArea = projArea + ctri->area*(-centroid[0]*ctri->xnorm - centroid[1]*ctri->ynorm - centroid[2]*ctri->znorm)/ sqrtl(centroid[0]*centroid[0]+centroid[1]*centroid[1]+centroid[2]*centroid[2]);
-#endif
+        projArea = projArea + ctri->area*(-centroid[0]*ctri->xnorm - centroid[1]*ctri->ynorm - centroid[2]*ctri->znorm)/ sqrt(centroid[0]*centroid[0]+centroid[1]*centroid[1]+centroid[2]*centroid[2]);
+
         }
 
     projArea=projArea/3.0;
         //we dont store spherical coordinates of vertex, so we have to calculate
         //r(i) at this point.
-#ifdef TS_DOUBLE_DOUBLE
+
     r=sqrt(cvtx->x*cvtx->x+cvtx->y*cvtx->y+cvtx->z*cvtx->z);
-#endif
-#ifdef TS_DOUBLE_FLOAT
-    r=sqrtf(cvtx->x*cvtx->x+cvtx->y*cvtx->y+cvtx->z*cvtx->z);
-#endif
-#ifdef TS_DOUBLE_LONGDOUBLE
-    r=sqrtl(cvtx->x*cvtx->x+cvtx->y*cvtx->y+cvtx->z*cvtx->z);
-#endif
+
     vesicle->sphHarmonics->vtx_relR[i]=(r-r0)/r0;
     vesicle->sphHarmonics->vtx_solAngle[i]=projArea/r/r;
     }

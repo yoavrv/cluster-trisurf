@@ -502,15 +502,9 @@ ts_bool single_poly_vertex_move(ts_vesicle *vesicle,ts_poly *poly,ts_vertex *vtx
 
 
     if(delta_energy>=0){
-#ifdef TS_DOUBLE_DOUBLE
+
         if(exp(-delta_energy)< drand48() )
-#endif
-#ifdef TS_DOUBLE_FLOAT
-        if(expf(-delta_energy)< (ts_float)drand48())
-#endif
-#ifdef TS_DOUBLE_LONGDOUBLE
-        if(expl(-delta_energy)< (ts_ldouble)drand48())
-#endif
+
         {
     //not accepted, reverting changes
     vtx=memcpy((void *)vtx,(void *)&backupvtx,sizeof(ts_vertex));
@@ -618,27 +612,18 @@ ts_bool single_filament_vertex_move(ts_vesicle *vesicle,ts_poly *poly,ts_vertex 
     delta_energy *= poly->k;
 
     if(delta_energy>=0){
-#ifdef TS_DOUBLE_DOUBLE
-        if(exp(-delta_energy)< drand48() )
-#endif
-#ifdef TS_DOUBLE_FLOAT
-        if(expf(-delta_energy)< (ts_float)drand48())
-#endif
-#ifdef TS_DOUBLE_LONGDOUBLE
-        if(expl(-delta_energy)< (ts_ldouble)drand48())
-#endif
-        {
-    //not accepted, reverting changes
-    vtx=memcpy((void *)vtx,(void *)&backupvtx,sizeof(ts_vertex));
-    for(i=0;i<vtx->neigh_no;i++){
-        memcpy(vtx->neigh[i],&backupneigh[i],sizeof(ts_vertex));
-    }
-    for(i=0;i<vtx->bond_no;i++){
-        vtx->bond[i]=memcpy((void *)vtx->bond[i],(void *)&backupbond[i],sizeof(ts_bond));
-    }
+        if(exp(-delta_energy)< drand48() ){
+            //not accepted, reverting changes
+            vtx=memcpy((void *)vtx,(void *)&backupvtx,sizeof(ts_vertex));
+            for(i=0;i<vtx->neigh_no;i++){
+                memcpy(vtx->neigh[i],&backupneigh[i],sizeof(ts_vertex));
+            }
+            for(i=0;i<vtx->bond_no;i++){
+                vtx->bond[i]=memcpy((void *)vtx->bond[i],(void *)&backupbond[i],sizeof(ts_bond));
+            }
 
-    return TS_FAIL; 
-    }
+            return TS_FAIL; 
+        }
     }
     
     
