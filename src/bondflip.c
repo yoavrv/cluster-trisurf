@@ -196,10 +196,10 @@ c
     	if (orig_tria[i]!=NULL) memcpy((void *)bck_tria[i],(void *)orig_tria[i],sizeof(ts_triangle));
 	    /* level 2 pointers */
 
-    	bck_vtx[i]->neigh=(ts_vertex **)malloc(orig_vtx[i]->neigh_no*sizeof(ts_vertex *));
-    	bck_vtx[i]->tristar=(ts_triangle **)malloc(orig_vtx[i]->tristar_no*sizeof(ts_triangle *));
-    	bck_vtx[i]->bond=(ts_bond **)malloc(orig_vtx[i]->bond_no*sizeof(ts_bond *));
-    	if (orig_tria[i]!=NULL) bck_tria[i]->neigh=(ts_triangle **)malloc(orig_tria[i]->neigh_no*sizeof(ts_triangle *));
+    	// bck_vtx[i]->neigh=(ts_vertex **)malloc(orig_vtx[i]->neigh_no*sizeof(ts_vertex *));
+    	// bck_vtx[i]->tristar=(ts_triangle **)malloc(orig_vtx[i]->tristar_no*sizeof(ts_triangle *));
+    	// bck_vtx[i]->bond=(ts_bond **)malloc(orig_vtx[i]->bond_no*sizeof(ts_bond *));
+    	// if (orig_tria[i]!=NULL) bck_tria[i]->neigh=(ts_triangle **)malloc(orig_tria[i]->neigh_no*sizeof(ts_triangle *));
 
     	memcpy((void *)bck_vtx[i]->neigh,(void *)orig_vtx[i]->neigh,orig_vtx[i]->neigh_no*sizeof(ts_vertex *));
     	memcpy((void *)bck_vtx[i]->tristar,(void *)orig_vtx[i]->tristar,orig_vtx[i]->tristar_no*sizeof(ts_triangle *));
@@ -255,10 +255,10 @@ c
         if( tri_normals_angle_cosine_new_min<-vesicle->tape->max_dihedral_angle_cosine && tri_normals_angle_cosine_new_min < tri_normals_angle_cosine_old_min){
             //restore old state.
             for(i=0;i<4;i++){
-                free(orig_vtx[i]->neigh);
-                free(orig_vtx[i]->tristar);
-                free(orig_vtx[i]->bond);
-                if (orig_tria[i]!=NULL) free(orig_tria[i]->neigh);
+                // free(orig_vtx[i]->neigh);
+                // free(orig_vtx[i]->tristar);
+                // free(orig_vtx[i]->bond);
+                // if (orig_tria[i]!=NULL) free(orig_tria[i]->neigh);
                 memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
                 if (orig_tria[i]!=NULL) memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
                 /* level 2 pointers are redirected*/
@@ -305,10 +305,10 @@ c
         /* restoration procedure copied from few lines below */
         for(i=0;i<4;i++){
         // fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
-            free(orig_vtx[i]->neigh);
-            free(orig_vtx[i]->tristar);
-            free(orig_vtx[i]->bond);
-            free(orig_tria[i]->neigh);
+            // free(orig_vtx[i]->neigh);
+            // free(orig_vtx[i]->tristar);
+            // free(orig_vtx[i]->bond);
+            // free(orig_tria[i]->neigh);
             memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
             memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
             // fprintf(stderr,"Restored vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
@@ -341,10 +341,10 @@ c
 
             for(i=0;i<4;i++){
             // fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
-                free(orig_vtx[i]->neigh);
-                free(orig_vtx[i]->tristar);
-                free(orig_vtx[i]->bond);
-                if (orig_tria[i]!=NULL) free(orig_tria[i]->neigh);
+                // free(orig_vtx[i]->neigh);
+                // free(orig_vtx[i]->tristar);
+                // free(orig_vtx[i]->bond);
+                // if (orig_tria[i]!=NULL) free(orig_tria[i]->neigh);
                 memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
                 if (orig_tria[i]!=NULL) memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
                 // fprintf(stderr,"Restored vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
@@ -390,11 +390,11 @@ c
 
     // delete all backups
     for(i=0;i<4;i++){
-        free(bck_vtx[i]->neigh);
-        free(bck_vtx[i]->bond);
-        free(bck_vtx[i]->tristar);
+        // free(bck_vtx[i]->neigh);
+        // free(bck_vtx[i]->bond);
+        // free(bck_vtx[i]->tristar);
         free(bck_vtx[i]);
-        if (orig_tria[i]!=NULL) free(bck_tria[i]->neigh);
+        // if (orig_tria[i]!=NULL) free(bck_tria[i]->neigh);
         if (orig_tria[i]!=NULL) free(bck_tria[i]);
     }
     free(bck_bond);
@@ -701,10 +701,10 @@ c
         memcpy((void *)bck_tria[i],(void *)orig_tria[i],sizeof(ts_triangle));
         /* level 2 pointers */
 
-        bck_vtx[i]->neigh=(ts_vertex **)malloc(orig_vtx[i]->neigh_no*sizeof(ts_vertex *));
-        bck_vtx[i]->tristar=(ts_triangle **)malloc(orig_vtx[i]->tristar_no*sizeof(ts_triangle *));
-        bck_vtx[i]->bond=(ts_bond **)malloc(orig_vtx[i]->bond_no*sizeof(ts_bond *));
-        bck_tria[i]->neigh=(ts_triangle **)malloc(orig_tria[i]->neigh_no*sizeof(ts_triangle *));
+        // bck_vtx[i]->neigh=(ts_vertex **)malloc(orig_vtx[i]->neigh_no*sizeof(ts_vertex *));
+        // bck_vtx[i]->tristar=(ts_triangle **)malloc(orig_vtx[i]->tristar_no*sizeof(ts_triangle *));
+        // bck_vtx[i]->bond=(ts_bond **)malloc(orig_vtx[i]->bond_no*sizeof(ts_bond *));
+        // bck_tria[i]->neigh=(ts_triangle **)malloc(orig_tria[i]->neigh_no*sizeof(ts_triangle *));
 
         memcpy((void *)bck_vtx[i]->neigh,(void *)orig_vtx[i]->neigh,orig_vtx[i]->neigh_no*sizeof(ts_vertex *));
         memcpy((void *)bck_vtx[i]->tristar,(void *)orig_vtx[i]->tristar,orig_vtx[i]->tristar_no*sizeof(ts_triangle *));
@@ -760,10 +760,10 @@ c
         if( tri_normals_angle_cosine_new_min<-vesicle->tape->max_dihedral_angle_cosine && tri_normals_angle_cosine_new_min < tri_normals_angle_cosine_old_min){
             //restore old state.
             for(i=0;i<4;i++){
-                free(orig_vtx[i]->neigh);
-                free(orig_vtx[i]->tristar);
-                free(orig_vtx[i]->bond);
-                free(orig_tria[i]->neigh);
+                // free(orig_vtx[i]->neigh);
+                // free(orig_vtx[i]->tristar);
+                // free(orig_vtx[i]->bond);
+                // free(orig_tria[i]->neigh);
                 memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
                 memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
                 /* level 2 pointers are redirected*/
@@ -810,10 +810,10 @@ c
         //restore old state.
         /* restoration procedure copied from few lines below */
         for(i=0;i<4;i++){
-            free(orig_vtx[i]->neigh);
-            free(orig_vtx[i]->tristar);
-            free(orig_vtx[i]->bond);
-            free(orig_tria[i]->neigh);
+            // free(orig_vtx[i]->neigh);
+            // free(orig_vtx[i]->tristar);
+            // free(orig_vtx[i]->bond);
+            // free(orig_tria[i]->neigh);
             memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
             memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
             /* level 2 pointers are redirected*/
@@ -841,10 +841,10 @@ c
 
             for(i=0;i<4;i++){
                 //fprintf(stderr,"Restoring vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
-                free(orig_vtx[i]->neigh);
-                free(orig_vtx[i]->tristar);
-                free(orig_vtx[i]->bond);
-                free(orig_tria[i]->neigh);
+                // free(orig_vtx[i]->neigh);
+                // free(orig_vtx[i]->tristar);
+                // free(orig_vtx[i]->bond);
+                // free(orig_tria[i]->neigh);
                 memcpy((void *)orig_vtx[i],(void *)bck_vtx[i],sizeof(ts_vertex));
                 memcpy((void *)orig_tria[i],(void *)bck_tria[i],sizeof(ts_triangle));
                 //fprintf(stderr,"Restored vtx neigh[%d] with neighbours %d\n",i, orig_vtx[i]->neigh_no );
@@ -890,11 +890,11 @@ c
 
 	// delete all backups
 	for(i=0;i<4;i++){
-	    free(bck_vtx[i]->neigh);
-	    free(bck_vtx[i]->bond);
-	    free(bck_vtx[i]->tristar);
+	    // free(bck_vtx[i]->neigh);
+	    // free(bck_vtx[i]->bond);
+	    // free(bck_vtx[i]->tristar);
 	    free(bck_vtx[i]);
- 	    free(bck_tria[i]->neigh);
+ 	    // free(bck_tria[i]->neigh);
         free(bck_tria[i]);
 	}
 	free(bck_bond);

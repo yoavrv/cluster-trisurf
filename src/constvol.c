@@ -16,7 +16,7 @@ ts_bool constvolume(ts_vesicle *vesicle, ts_vertex *vtx_avoid, ts_double Vol, ts
     ts_idx Ntries=100;
     ts_vertex *backupvtx;
     ts_double Rv, dh, dvol, volFirst, voldiff, oenergy,delta_energy;
-    backupvtx=(ts_vertex *)calloc(sizeof(ts_vertex),10);
+    backupvtx=(ts_vertex *)calloc(sizeof(ts_vertex),TS_MAX_NEIGH);
     ts_double l0 = (1.0 + sqrt(vesicle->dmax))/2.0; //make this a global constant if necessary
     for(i=0;i<Ntries;i++){
         vtxind=rand() % vesicle->vlist->n;

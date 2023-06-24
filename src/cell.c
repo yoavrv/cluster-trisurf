@@ -104,10 +104,10 @@ inline ts_bool cell_remove_vertex(ts_cell *cell, ts_vertex *vtx){
     /* resize memory. potentionally time consuming */
     cell->nvertex--;
     cell->vertex=(ts_vertex **)realloc(cell->vertex,cell->nvertex*sizeof(ts_vertex *));
-    if(vtx->neigh == NULL && vtx->neigh_no!=0)
-        if(cell->vertex == NULL){
-            fatal("Reallocation of memory failed during removal of vertex in cell_remove_vertex",3);
-        }
+    // if(vtx->neigh == NULL && vtx->neigh_no!=0)
+    if(cell->nvertex!=0 && cell->vertex == NULL){
+        fatal("Reallocation of memory failed during removal of vertex in cell_remove_vertex",3);
+    }
     return TS_SUCCESS;
 }
 

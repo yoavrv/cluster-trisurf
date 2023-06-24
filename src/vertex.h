@@ -20,7 +20,6 @@ ts_vertex_list *init_vertex_list(ts_idx N);
 ts_seen_vertex *init_seen_vertex(ts_idx max_size);
 ts_bool vtx_add_neighbour(ts_vertex *vtx, ts_vertex *nvtx);
 ts_bool vtx_add_cneighbour(ts_bond_list *blist,ts_vertex *vtx1,ts_vertex *vtx2);
-ts_bool vtx_add_cneighbour2(ts_bond_list *blist,ts_vertex *vtx1,ts_vertex *vtx2);
 ts_bool vtx_add_bond(ts_bond_list *blist,ts_vertex *vtx1,ts_vertex *vtx2);
 ts_bool vtx_remove_neighbour(ts_vertex *vtx, ts_vertex *nvtx);
 

@@ -64,13 +64,19 @@ ts_bool vtx_add_neighbour(ts_vertex *vtx, ts_vertex *nvtx){
     ts_small_idx i;
     /* no neighbour can be null! */
     if(vtx==NULL || nvtx==NULL) return TS_FAIL;
+
+    // limited number of neighbors
+    if (vtx->neigh_no==TS_MAX_NEIGH) {
+        fatal("addition of vertex neighbour in vtx_add_neighbour beyond TS_MAX_NEIGH",100);
+        return TS_FAIL;
+    }
     
     /*if it is already a neighbour don't add it to the list */
     for(i=0; i<vtx->neigh_no;i++){
         if(vtx->neigh[i]==nvtx) return TS_FAIL;
     }
     ts_small_idx nn=++vtx->neigh_no;
-    vtx->neigh=(ts_vertex **)realloc(vtx->neigh, nn*sizeof(ts_vertex *));
+    // vtx->neigh=(ts_vertex **)realloc(vtx->neigh, nn*sizeof(ts_vertex *));
     vtx->neigh[nn-1]=nvtx;
     /* This was a bug in creating DIPYRAMID (the neighbours were not in right
     * order).
@@ -103,10 +109,10 @@ ts_bool vtx_remove_neighbour(ts_vertex *vtx, ts_vertex *nvtx){
     }
     //	fprintf(stderr,"remove_neighbour: vtx1_addr=%ld, vtx2_addr=%ld\n",(long)vtx,(long)nvtx);
     /* resize memory. potentionally time consuming */
-    vtx->neigh_no--;
-    vtx->neigh=(ts_vertex **)realloc(vtx->neigh,vtx->neigh_no*sizeof(ts_vertex *));
-    if(vtx->neigh == NULL && vtx->neigh_no!=0)
-        fatal("(1) Reallocation of memory failed during removal of vertex neighbour in vtx_remove_neighbour",100);
+    vtx->neigh_no=j;
+    // vtx->neigh=(ts_vertex **)realloc(vtx->neigh,vtx->neigh_no*sizeof(ts_vertex *));
+    // if(vtx->neigh == NULL && vtx->neigh_no!=0)
+    //     fatal("(1) Reallocation of memory failed during removal of vertex neighbour in vtx_remove_neighbour",100);
     //fprintf(stderr,"first alloc");
     /* repeat for the neighbour */
     /* find a neighbour */
@@ -120,11 +126,11 @@ ts_bool vtx_remove_neighbour(ts_vertex *vtx, ts_vertex *nvtx){
     }
     /* resize memory. potentionally time consuming. */
     // fprintf(stderr,"Neigbours=%d\n",nvtx->neigh_no);
-    nvtx->neigh_no--;
-    nvtx->neigh=(ts_vertex **)realloc(nvtx->neigh,nvtx->neigh_no*sizeof(ts_vertex *));
-    // fprintf(stderr,"Neigbours=%d\n",nvtx->neigh_no);
-    if(nvtx->neigh == NULL && nvtx->neigh_no!=0)
-        fatal("(2) Reallocation of memory failed during removal of vertex neighbour in vtx_remove_neighbour",100);
+    nvtx->neigh_no=j;
+    // nvtx->neigh=(ts_vertex **)realloc(nvtx->neigh,nvtx->neigh_no*sizeof(ts_vertex *));
+    // // fprintf(stderr,"Neigbours=%d\n",nvtx->neigh_no);
+    // if(nvtx->neigh == NULL && nvtx->neigh_no!=0)
+    //     fatal("(2) Reallocation of memory failed during removal of vertex neighbour in vtx_remove_neighbour",100);
 
     return TS_SUCCESS;
 }
@@ -146,8 +152,11 @@ ts_bool vtx_add_bond(ts_bond_list *blist,ts_vertex *vtx1,ts_vertex *vtx2){
         };
     }
     if (!bond_in_vtx1){
+        if (vtx1->bond_no==TS_MAX_NEIGH){
+            fatal("attempt to attach more bonds than TS_MAX_NEIGH",100);
+        }
         vtx1->bond_no++;
-        vtx1->bond=(ts_bond **)realloc(vtx1->bond, vtx1->bond_no*sizeof(ts_bond *)); 
+        // vtx1->bond=(ts_bond **)realloc(vtx1->bond, vtx1->bond_no*sizeof(ts_bond *)); 
         vtx1->bond[vtx1->bond_no-1]=bond;
     }
 
@@ -160,7 +169,10 @@ ts_bool vtx_add_bond(ts_bond_list *blist,ts_vertex *vtx1,ts_vertex *vtx2){
     }
     if (!bond_in_vtx2){
         vtx2->bond_no++;
-        vtx2->bond=(ts_bond **)realloc(vtx2->bond, vtx2->bond_no*sizeof(ts_bond *)); 
+        if (vtx2->bond_no==TS_MAX_NEIGH){
+            fatal("attempt to attach more bonds than TS_MAX_NEIGH",100);
+        }
+        // vtx2->bond=(ts_bond **)realloc(vtx2->bond, vtx2->bond_no*sizeof(ts_bond *)); 
         vtx2->bond[vtx2->bond_no-1]=bond;
     }
     return TS_SUCCESS;
@@ -178,115 +190,10 @@ ts_bool vtx_add_cneighbour(ts_bond_list *blist, ts_vertex *vtx1, ts_vertex *vtx2
 }
 
 
-// add neighbors and connect with bond? doesn't work for some reason
-ts_bool vtx_add_cneighbour2(ts_bond_list *blist, ts_vertex *vtx1, ts_vertex *vtx2){
-    ts_bool nei_in_v=0, bond_in_v=0, is_registered=0;
-    ts_idx i,b=blist->n;
-    ts_small_idx j;
-    ts_bond *add_bond=NULL;
-    if (vtx1==NULL || vtx2==NULL) return TS_FAIL;
-    if (vtx1==vtx2) return TS_FAIL;
-    for (i=0; i<blist->n; i++){
-        if (blist->bond[i]!=NULL){
-            if (in_bond(blist->bond[i], vtx1) && in_bond(blist->bond[i],vtx2)){
-                is_registered += 1;
-                b=i;
-            }
-        }
-    }
-    if (is_registered == 0){
-        blist->n++;
-        blist->bond = (ts_bond **) realloc(blist->bond,blist->n*sizeof(ts_bond *));
-        add_bond = blist->bond[b];
-        add_bond = (ts_bond*) malloc(sizeof(ts_bond));
-        if(add_bond==NULL){
-             fatal("Cannot allocate memory for additional ts_bond.",100);
-        } else{
-            add_bond->idx = b;
-            add_bond->vtx1 = vtx1;
-            add_bond->vtx2 = vtx2;
-        }
-    } else if (is_registered == 1){
-        add_bond = blist->bond[b];
-    } else {
-        ts_fprintf(stdout,"bond is registered %d times", is_registered);
-        fatal("bond registration failure",3);
-    }
-    
-    for (j=0; j<vtx1->bond_no; j++){
-        if (vtx1->bond[j]==add_bond){
-            bond_in_v=1;
-            break;
-        }
-    }
-    if (!bond_in_v){
-        if (vtx1->bond_no==0) {
-            vtx_insert_bond_at(vtx1, add_bond, 0);
-        } else {
-            vtx_insert_bond_at(vtx1, add_bond, vtx1->bond_no-1);
-        }
-    }
-    for (j=0; j<vtx1->neigh_no; j++){
-        if (vtx1->neigh[j]==vtx2){
-            nei_in_v=1;
-            break;
-        }
-    }
-    if (!nei_in_v){
-        if (vtx1->neigh_no==0) {
-            vtx1->neigh = (ts_vertex**) malloc(sizeof(ts_vertex *));
-            vtx1->neigh[0] = vtx2;
-        } else {
-            vtx_insert_neigh_at(vtx1, vtx2, vtx1->neigh_no-1);
-        }
-    }
-    nei_in_v=0;
-    bond_in_v=0;
-    for (j=0; j<vtx2->bond_no; j++){
-        if (vtx2->bond[j]==add_bond){
-            bond_in_v=1;
-            break;
-        }
-    }
-    if (!bond_in_v){
-        if (vtx2->bond_no==0) {
-            vtx_insert_bond_at(vtx2, add_bond, 0);
-        } else {
-            vtx_insert_bond_at(vtx2, add_bond, vtx2->bond_no-1);
-        }
-    }
-    for (j=0; j<vtx2->neigh_no; j++){
-        if (vtx2->neigh[j]==vtx1){
-            nei_in_v=1;
-            break;
-        }
-    }
-    if (!nei_in_v){
-        if (vtx2->neigh_no==0) {
-            vtx2->neigh = (ts_vertex**) malloc(sizeof(ts_vertex*));
-            vtx2->neigh[0] = vtx1;
-        } else {
-            vtx_insert_neigh_at(vtx2, vtx1, vtx2->neigh_no-1);
-        }
-    }
-    ts_fprintf(stdout,"at %u, %u, creating bond %u\n", vtx1->idx, vtx2->idx, add_bond->idx);
-    return TS_SUCCESS;
-}
-
-/*TODO: write and optimize this urgently before use! */
-ts_bool vtx_remove_cneighbour(ts_bond_list *blist, ts_vertex *vtx1, ts_vertex *vtx2){
-    // ts_bool retval;
-    /* remove the bond */
-    //retval=vtx_remove_bond(blist,vtx1,vtx2);
-    /* remove the vertices */
-    return TS_SUCCESS;
-}
-
-
 ts_bool vtx_free(ts_vertex  *vtx){
-    if(vtx->neigh!=NULL)   free(vtx->neigh);
-    if(vtx->tristar!=NULL) free(vtx->tristar);
-    if(vtx->bond!=NULL)    free(vtx->bond);
+    // if(vtx->neigh!=NULL)   free(vtx->neigh);
+    // if(vtx->tristar!=NULL) free(vtx->tristar);
+    // if(vtx->bond!=NULL)    free(vtx->bond);
     free(vtx);
     return TS_SUCCESS;
 }
@@ -309,15 +216,7 @@ ts_bool seen_vertex_free(ts_seen_vertex *seen_vtx){
 
 inline ts_double vtx_distance_sq(ts_vertex *vtx1, ts_vertex *vtx2){
     ts_double dist;
-#ifdef TS_DOUBLE_DOUBLE
     dist=pow(vtx1->x-vtx2->x,2) + pow(vtx1->y-vtx2->y,2) + pow(vtx1->z-vtx2->z,2);
-#endif
-#ifdef TS_DOUBLE_LONGDOUBLE
-    dist=powl(vtx1->x-vtx2->x,2) + powl(vtx1->y-vtx2->y,2) + powl(vtx1->z-vtx2->z,2);
-#endif
-#ifdef TS_DOUBLE_FLOAT
-    dist=powf(vtx1->x-vtx2->x,2) + powf(vtx1->y-vtx2->y,2) + powf(vtx1->z-vtx2->z,2);
-#endif
     return(dist);
 }
 
@@ -404,11 +303,14 @@ inline ts_double vtx_direct(ts_vertex *vtx1, ts_vertex *vtx2, ts_vertex *vtx3){
 
 
 inline ts_bool vertex_add_tristar(ts_vertex *vtx, ts_triangle *tristarmem){
+    if (vtx->tristar_no==TS_MAX_NEIGH) {
+        fatal("Cannot add more than TS_MAX_NEIGH triangle neighbors",100);
+    }
 	vtx->tristar_no++;
-	vtx->tristar=(ts_triangle **)realloc(vtx->tristar,vtx->tristar_no*sizeof(ts_triangle *));
-	if(vtx->tristar==NULL){
-			fatal("Reallocation of memory while adding tristar failed.",3);
-	}
+	// vtx->tristar=(ts_triangle **)realloc(vtx->tristar,vtx->tristar_no*sizeof(ts_triangle *));
+	// if(vtx->tristar==NULL){
+	// 		fatal("Reallocation of memory while adding tristar failed.",3);
+	// }
 	vtx->tristar[vtx->tristar_no-1]=tristarmem;
 	return TS_SUCCESS;
 }
@@ -419,14 +321,17 @@ inline ts_bool vertex_add_tristar(ts_vertex *vtx, ts_triangle *tristarmem){
 inline ts_bool vtx_insert_neighbour(ts_vertex *vtx, ts_vertex *nvtx, ts_vertex *vtxm){
         //nvtx is a vertex that is to be inserted after vtxm!
         ts_idx i,j,midx;
+        if(vtx->neigh_no == TS_MAX_NEIGH){
+            fatal("Attempt to insert more TS_MAX_NEIGH neighbor in vertex_insert_neighbour",3);
+        }
         vtx->neigh_no++;
         if(vtxm==NULL ||  nvtx==NULL || vtx==NULL)
             fatal("vertex_insert_neighbour: one of pointers has been zero.. Cannot proceed.",3);
         //We need to reallocate space! The pointer *neight must be zero if not having neighbours jey (if neigh_no was 0 at time of calling
-        vtx->neigh=realloc(vtx->neigh,vtx->neigh_no*sizeof(ts_vertex *));
-        if(vtx->neigh == NULL){
-            fatal("Reallocation of memory failed during insertion of vertex neighbour in vertex_insert_neighbour",3);
-        }
+        // vtx->neigh=realloc(vtx->neigh,vtx->neigh_no*sizeof(ts_vertex *));
+        // if(vtx->neigh == NULL){
+        //     fatal("Reallocation of memory failed during insertion of vertex neighbour in vertex_insert_neighbour",3);
+        // }
         midx=0;
         for(i=0;i<vtx->neigh_no-1;i++){
             if(vtx->neigh[i]==vtxm){
@@ -460,11 +365,11 @@ inline ts_bool vtx_remove_tristar(ts_vertex *vtx, ts_triangle *tristar){
             j++;
         }
     }
-    vtx->tristar_no--;
-    vtx->tristar=realloc(vtx->tristar,vtx->tristar_no*sizeof(ts_triangle *));
-    if(vtx->neigh == NULL){
-            fatal("Reallocation of memory failed during insertion of vertex neighbour in vertex_add_neighbour",3);
-        }
+    vtx->tristar_no=j;
+    // vtx->tristar=realloc(vtx->tristar,vtx->tristar_no*sizeof(ts_triangle *));
+    // if(vtx->neigh == NULL){
+    //         fatal("Reallocation of memory failed during insertion of vertex neighbour in vertex_add_neighbour",3);
+    //     }
     return TS_SUCCESS;
 }
 
@@ -489,12 +394,12 @@ ts_bool add_vtx_to_seen(ts_seen_vertex *seen_vtx, ts_vertex *vtx){
 // copy all information except structure (neighbors, bonds, etc)
 ts_bool vtx_copy(ts_vertex *cvtx, ts_vertex *ovtx){
     memcpy((void *)cvtx,(void *)ovtx,sizeof(ts_vertex));
-    cvtx->neigh=NULL;
+    // cvtx->neigh=NULL;
     cvtx->neigh_no=0;
     cvtx->tristar_no=0;
     cvtx->bond_no=0;
-    cvtx->tristar=NULL;
-    cvtx->bond=NULL;
+    // cvtx->tristar=NULL;
+    // cvtx->bond=NULL;
     cvtx->cell=NULL;
     return TS_SUCCESS;
 }
@@ -852,11 +757,14 @@ ts_bool vtx_insert_neigh_at(ts_vertex *vtx, ts_vertex *vtxmem, ts_small_idx i){
     if ( i>vtx->neigh_no){
         fatal("attempt to add neighbor above neigh_no",3);
     }
+    if (vtx->neigh_no==TS_MAX_NEIGH){
+        fatal("attempt to add neighbor beyond TS_MAX_NEIGHBOR in vtx_insert_neigh_at",100);
+    }
 	vtx->neigh_no++;
-	vtx->neigh=(ts_vertex **)realloc(vtx->neigh,vtx->neigh_no*sizeof(ts_vertex *));
-	if(vtx->neigh==NULL){
-			fatal("Reallocation of memory while adding neighbor failed.",3);
-	}
+	// vtx->neigh=(ts_vertex **)realloc(vtx->neigh,vtx->neigh_no*sizeof(ts_vertex *));
+	// if(vtx->neigh==NULL){
+	// 		fatal("Reallocation of memory while adding neighbor failed.",3);
+	// }
     if (i+1 != vtx->neigh_no) { //no need to shift, don't want to tempt memmove(outside, edge, 0)
         memmove(vtx->neigh+i+1, vtx->neigh+i,(vtx->neigh_no-i-1)*sizeof(ts_vertex*));
     }
@@ -874,10 +782,10 @@ ts_bool vtx_remove_neigh_at(ts_vertex *vtx, ts_small_idx i){
         memmove(vtx->neigh+i, vtx->neigh+i+1,(vtx->neigh_no-i-1)*sizeof(ts_vertex*));
     }
     vtx->neigh_no--;
-    vtx->neigh=(ts_vertex **)realloc(vtx->neigh,vtx->neigh_no*sizeof(ts_vertex *));
-    if(vtx->neigh == NULL){
-            fatal("Reallocation of memory failed during removal of neighbor",3);
-        }
+    // vtx->neigh=(ts_vertex **)realloc(vtx->neigh,vtx->neigh_no*sizeof(ts_vertex *));
+    // if(vtx->neigh == NULL){
+    //         fatal("Reallocation of memory failed during removal of neighbor",3);
+    //     }
     return TS_SUCCESS;
 }
 
@@ -887,11 +795,14 @@ ts_bool vtx_insert_bond_at(ts_vertex *vtx, ts_bond *bondmem, ts_small_idx i){
     if ( i>vtx->bond_no){
         fatal("attempt to add bond above bond_no",3);
     }
+    if (vtx->bond_no==TS_MAX_NEIGH) {
+        fatal("attempt to add bond beyond TS_MAX_NEIGH in vtx_insert_bond_at",100);
+    }
 	vtx->bond_no++;
-	vtx->bond=(ts_bond **)realloc(vtx->bond,vtx->bond_no*sizeof(ts_bond *));
-	if(vtx->bond==NULL){
-			fatal("Reallocation of memory while adding bond failed.",3);
-	}
+	// vtx->bond=(ts_bond **)realloc(vtx->bond,vtx->bond_no*sizeof(ts_bond *));
+	// if(vtx->bond==NULL){
+	// 		fatal("Reallocation of memory while adding bond failed.",3);
+	// }
     if (i+1 != vtx->bond_no) { //no need to shift, don't want to tempt memmove(outside, edge, 0)
         memmove(vtx->bond+i+1, vtx->bond+i, (vtx->bond_no-i-1)*sizeof(ts_bond*));
     }
@@ -909,10 +820,10 @@ ts_bool vtx_remove_bond_at(ts_vertex *vtx, ts_small_idx i){
         memmove(vtx->bond+i, vtx->bond+i+1,(vtx->bond_no-i-1)*sizeof(ts_bond*));
     }
     vtx->bond_no--;
-    vtx->bond=(ts_bond **)realloc(vtx->bond,vtx->bond_no*sizeof(ts_bond *));
-    if(vtx->bond == NULL){
-            fatal("Reallocation of memory failed during removal of bond",3);
-        }
+    // vtx->bond=(ts_bond **)realloc(vtx->bond,vtx->bond_no*sizeof(ts_bond *));
+    // if(vtx->bond == NULL){
+    //         fatal("Reallocation of memory failed during removal of bond",3);
+    //     }
     return TS_SUCCESS;
 }
 

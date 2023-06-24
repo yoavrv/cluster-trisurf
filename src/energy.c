@@ -444,31 +444,31 @@ inline ts_bool tensor_curvature_energy2(ts_vesicle *vesicle, ts_vertex *vtx){
     // we hardcoded 10 neighbor limit!
     ts_small_idx i, ip;
 
-    ts_double edge_e_x[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double edge_e_y[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double edge_e_z[10]={0,0,0,0,0,0,0,0,0,0};
+    ts_double edge_e_x[TS_MAX_NEIGH]={}; // automatically initialize to 0
+    ts_double edge_e_y[TS_MAX_NEIGH]={};
+    ts_double edge_e_z[TS_MAX_NEIGH]={};
 
-    ts_double edge_middle_x[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double edge_middle_y[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double edge_middle_z[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double edge_len[10]={0,0,0,0,0,0,0,0,0,0};
+    ts_double edge_middle_x[TS_MAX_NEIGH]={};
+    ts_double edge_middle_y[TS_MAX_NEIGH]={};
+    ts_double edge_middle_z[TS_MAX_NEIGH]={};
+    ts_double edge_len[TS_MAX_NEIGH]={};
 
-    ts_double edge_normal_x[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double edge_normal_y[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double edge_normal_z[10]={0,0,0,0,0,0,0,0,0,0};
+    ts_double edge_normal_x[TS_MAX_NEIGH]={};
+    ts_double edge_normal_y[TS_MAX_NEIGH]={};
+    ts_double edge_normal_z[TS_MAX_NEIGH]={};
 
 
 
-    ts_double sigma_L_x[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double sigma_L_y[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double sigma_L_z[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double sigma_L_len[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double area_L[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double sigma_R_x[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double sigma_R_y[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double sigma_R_z[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double sigma_R_len[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double area_R[10]={0,0,0,0,0,0,0,0,0,0};
+    ts_double sigma_L_x[TS_MAX_NEIGH]={};
+    ts_double sigma_L_y[TS_MAX_NEIGH]={};
+    ts_double sigma_L_z[TS_MAX_NEIGH]={};
+    ts_double sigma_L_len[TS_MAX_NEIGH]={};
+    ts_double area_L[TS_MAX_NEIGH]={};
+    ts_double sigma_R_x[TS_MAX_NEIGH]={};
+    ts_double sigma_R_y[TS_MAX_NEIGH]={};
+    ts_double sigma_R_z[TS_MAX_NEIGH]={};
+    ts_double sigma_R_len[TS_MAX_NEIGH]={};
+    ts_double area_R[TS_MAX_NEIGH]={};
 
     ts_double vertex_normal_x=0.0;
     ts_double vertex_normal_y=0.0;
@@ -823,15 +823,15 @@ inline ts_bool tensor_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
 
     // we hardcoded 10 neighbor limit!
     ts_small_idx jj, i, ip;
-    ts_double edge_vector_x[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double edge_vector_y[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double edge_vector_z[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double edge_normal_x[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double edge_normal_y[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double edge_normal_z[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double edge_binormal_x[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double edge_binormal_y[10]={0,0,0,0,0,0,0,0,0,0};
-    ts_double edge_binormal_z[10]={0,0,0,0,0,0,0,0,0,0};
+    ts_double edge_vector_x[TS_MAX_NEIGH]={}; // automatically initizilized to 0
+    ts_double edge_vector_y[TS_MAX_NEIGH]={};
+    ts_double edge_vector_z[TS_MAX_NEIGH]={};
+    ts_double edge_normal_x[TS_MAX_NEIGH]={};
+    ts_double edge_normal_y[TS_MAX_NEIGH]={};
+    ts_double edge_normal_z[TS_MAX_NEIGH]={};
+    ts_double edge_binormal_x[TS_MAX_NEIGH]={};
+    ts_double edge_binormal_y[TS_MAX_NEIGH]={};
+    ts_double edge_binormal_z[TS_MAX_NEIGH]={};
     ts_double vertex_normal_x=0.0;
     ts_double vertex_normal_y=0.0;
     ts_double vertex_normal_z=0.0;
@@ -859,7 +859,7 @@ inline ts_bool tensor_curvature_energy(ts_vesicle *vesicle, ts_vertex *vtx){
     ts_double We;
     ts_double Av, We_Av;
 
-    ts_double he[10];
+    ts_double he[TS_MAX_NEIGH];
     ts_double Sv[3][3]={{0,0,0},{0,0,0},{0,0,0}};
 
     // #########################################################################

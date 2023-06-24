@@ -54,6 +54,10 @@
 
 #define TS_ID_FILAMENT 1
 
+
+//max number of neighbors per vertex. This is the same value as in an fcc crystal, and empirically we rarely see 9 neighbors per vertex
+#define TS_MAX_NEIGH 12
+
 /* DATA TYPES */
 /** @brief Sets the default datatype for ts_double
  *
@@ -64,8 +68,10 @@
  *	TS_DOUBLE_FLOAT
  *	TS_DOUBLE_DOUBLE
  *	TS_DOUBLE_LONGDOUBLE
+
+ * Yoav 24/06/23: I don't see what it does anymore
 */
-#define TS_DOUBLE_DOUBLE
+// #define TS_DOUBLE_DOUBLE
 
 /** For the purpose of greater flexibility all data types used in the program
  *  shouldn't use standard C types, but should use types defined here.
@@ -269,9 +275,9 @@ struct ts_vertex {
         ts_double gaussian_curvature2; // from shape tensor
         ts_double mean_energy2; // from shape tensor
         ts_double gaussian_energy2; // from shape tensor
-        struct ts_vertex **neigh; /**< The pointer that holds neigh_no pointers to this structure. */
-        struct ts_triangle **tristar; /**< The list of triangles this vertex belongs to. This is an array of pointers to ts_triangle structure of tristar_no length */
-        struct ts_bond **bond; /**< Array of pointers of lenght bond_no that stores information on bonds. */
+        struct ts_vertex *neigh[TS_MAX_NEIGH]; /**< The pointer that holds neigh_no pointers to this structure. */
+        struct ts_triangle *tristar[TS_MAX_NEIGH]; /**< The list of triangles this vertex belongs to. This is an array of pointers to ts_triangle structure of tristar_no length */
+        struct ts_bond *bond[TS_MAX_NEIGH]; /**< Array of pointers of lenght bond_no that stores information on bonds. */
         struct ts_cell *cell; /**< Which cell do we belong to? */
         struct ts_poly *grafted_poly;
         struct ts_cluster *cluster;
@@ -330,7 +336,7 @@ struct ts_triangle {
     ts_double volume; // firstly needed for sh.c
     ts_double energy;
     ts_vertex *vertex[3];
-    struct ts_triangle **neigh;
+    struct ts_triangle *neigh[3];
     ts_idx idx;
     ts_small_idx neigh_no;
 };

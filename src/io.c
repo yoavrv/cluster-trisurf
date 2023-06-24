@@ -296,19 +296,19 @@ ts_vesicle *restore_state(ts_idx *iteration, ts_tape* tape){
     for(i=0;i<vesicle->vlist->n;i++){
         retval=fread(vesicle->vlist->vtx[i],sizeof(ts_vertex),1,fh);
         /*restore neigh, bond, tristar. Ignoring cell */
-        vesicle->vlist->vtx[i]->neigh=(ts_vertex **)calloc(vesicle->vlist->vtx[i]->neigh_no, sizeof(ts_vertex *));
+        // vesicle->vlist->vtx[i]->neigh=(ts_vertex **)calloc(vesicle->vlist->vtx[i]->neigh_no, sizeof(ts_vertex *));
         for(j=0;j<vesicle->vlist->vtx[i]->neigh_no;j++){
             retval=fread(&idx,sizeof(ts_idx),1,fh);
             vesicle->vlist->vtx[i]->neigh[j]=vesicle->vlist->vtx[idx];
         }
-        vesicle->vlist->vtx[i]->bond=(ts_bond **)calloc(vesicle->vlist->vtx[i]->bond_no, sizeof(ts_bond *));
+        // vesicle->vlist->vtx[i]->bond=(ts_bond **)calloc(vesicle->vlist->vtx[i]->bond_no, sizeof(ts_bond *));
         for(j=0;j<vesicle->vlist->vtx[i]->bond_no;j++){
             retval=fread(&idx,sizeof(ts_idx),1,fh);
             /* pointer can be assigned only when list of bonds is fully initialized in memory. Thus bondlist popularization must be done before vertex can reference to it */
             vesicle->vlist->vtx[i]->bond[j]=vesicle->blist->bond[idx];    
         }
 
-        vesicle->vlist->vtx[i]->tristar=(ts_triangle **)calloc(vesicle->vlist->vtx[i]->tristar_no, sizeof(ts_triangle *));
+        // vesicle->vlist->vtx[i]->tristar=(ts_triangle **)calloc(vesicle->vlist->vtx[i]->tristar_no, sizeof(ts_triangle *));
         for(j=0;j<vesicle->vlist->vtx[i]->tristar_no;j++){
             retval=fread(&idx,sizeof(ts_idx),1,fh);
             /* same comment as above */
@@ -386,12 +386,12 @@ ts_vesicle *restore_state(ts_idx *iteration, ts_tape* tape){
             retval=fread(vesicle->poly_list->poly[i]->vlist->vtx[j],sizeof(ts_vertex),1,fh);
                 
             /* restore neigh and bonds */
-            vesicle->poly_list->poly[i]->vlist->vtx[j]->neigh=(ts_vertex **)calloc(vesicle->poly_list->poly[i]->vlist->vtx[j]->neigh_no, sizeof(ts_vertex *));
+            // vesicle->poly_list->poly[i]->vlist->vtx[j]->neigh=(ts_vertex **)calloc(vesicle->poly_list->poly[i]->vlist->vtx[j]->neigh_no, sizeof(ts_vertex *));
             for(k=0;k<vesicle->poly_list->poly[i]->vlist->vtx[j]->neigh_no;k++){
                 retval=fread(&idx,sizeof(ts_idx),1,fh);
                 vesicle->poly_list->poly[i]->vlist->vtx[j]->neigh[k]=vesicle->poly_list->poly[i]->vlist->vtx[idx];
             }
-            vesicle->poly_list->poly[i]->vlist->vtx[j]->bond=(ts_bond **)calloc(vesicle->poly_list->poly[i]->vlist->vtx[j]->bond_no, sizeof(ts_bond *));
+            // vesicle->poly_list->poly[i]->vlist->vtx[j]->bond=(ts_bond **)calloc(vesicle->poly_list->poly[i]->vlist->vtx[j]->bond_no, sizeof(ts_bond *));
             for(k=0;k<vesicle->poly_list->poly[i]->vlist->vtx[j]->bond_no;k++){
                 retval=fread(&idx,sizeof(ts_idx),1,fh);
                 vesicle->poly_list->poly[i]->vlist->vtx[j]->bond[k]=vesicle->poly_list->poly[i]->blist->bond[idx];
@@ -445,12 +445,12 @@ ts_vesicle *restore_state(ts_idx *iteration, ts_tape* tape){
             retval=fread(vesicle->filament_list->poly[i]->vlist->vtx[j],sizeof(ts_vertex),1,fh);
                 
             /* restore neigh and bonds */
-            vesicle->filament_list->poly[i]->vlist->vtx[j]->neigh=(ts_vertex **)calloc(vesicle->filament_list->poly[i]->vlist->vtx[j]->neigh_no, sizeof(ts_vertex *));
+            // vesicle->filament_list->poly[i]->vlist->vtx[j]->neigh=(ts_vertex **)calloc(vesicle->filament_list->poly[i]->vlist->vtx[j]->neigh_no, sizeof(ts_vertex *));
             for(k=0;k<vesicle->filament_list->poly[i]->vlist->vtx[j]->neigh_no;k++){
                 retval=fread(&idx,sizeof(ts_idx),1,fh);
                 vesicle->filament_list->poly[i]->vlist->vtx[j]->neigh[k]=vesicle->filament_list->poly[i]->vlist->vtx[idx];
             }
-            vesicle->filament_list->poly[i]->vlist->vtx[j]->bond=(ts_bond **)calloc(vesicle->filament_list->poly[i]->vlist->vtx[j]->bond_no, sizeof(ts_bond *));
+            // vesicle->filament_list->poly[i]->vlist->vtx[j]->bond=(ts_bond **)calloc(vesicle->filament_list->poly[i]->vlist->vtx[j]->bond_no, sizeof(ts_bond *));
             for(k=0;k<vesicle->filament_list->poly[i]->vlist->vtx[j]->bond_no;k++){
                 retval=fread(&idx,sizeof(ts_idx),1,fh);
                 vesicle->filament_list->poly[i]->vlist->vtx[j]->bond[k]=vesicle->filament_list->poly[i]->blist->bond[idx];
