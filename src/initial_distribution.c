@@ -342,7 +342,7 @@ ts_bool pentagonal_dipyramid_vertex_distribution(ts_uint nshell, ts_vertex_list 
 
 
 ts_bool init_vertex_neighbours(ts_vertex_list *vlist){
-    ts_vertex **vtx=vlist->vtx -1; // take a look at dipyramid function for comment.
+    ts_vertex **vtx=vlist->vtx; // take a look at dipyramid function for comment.
     const ts_double eps=0.001; //TODO: find out if you can use EPS from math.h
     ts_uint i,j;
     ts_double dist2; // Square of distance of neighbours
@@ -351,8 +351,8 @@ ts_bool init_vertex_neighbours(ts_vertex_list *vlist){
     //for(i=1;i<=vlist->n;i++){
     //	vtx[i].neigh_no=0;
     //}
-    for(i=1;i<=vlist->n;i++){
-        for(j=1;j<=vlist->n;j++){
+    for(i=0;i<vlist->n;i++){
+        for(j=0;j<vlist->n;j++){
             dist2=vtx_distance_sq(vtx[i],vtx[j]);
             if( (dist2>eps) && (dist2<(DEF_A0*DEF_A0+eps))){ 
                 //if it is close enough, but not too much close (solves problem of comparing when i==j)
@@ -419,13 +419,13 @@ ts_vertex_list *init_sort_neighbours(ts_bond_list *blist,ts_vertex_list *vlist){
 ts_bool init_vesicle_bonds(ts_vesicle *vesicle){
     ts_vertex_list *vlist=vesicle->vlist;
     ts_bond_list *blist=vesicle->blist;
-    ts_vertex **vtx=vesicle->vlist->vtx - 1; // Because of 0 indexing
+    ts_vertex **vtx=vesicle->vlist->vtx;
     /* lets make correct clockwise ordering of in nearest neighbour list */
     ts_uint i,j,k;
-    for(i=1;i<=vlist->n;i++){
-        for(j=i+1;j<=vlist->n;j++){
-            for(k=0;k<vtx[i]->neigh_no;k++){ // has changed 0 to < instead of 1 and <=
-                if(vtx[i]->neigh[k]==vtx[j]){  //if addresses matches it is the same
+    for(i=0;i<vlist->n;i++){
+        for(j=i+1;j<vlist->n;j++){
+            for(k=0;k<vtx[i]->neigh_no;k++){ 
+                if(vtx[i]->neigh[k]==vtx[j]){  
                     bond_add(blist,vtx[i],vtx[j]);
                     break;
                 }
