@@ -36,7 +36,7 @@ iterations=10
 quiet=false
 
 # $ add debug fields to the vtu file (int flag). 0: no debug. 1: some. 2: all, 64: minimal
-debug_fields=0
+debug_fields=1
 
 
 ######-----------------------------#######
