@@ -342,7 +342,7 @@ ts_bool pentagonal_dipyramid_vertex_distribution(ts_uint nshell, ts_vertex_list 
 
 
 ts_bool init_vertex_neighbours(ts_vertex_list *vlist){
-    ts_vertex **vtx=vlist->vtx -1; // take a look at dipyramid function for comment.
+    ts_vertex **vtx=vlist->vtx; // take a look at dipyramid function for comment.
     const ts_double eps=0.001; //TODO: find out if you can use EPS from math.h
     ts_uint i,j;
     ts_double dist2; // Square of distance of neighbours
@@ -351,8 +351,8 @@ ts_bool init_vertex_neighbours(ts_vertex_list *vlist){
     //for(i=1;i<=vlist->n;i++){
     //	vtx[i].neigh_no=0;
     //}
-    for(i=1;i<=vlist->n;i++){
-        for(j=1;j<=vlist->n;j++){
+    for(i=0;i<vlist->n;i++){
+        for(j=0;j<vlist->n;j++){
             dist2=vtx_distance_sq(vtx[i],vtx[j]);
             if( (dist2>eps) && (dist2<(DEF_A0*DEF_A0+eps))){ 
                 //if it is close enough, but not too much close (solves problem of comparing when i==j)
@@ -419,13 +419,13 @@ ts_vertex_list *init_sort_neighbours(ts_bond_list *blist,ts_vertex_list *vlist){
 ts_bool init_vesicle_bonds(ts_vesicle *vesicle){
     ts_vertex_list *vlist=vesicle->vlist;
     ts_bond_list *blist=vesicle->blist;
-    ts_vertex **vtx=vesicle->vlist->vtx - 1; // Because of 0 indexing
+    ts_vertex **vtx=vesicle->vlist->vtx;
     /* lets make correct clockwise ordering of in nearest neighbour list */
     ts_uint i,j,k;
-    for(i=1;i<=vlist->n;i++){
-        for(j=i+1;j<=vlist->n;j++){
-            for(k=0;k<vtx[i]->neigh_no;k++){ // has changed 0 to < instead of 1 and <=
-                if(vtx[i]->neigh[k]==vtx[j]){  //if addresses matches it is the same
+    for(i=0;i<vlist->n;i++){
+        for(j=i+1;j<vlist->n;j++){
+            for(k=0;k<vtx[i]->neigh_no;k++){ 
+                if(vtx[i]->neigh[k]==vtx[j]){  
                     bond_add(blist,vtx[i],vtx[j]);
                     break;
                 }
@@ -444,21 +444,21 @@ ts_bool init_vesicle_bonds(ts_vesicle *vesicle){
 
 ts_bool init_triangles(ts_vesicle *vesicle){
     ts_uint i,j,jj,k;
-    ts_vertex **vtx=vesicle->vlist->vtx -1; // difference between 0 indexing and 1 indexing
+    ts_vertex **vtx=vesicle->vlist->vtx ; 
     ts_triangle_list *tlist=vesicle->tlist;
     ts_double dist, direct;
     ts_double eps=0.001; // can we use EPS from math.h?
     k=0;
-    for(i=1;i<=vesicle->vlist->n;i++){
-        for(j=1;j<=vtx[i]->neigh_no;j++){
-            for(jj=1;jj<=vtx[i]->neigh_no;jj++){
+    for(i=0;i<vesicle->vlist->n;i++){
+        for(j=0;j<vtx[i]->neigh_no;j++){
+            for(jj=0;jj<vtx[i]->neigh_no;jj++){
                 // ts_fprintf(stderr,"%u: (%u,%u) neigh_no=%u ",i,j,jj,vtx[i].neigh_no);
                 // ts_fprintf(stderr,"%e, %e",vtx[i].neigh[j-1]->x,vtx[i].neigh[jj-1]->x);
-                dist=vtx_distance_sq(vtx[i]->neigh[j-1],vtx[i]->neigh[jj-1]);
-                direct=vtx_direct(vtx[i],vtx[i]->neigh[j-1],vtx[i]->neigh[jj-1]);				
+                dist=vtx_distance_sq(vtx[i]->neigh[j],vtx[i]->neigh[jj]);
+                direct=vtx_direct(vtx[i],vtx[i]->neigh[j],vtx[i]->neigh[jj]);				
                 // TODO: same as above				
-                if(fabs(dist-DEF_A0*DEF_A0)<=eps && direct < 0.0 && vtx[i]->neigh[j-1]->idx+1 > i && vtx[i]->neigh[jj-1]->idx+1 >i){
-                    triangle_add(tlist,vtx[i],vtx[i]->neigh[j-1],vtx[i]->neigh[jj-1]);
+                if(fabs(dist-DEF_A0*DEF_A0)<=eps && direct < 0.0 && vtx[i]->neigh[j]->idx > i && vtx[i]->neigh[jj]->idx >i){
+                    triangle_add(tlist,vtx[i],vtx[i]->neigh[j],vtx[i]->neigh[jj]);
                 }
             }
         }
@@ -488,15 +488,15 @@ ts_bool init_triangles(ts_vesicle *vesicle){
 ts_bool init_triangle_neighbours(ts_vesicle *vesicle){
     ts_uint i,j,nobo;
     ts_vertex *i1,*i2,*i3,*j1,*j2,*j3;
-    // ts_vertex **vtx=vesicle->vlist->vtx -1; // difference between 0 indexing and 1 indexing
+    // ts_vertex **vtx=vesicle->vlist->vtx ; // difference between 0 indexing and 1 indexing
     ts_triangle_list *tlist=vesicle->tlist;
-    ts_triangle **tria=tlist->tria -1;
+    ts_triangle **tria=tlist->tria ;
     nobo=0;
-    for(i=1;i<=tlist->n;i++){
+    for(i=0;i<tlist->n;i++){
         i1=tria[i]->vertex[0]; 
         i2=tria[i]->vertex[1]; 
         i3=tria[i]->vertex[2]; 
-        for(j=1;j<=tlist->n;j++){
+        for(j=0;j<tlist->n;j++){
             if(j==i) continue;
             j1=tria[j]->vertex[0]; 
             j2=tria[j]->vertex[1]; 
@@ -507,11 +507,11 @@ ts_bool init_triangle_neighbours(ts_vesicle *vesicle){
             }
         }
     }
-    for(i=1;i<=tlist->n;i++){
+    for(i=0;i<tlist->n;i++){
         i1=tria[i]->vertex[0]; 
         i2=tria[i]->vertex[1]; 
         i3=tria[i]->vertex[2]; 
-        for(j=1;j<=tlist->n;j++){
+        for(j=0;j<tlist->n;j++){
             if(j==i) continue;
             j1=tria[j]->vertex[0]; 
             j2=tria[j]->vertex[1]; 
@@ -522,11 +522,11 @@ ts_bool init_triangle_neighbours(ts_vesicle *vesicle){
             }
         }
     }
-    for(i=1;i<=tlist->n;i++){
+    for(i=0;i<tlist->n;i++){
         i1=tria[i]->vertex[0]; 
         i2=tria[i]->vertex[1]; 
         i3=tria[i]->vertex[2]; 
-        for(j=1;j<=tlist->n;j++){
+        for(j=0;j<tlist->n;j++){
             if(j==i) continue;
             j1=tria[j]->vertex[0]; 
             j2=tria[j]->vertex[1]; 
@@ -548,17 +548,16 @@ ts_bool init_triangle_neighbours(ts_vesicle *vesicle){
 ts_bool init_common_vertex_triangle_neighbours(ts_vesicle *vesicle){
     ts_uint i,j,jp,k;
     ts_vertex *k1,*k2,*k3,*k4,*k5;
-    ts_vertex **vtx=vesicle->vlist->vtx -1; // difference between 0 indexing and 1 indexing
+    ts_vertex **vtx=vesicle->vlist->vtx; 
     ts_triangle_list *tlist=vesicle->tlist;
-    ts_triangle **tria=tlist->tria -1;
+    ts_triangle **tria=tlist->tria;
 
-    for (i=1;i<=vesicle->vlist->n;i++){
-        for(j=1;j<=vtx[i]->neigh_no;j++){
-            k1=vtx[i]->neigh[j-1];
-            jp=j+1;
-            if (j == vtx[i]->neigh_no) jp=1;
-            k2=vtx[i]->neigh[jp-1];
-            for(k=1;k<=tlist->n;k++){		// VERY NON-OPTIMAL!!! too many loops (vlist.n * vtx.neigh * tlist.n )!
+    for (i=0;i<vesicle->vlist->n;i++){
+        for(j=0;j<vtx[i]->neigh_no;j++){
+            jp=next_small(j,vtx[i]->neigh_no);
+            k1=vtx[i]->neigh[j];
+            k2=vtx[i]->neigh[jp];
+            for(k=0;k<tlist->n;k++){		// VERY NON-OPTIMAL!!! too many loops (vlist.n * vtx.neigh * tlist.n )!
                 k3=tria[k]->vertex[0];
                 k4=tria[k]->vertex[1];
                 k5=tria[k]->vertex[2];
@@ -574,7 +573,7 @@ ts_bool init_common_vertex_triangle_neighbours(ts_vesicle *vesicle){
                 }
             }
         }
-        /* ts_fprintf(stderr,"TRISTAR for %u (%u):",i-1,vtx[i].tristar_no);
+        /* ts_fprintf(stderr,"TRISTAR for %u (%u):",i,vtx[i].tristar_no);
         for(j=0;j<vtx[i].tristar_no;j++){
             ts_fprintf(stderr," %u,",vtx[i].tristar[j]->idx);
         }
@@ -587,8 +586,8 @@ ts_bool init_common_vertex_triangle_neighbours(ts_vesicle *vesicle){
 ts_bool init_normal_vectors(ts_triangle_list *tlist){
     /* Normals point INSIDE vesicle */
     ts_idx k;
-    ts_triangle **tria=tlist->tria -1; //for 0 indexing
-    for(k=1;k<=tlist->n;k++){
+    ts_triangle **tria=tlist->tria; //for 0 indexing
+    for(k=0;k<tlist->n;k++){
         triangle_normal_vector(tria[k]);	
     }
     return TS_SUCCESS;
