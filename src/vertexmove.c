@@ -24,7 +24,6 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
     ts_double delta_energy, oenergy,dvol=0.0, darea=0.0, dstretchenergy=0.0;
     ts_double costheta,sintheta,phi,cosphi,sinphi,r, omega, cosomega, sinomega;
     ts_double tri_angle, tri_angle_old_min, tri_angle_new_min;
-    ts_double side_0,side_1,side_2;
     //This will hold all the information of vtx and its neighbours
     ts_vertex backupvtx[20];
     // ts_vertex* *constvol_vtx_moved=NULL, *constvol_vtx_backup=NULL;
@@ -164,27 +163,19 @@ ts_bool single_verticle_timestep(ts_vesicle *vesicle,ts_vertex *vtx){
     delta_energy=0;
 
     // check acute triangles
-    for (i=0; i<vtx->neigh_no; i++){
-        j = next_small(i,vtx->neigh_no);
-        side_0 = pow(vtx->neigh[i]->x - vtx->neigh[j]->x,2)
-                +pow(vtx->neigh[i]->y - vtx->neigh[j]->y,2)
-                +pow(vtx->neigh[i]->z - vtx->neigh[j]->z,2);
-        side_1 = pow(vtx->x - vtx->neigh[j]->x,2)
-                +pow(vtx->y - vtx->neigh[j]->y,2)
-                +pow(vtx->z - vtx->neigh[j]->z,2);
-        side_2 = pow(vtx->neigh[i]->x - vtx->x,2)
-                +pow(vtx->neigh[i]->y - vtx->y,2)
-                +pow(vtx->neigh[i]->z - vtx->z,2);
-        if (side_0+side_1<=side_2 || side_1+side_2<=side_0 || side_2+side_0<=side_1){
+    if (vesicle->tape->prevent_obtuse_triangles){
+        for (i=0; i<vtx->neigh_no; i++){
+            j = next_small(i,vtx->neigh_no);
+            if (check_vertex_triangle_obtuse(vtx,vtx->neigh[i],vtx->neigh[j])==TS_FAIL){
                 // failure! obtuse/right triangle!
                 vtx=memcpy((void *)vtx,(void *)&backupvtx[0],sizeof(ts_vertex));
                 for(i=0;i<vtx->neigh_no;i++){
                     vtx->neigh[i]=memcpy((void *)vtx->neigh[i],(void *)&backupvtx[i+1],sizeof(ts_vertex));
                 }
                 // no need to un-do triangle normals
-
                 return TS_FAIL;
         }
+    }
     }
 
     if(vesicle->tape->max_dihedral_angle_cosine<1){

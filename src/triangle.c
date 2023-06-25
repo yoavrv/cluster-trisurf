@@ -346,3 +346,24 @@ ts_bool in_tri(ts_triangle* t, ts_vertex* v){
 ts_double triangle_dot_normals(ts_triangle *t1, ts_triangle *t2){
     return (t1->xnorm*t2->xnorm + t1->ynorm*t2->ynorm + t1->znorm*t2->znorm);
 }
+
+ts_bool check_vertex_triangle_obtuse(ts_vertex* vtx0, ts_vertex* vtx1, ts_vertex* vtx2){
+    ts_double side_0, side_1,side_2;
+    side_0 = pow(vtx1->x - vtx0->x,2)
+            +pow(vtx1->y - vtx0->y,2)
+            +pow(vtx1->z - vtx0->z,2);
+    side_1 = pow(vtx2->x - vtx1->x,2)
+            +pow(vtx2->y - vtx1->y,2)
+            +pow(vtx2->z - vtx1->z,2);
+    side_2 = pow(vtx0->x - vtx2->x,2)
+            +pow(vtx0->y - vtx2->y,2)
+            +pow(vtx0->z - vtx2->z,2);
+    if (side_0+side_1<=side_2 || side_1+side_2<=side_0 || side_2+side_0<=side_1){
+        return TS_FAIL;
+    }
+    return TS_SUCCESS;
+}
+
+ts_bool check_triangle_obtuse(ts_triangle* tria){
+    return check_vertex_triangle_obtuse(tria->vertex[0], tria->vertex[1], tria->vertex[2]);
+}

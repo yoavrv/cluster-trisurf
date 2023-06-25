@@ -11,4 +11,6 @@ ts_bool triangle_remove_neighbour(ts_triangle *tria, ts_triangle *ntria);
 ts_bool in_tri(ts_triangle* t, ts_vertex* v);
 ts_double triangle_dot_normals(ts_triangle *t1, ts_triangle *t2);
 ts_bool debug_triangle_normal_vector(ts_triangle* tria);
+ts_bool check_vertex_triangle_obtuse(ts_vertex* vtx0, ts_vertex* vtx1, ts_vertex* vtx2);
+ts_bool check_triangle_obtuse(ts_triangle* tria);
 #endif
