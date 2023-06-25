@@ -347,18 +347,19 @@ ts_bool vtx_set_global_values(ts_vesicle *vesicle){
 		vesicle->vlist->vtx[i]->d=0;  // curvature deviator
 		vesicle->vlist->vtx[i]->xk = vesicle->tape->xk0;
 		vesicle->vlist->vtx[i]->xk2 = vesicle->tape->xk2; // Gauss-Bonet: we only need excess compare to the regular membrane
-		vesicle->vlist->vtx[i]->nx=0; //normal
+		vesicle->vlist->vtx[i]->nx=1; //normal
 		vesicle->vlist->vtx[i]->ny=0;
 		vesicle->vlist->vtx[i]->nz=0;
-        vesicle->vlist->vtx[i]->nx2=0; //normal
+        vesicle->vlist->vtx[i]->nx2=1; //normal
 		vesicle->vlist->vtx[i]->ny2=0;
 		vesicle->vlist->vtx[i]->nz2=0;
-		vesicle->vlist->vtx[i]->fx=0; //force
+		vesicle->vlist->vtx[i]->fx=1; //force
 		vesicle->vlist->vtx[i]->fy=0;
 		vesicle->vlist->vtx[i]->fz=0;
-		vesicle->vlist->vtx[i]->dx=0; //director
+		vesicle->vlist->vtx[i]->dx=1; //director
 		vesicle->vlist->vtx[i]->dy=0;
 		vesicle->vlist->vtx[i]->dz=0;
+        vesicle->vlist->vtx[i]->area=0;
         vesicle->vlist->vtx[i]->eig0[0]=0; // principal curvature direction (largest curvature)
         vesicle->vlist->vtx[i]->eig0[1]=0;
         vesicle->vlist->vtx[i]->eig0[2]=0;
@@ -371,6 +372,11 @@ ts_bool vtx_set_global_values(ts_vesicle *vesicle){
         vesicle->vlist->vtx[i]->eig_v0=0; // c1 from shape tensor (largest curvature)
         vesicle->vlist->vtx[i]->eig_v1=0; // c2 from shape tensor (smallest curvature)
         vesicle->vlist->vtx[i]->eig_v2=0; // 0 noraml eigenvalue: 3x3 shape tensor has 0 eigenvalue normal
+        vesicle->vlist->vtx[i]->S[0]=0;
+        vesicle->vlist->vtx[i]->S[1]=0;
+        vesicle->vlist->vtx[i]->S[2]=0;
+        vesicle->vlist->vtx[i]->S[3]=0;
+        
 
     }
     return TS_SUCCESS;

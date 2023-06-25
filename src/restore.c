@@ -44,6 +44,7 @@ do{\
             idx++;\
             token=strtok(NULL," ");\
         }\
+        number_of_fields_read++;\
     xmlFree(values);\
     }\
 }while(0)
@@ -81,6 +82,7 @@ do{\
             vtoken[2]=strtok(NULL,"\n");\
             idx++;\
         }\
+        number_of_fields_read++;\
         xmlFree(points);\
         }\
 }while(0)
@@ -447,13 +449,14 @@ ts_bool parseTrisurfTristar(ts_vesicle *vesicle, xmlDocPtr doc, xmlNodePtr cur){
 
 /* this parses the data for vertices (like spontaneous curvature, etc.) */
 ts_bool parseXMLPointData(ts_vesicle *vesicle,xmlDocPtr doc, xmlNodePtr cur){
-    // todo: reduce with macro??
     xmlNodePtr child = cur->xmlChildrenNode;
     xmlChar *property_name;
     xmlChar *values;
     char *vals;
     char *token;
-    int idx, polyidx, monoidx, filidx, fonoidx;
+    ts_int idx, polyidx, monoidx, filidx, fonoidx;
+    ts_double norml;
+    int number_of_fields_read=0,got_type=0,got_director=0;
     // these are needed for vector properties
     xmlChar *points;
     char *pts;
@@ -463,7 +466,6 @@ ts_bool parseXMLPointData(ts_vesicle *vesicle,xmlDocPtr doc, xmlNodePtr cur){
         if ((!xmlStrcmp(child->name, (const xmlChar *)"DataArray"))){
             property_name=xmlGetProp(child, (xmlChar *)"Name");
     
-            TS_READ_DATAARRAY_VTX("spontaneous_curvature",c);
             // Yoav : additional scalar data: type, (spontaneous_curature), bonding_strength (w), direct_force (f), 
             // adhesion_strength (ad_w), spontaneous_deviator (d, which has nothing at the moment),
             // bending_modulus (xk), second bending modulus (xk2)
@@ -473,14 +475,15 @@ ts_bool parseXMLPointData(ts_vesicle *vesicle,xmlDocPtr doc, xmlNodePtr cur){
             // update: macro it is
 
             TS_READ_DATAARRAY_VTX("type",type);
+            TS_READ_DATAARRAY_VTX("spontaneous_curvature",c);
             TS_READ_DATAARRAY_VTX("bonding_strength",w);
             TS_READ_DATAARRAY_VTX("direct_force",f);
             TS_READ_DATAARRAY_VTX("adhesion_strength",ad_w);
             TS_READ_DATAARRAY_VTX("spontaneous_deviator",d);
             TS_READ_DATAARRAY_VTX("bending_modulus",xk);
             TS_READ_DATAARRAY_VTX("second_bending_modulus",xk2);
-            TS_READ_DATAARRAY_VTX("mean_curvature",mean_curvature);
-            TS_READ_DATAARRAY_VTX("gaussian_curvature",gaussian_curvature);
+            // TS_READ_DATAARRAY_VTX("mean_curvature",mean_curvature);
+            // TS_READ_DATAARRAY_VTX("gaussian_curvature",gaussian_curvature);
 
             // also have normal property, and vector properties: 
             // modified from the coordinate extraction
@@ -489,11 +492,51 @@ ts_bool parseXMLPointData(ts_vesicle *vesicle,xmlDocPtr doc, xmlNodePtr cur){
             TS_READ_VECTOR_DATAARRAY_VTX("force",f);
             TS_READ_VECTOR_DATAARRAY_VTX("director",d);
 
+            // check if the only thing we ever had was "type"
+            if(!xmlStrcmp(property_name,(const xmlChar *)"type")){
+                got_type=1;
+            }
+            if(!xmlStrcmp(property_name,(const xmlChar *)"director")){
+                got_director=1;
+            }
+
             xmlFree(property_name);
             }
 
         child=child->next;
     }
+
+    // If we got very minimal amount of data, we fill in values from the tape
+    // this should only happen for tape->debug_fields==64 (enum debug_fields_minimal)
+    // were all of these fields are missing
+    // The generic fields were already set in vtx_set_global_values for the bare membrane
+    // and most other fields are recalculated anyway
+    if ((number_of_fields_read==1 && got_type==1)
+        || (number_of_fields_read==2 && got_type==1 && got_director==1)){
+        // we got exclusivly type
+        // then we need to put d, f, etc.. ourselves from the tape
+        for (idx=0; idx<vesicle->vlist->n; idx++){
+            if (vesicle->vlist->vtx[idx]->type!=(is_adhesive_vtx)){
+                vesicle->vlist->vtx[idx]->w=vesicle->tape->w;
+                vesicle->vlist->vtx[idx]->c=vesicle->tape->c0;
+                vesicle->vlist->vtx[idx]->f=vesicle->tape->F;
+                vesicle->vlist->vtx[idx]->d=vesicle->tape->d0;  // curvature deviator
+                if (got_director==0){
+                vesicle->vlist->vtx[idx]->dx=((1+i)%7-3.5); //director (quasirandom)
+                vesicle->vlist->vtx[idx]->dy=((10-i)%13-6.5);
+                vesicle->vlist->vtx[idx]->dz=((4+2*i)%11-5.5);
+                norml=sqrt(pow(vesicle->vlist->vtx[idx]->dx,2)
+                          +pow(vesicle->vlist->vtx[idx]->dy,2)
+                          +pow(vesicle->vlist->vtx[idx]->dz,2));
+                vesicle->vlist->vtx[idx]->dx=vesicle->vlist->vtx[idx]->dx/norml;
+                vesicle->vlist->vtx[idx]->dy=vesicle->vlist->vtx[idx]->dy/norml;
+                vesicle->vlist->vtx[idx]->dz=vesicle->vlist->vtx[idx]->dz/norml;
+                }
+            }
+        }
+
+    }
+
     return TS_SUCCESS;
 }
 /* this is a parser of vertex positions and bonds from main xml data */

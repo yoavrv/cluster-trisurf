@@ -1,10 +1,8 @@
 ##################
 ## Trisurf Tape ##
 ##################
-
 # a control file for the trisurf simulations
-# $ are program control
-# * are initialization only
+# $ are program control, * are initialization only
 
 ####### Vesicle definitions ###########
 # * nshell is a number of divisions of dipyramid
@@ -15,7 +13,8 @@ dmax=1.7
 dmin_interspecies=1.2
 # $ max step size (in units l_min)
 stepsize=0.15
-
+# $ enforce triangles beign acute: 0 to allow obtuse triangles, 1 to forbid (int flag))
+prevent_obtuse=0
 
 #######  Cell definitions ############
 # $ partition space to cells of 
@@ -35,6 +34,9 @@ iterations=10
 
 # $ do not write "ts_fprintf" statements to stdout (for use in cluster)
 quiet=false
+
+# $ add debug fields to the vtu file (int flag). 0: no debug. 1: some. 2: all, 64: minimal
+debug_fields=0
 
 
 ######-----------------------------#######

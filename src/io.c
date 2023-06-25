@@ -888,7 +888,7 @@ ts_bool write_vertex_xml_file(ts_vesicle *vesicle, ts_idx timestepno, ts_cluster
     ts_bond_list *blist=vesicle->blist;
     ts_vertex **vtx=vlist->vtx;
     ts_idx i,j;
-    ts_flag debug=1;
+    ts_flag debug=vesicle->tape->debug_fields;
     //ts_double senergy=0.0;
     char filename[10000];
     char just_name[255];
@@ -991,35 +991,46 @@ ts_bool write_vertex_xml_file(ts_vesicle *vesicle, ts_idx timestepno, ts_cluster
     TS_WRITE_ITERATE_VTX("%u ",type);
     fprintf(fh,"</DataArray>\n");
 
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"spontaneous_curvature\" format=\"ascii\">");
-    TS_WRITE_ITERATE_VTX("%.17e ",c);
-    fprintf(fh,"</DataArray>\n");
+    if (debug!=debug_fields_minimal){
 
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"bonding_strength\" format=\"ascii\">");
-    TS_WRITE_ITERATE_VTX("%.17e ",w);
-    fprintf(fh,"</DataArray>\n");
+        fprintf(fh,"<DataArray type=\"Float64\" Name=\"spontaneous_curvature\" format=\"ascii\">");
+        TS_WRITE_ITERATE_VTX("%.17e ",c);
+        fprintf(fh,"</DataArray>\n");
 
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"direct_force\" format=\"ascii\">");
-    TS_WRITE_ITERATE_VTX("%.17e ",f);
-    fprintf(fh,"</DataArray>\n");
+        fprintf(fh,"<DataArray type=\"Float64\" Name=\"bonding_strength\" format=\"ascii\">");
+        TS_WRITE_ITERATE_VTX("%.17e ",w);
+        fprintf(fh,"</DataArray>\n");
 
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"adhesion_strength\" format=\"ascii\">");
-    TS_WRITE_ITERATE_VTX("%.17e ",ad_w);
-    fprintf(fh,"</DataArray>\n");
+        fprintf(fh,"<DataArray type=\"Float64\" Name=\"direct_force\" format=\"ascii\">");
+        TS_WRITE_ITERATE_VTX("%.17e ",f);
+        fprintf(fh,"</DataArray>\n");
 
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"spontaneous_deviator\" format=\"ascii\">");
-    TS_WRITE_ITERATE_VTX("%.17e ",d);
-    fprintf(fh,"</DataArray>\n");
+        fprintf(fh,"<DataArray type=\"Float64\" Name=\"adhesion_strength\" format=\"ascii\">");
+        TS_WRITE_ITERATE_VTX("%.17e ",ad_w);
+        fprintf(fh,"</DataArray>\n");
 
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"mean_curvature\" format=\"ascii\">");
-    TS_WRITE_ITERATE_VTX("%.17e ",mean_curvature);
-    fprintf(fh,"</DataArray>\n");
+        fprintf(fh,"<DataArray type=\"Float64\" Name=\"spontaneous_deviator\" format=\"ascii\">");
+        TS_WRITE_ITERATE_VTX("%.17e ",d);
+        fprintf(fh,"</DataArray>\n");
 
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"gaussian_curvature\" format=\"ascii\">");
-    TS_WRITE_ITERATE_VTX("%.17e ",gaussian_curvature);
-    fprintf(fh,"</DataArray>\n");
+        fprintf(fh,"<DataArray type=\"Float64\" Name=\"mean_curvature\" format=\"ascii\">");
+        TS_WRITE_ITERATE_VTX("%.17e ",mean_curvature);
+        fprintf(fh,"</DataArray>\n");
 
-    if (debug){
+        fprintf(fh,"<DataArray type=\"Float64\" Name=\"gaussian_curvature\" format=\"ascii\">");
+        TS_WRITE_ITERATE_VTX("%.17e ",gaussian_curvature);
+        fprintf(fh,"</DataArray>\n");
+
+        fprintf(fh,"<DataArray type=\"Float64\" Name=\"bending_modulus\" format=\"ascii\">");
+        TS_WRITE_ITERATE_VTX("%.17e ",xk);
+        fprintf(fh,"</DataArray>\n");
+
+        fprintf(fh,"<DataArray type=\"Float64\" Name=\"second_bending_modulus\" format=\"ascii\">");
+        TS_WRITE_ITERATE_VTX("%.17e ",xk2);
+        fprintf(fh,"</DataArray>\n");
+    }
+
+    if (debug&debug_fields_some){
 
         fprintf(fh,"<DataArray type=\"Float64\" Name=\"mean_curvature2\" format=\"ascii\">");
         TS_WRITE_ITERATE_VTX("%.17e ",mean_curvature2);
@@ -1028,28 +1039,36 @@ ts_bool write_vertex_xml_file(ts_vesicle *vesicle, ts_idx timestepno, ts_cluster
         fprintf(fh,"<DataArray type=\"Float64\" Name=\"gaussian_curvature2\" format=\"ascii\">");
         TS_WRITE_ITERATE_VTX("%.17e ",gaussian_curvature2);
         fprintf(fh,"</DataArray>\n");
-    
+
+        if (debug&debug_fields_all) {
+
+            fprintf(fh,"<DataArray type=\"Float64\" Name=\"eigenvalue_0\" format=\"ascii\">");
+            TS_WRITE_ITERATE_VTX("%.17e ",eig_v0);
+            fprintf(fh,"</DataArray>\n");
+
+            fprintf(fh,"<DataArray type=\"Float64\" Name=\"eigenvalue_1\" format=\"ascii\">");
+            TS_WRITE_ITERATE_VTX("%.17e ",eig_v1);
+            fprintf(fh,"</DataArray>\n");
+
+            fprintf(fh,"<DataArray type=\"Float64\" Name=\"eigenvalue_2\" format=\"ascii\">");
+            TS_WRITE_ITERATE_VTX("%.17e ",eig_v2);
+            fprintf(fh,"</DataArray>\n");
+
+            fprintf(fh,"<DataArray type=\"Float64\" Name=\"dSd\" format=\"ascii\">");
+            TS_WRITE_ITERATE_VTX("%.17e ",S[0]);
+            fprintf(fh,"</DataArray>\n");
+            fprintf(fh,"<DataArray type=\"Float64\" Name=\"dSt\" format=\"ascii\">");
+            TS_WRITE_ITERATE_VTX("%.17e ",S[1]);
+            fprintf(fh,"</DataArray>\n");
+            fprintf(fh,"<DataArray type=\"Float64\" Name=\"tSt\" format=\"ascii\">");
+            TS_WRITE_ITERATE_VTX("%.17e ",S[3]);
+            fprintf(fh,"</DataArray>\n");
+        }
+
+        fprintf(fh,"<DataArray type=\"Float64\" Name=\"area\" format=\"ascii\">");
+        TS_WRITE_ITERATE_VTX("%.17e ",area);
+        fprintf(fh,"</DataArray>\n");
     }
-
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"eigenvalue_0\" format=\"ascii\">");
-    TS_WRITE_ITERATE_VTX("%.17e ",eig_v0);
-    fprintf(fh,"</DataArray>\n");
-
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"eigenvalue_1\" format=\"ascii\">");
-    TS_WRITE_ITERATE_VTX("%.17e ",eig_v1);
-    fprintf(fh,"</DataArray>\n");
-
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"eigenvalue_2\" format=\"ascii\">");
-    TS_WRITE_ITERATE_VTX("%.17e ",eig_v2);
-    fprintf(fh,"</DataArray>\n");
-
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"bending_modulus\" format=\"ascii\">");
-    TS_WRITE_ITERATE_VTX("%.17e ",xk);
-    fprintf(fh,"</DataArray>\n");
-
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"second_bending_modulus\" format=\"ascii\">");
-    TS_WRITE_ITERATE_VTX("%.17e ",xk2);
-    fprintf(fh,"</DataArray>\n");
 
 
     //here comes additional data. Energy! different form for polymers, so no macro
@@ -1061,7 +1080,7 @@ ts_bool write_vertex_xml_file(ts_vesicle *vesicle, ts_idx timestepno, ts_cluster
     if(poly){
         for(i=0;i<vesicle->poly_list->n;i++){
             for(j=0;j<vesicle->poly_list->poly[i]->vlist->n;j++){
-                fprintf(fh,"%.17e ", vesicle->poly_list->poly[i]->vlist->vtx[j]->energy* vesicle->poly_list->poly[i]->k);
+                fprintf(fh,"%.17e ", vesicle->poly_list->poly[i]->vlist->vtx[j]->energy * vesicle->poly_list->poly[i]->k);
             }
         }
     }
@@ -1069,89 +1088,107 @@ ts_bool write_vertex_xml_file(ts_vesicle *vesicle, ts_idx timestepno, ts_cluster
     if(fil){
         for(i=0;i<vesicle->filament_list->n;i++){
             for(j=0;j<vesicle->filament_list->poly[i]->vlist->n;j++){
-                fprintf(fh,"%.17e ",  vesicle->filament_list->poly[i]->vlist->vtx[j]->energy*  vesicle->filament_list->poly[i]->k);
+                fprintf(fh,"%.17e ",  vesicle->filament_list->poly[i]->vlist->vtx[j]->energy * vesicle->filament_list->poly[i]->k);
             }
         }
     }
     fprintf(fh,"</DataArray>\n");
+    
+    if (debug&debug_fields_some){
+        fprintf(fh,"<DataArray type=\"Float64\" Name=\"mean_energy\" format=\"ascii\">");
+        TS_WRITE_ITERATE_VTX("%.17e ",mean_energy);
+        fprintf(fh,"</DataArray>\n");
 
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"mean_energy\" format=\"ascii\">");
-    TS_WRITE_ITERATE_VTX("%.17e ",mean_energy);
-    fprintf(fh,"</DataArray>\n");
+        fprintf(fh,"<DataArray type=\"Float64\" Name=\"gaussian_energy\" format=\"ascii\">");
+        TS_WRITE_ITERATE_VTX("%.17e ",gaussian_energy);
+        fprintf(fh,"</DataArray>\n");
 
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"gaussian_energy\" format=\"ascii\">");
-    TS_WRITE_ITERATE_VTX("%.17e ",gaussian_energy);
-    fprintf(fh,"</DataArray>\n");
+        if (debug&debug_fields_all){
+            fprintf(fh,"<DataArray type=\"Float64\" Name=\"mean_energy2\" format=\"ascii\">");
+            TS_WRITE_ITERATE_VTX("%.17e ",mean_energy2);
+            fprintf(fh,"</DataArray>\n");
 
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"mean_energy2\" format=\"ascii\">");
-    TS_WRITE_ITERATE_VTX("%.17e ",mean_energy2);
-    fprintf(fh,"</DataArray>\n");
-
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"gaussian_energy2\" format=\"ascii\">");
-    TS_WRITE_ITERATE_VTX("%.17e ",gaussian_energy2);
-    fprintf(fh,"</DataArray>\n");
+            fprintf(fh,"<DataArray type=\"Float64\" Name=\"gaussian_energy2\" format=\"ascii\">");
+            TS_WRITE_ITERATE_VTX("%.17e ",gaussian_energy2);
+            fprintf(fh,"</DataArray>\n");
+        }
+    }
 
 
     // Normals
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"normal\" NumberOfComponents=\"3\" format=\"ascii\">\n");
-    TS_WRITE_VECTOR_ITERATE_VTX("%.17e %.17e %.17e\n",nx,ny,nz);
-    fprintf(fh,"</DataArray>\n");
+    if (debug!=debug_fields_minimal) {
+        fprintf(fh,"<DataArray type=\"Float64\" Name=\"normal\" NumberOfComponents=\"3\" format=\"ascii\">\n");
+        TS_WRITE_VECTOR_ITERATE_VTX("%.17e %.17e %.17e\n",nx,ny,nz);
+        fprintf(fh,"</DataArray>\n");
+    }
 
-    if (debug) {
-        fprintf(fh,"<DataArray type=\"Float64\" Name=\"normal_unused_debug\" NumberOfComponents=\"3\" format=\"ascii\">\n");
+    if (debug&debug_fields_all) {
+        fprintf(fh,"<DataArray type=\"Float64\" Name=\"normal2\" NumberOfComponents=\"3\" format=\"ascii\">\n");
         TS_WRITE_VECTOR_ITERATE_VTX("%.17e %.17e %.17e\n",nx2,ny2,nz2);
         fprintf(fh,"</DataArray>\n");
     }
 
-    // Vectors: force, director (currently has nothing)
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"force\" NumberOfComponents=\"3\" format=\"ascii\">\n");
-    TS_WRITE_VECTOR_ITERATE_VTX("%.17e %.17e %.17e\n",fx,fy,fz);
-    fprintf(fh,"</DataArray>\n");
+    if (debug!=debug_fields_minimal 
+        || (debug==debug_fields_minimal && vesicle->tape->force_model&is_vicsek_model)) {
+        // Vectors: force, director (currently has nothing)
+        fprintf(fh,"<DataArray type=\"Float64\" Name=\"force\" NumberOfComponents=\"3\" format=\"ascii\">\n");
+        TS_WRITE_VECTOR_ITERATE_VTX("%.17e %.17e %.17e\n",fx,fy,fz);
+        fprintf(fh,"</DataArray>\n");
+    } 
+    if (debug!=debug_fields_minimal 
+        || (debug==debug_fields_minimal && vesicle->tape->curvature_model&to_use_new_curvature)) {
 
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"director\" NumberOfComponents=\"3\" format=\"ascii\">\n");
-    TS_WRITE_VECTOR_ITERATE_VTX("%.17e %.17e %.17e\n",dx,dy,dz);
-    fprintf(fh,"</DataArray>\n");
+        fprintf(fh,"<DataArray type=\"Float64\" Name=\"director\" NumberOfComponents=\"3\" format=\"ascii\">\n");
+        TS_WRITE_VECTOR_ITERATE_VTX("%.17e %.17e %.17e\n",dx,dy,dz);
+        fprintf(fh,"</DataArray>\n");
+    }
 
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"eig0\" NumberOfComponents=\"3\" format=\"ascii\">\n");
-    TS_WRITE_VECTOR_ITERATE_VTX("%.17e %.17e %.17e\n",eig0[0],eig0[1],eig0[2]);
-    fprintf(fh,"</DataArray>\n");
+    if (debug&debug_fields_some) {
+        fprintf(fh,"<DataArray type=\"Float64\" Name=\"eig0\" NumberOfComponents=\"3\" format=\"ascii\">\n");
+        TS_WRITE_VECTOR_ITERATE_VTX("%.17e %.17e %.17e\n",eig0[0],eig0[1],eig0[2]);
+        fprintf(fh,"</DataArray>\n");
 
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"eig1\" NumberOfComponents=\"3\" format=\"ascii\">\n");
-    TS_WRITE_VECTOR_ITERATE_VTX("%.17e %.17e %.17e\n",eig1[0],eig1[1],eig1[2]);
-    fprintf(fh,"</DataArray>\n");
+        fprintf(fh,"<DataArray type=\"Float64\" Name=\"eig1\" NumberOfComponents=\"3\" format=\"ascii\">\n");
+        TS_WRITE_VECTOR_ITERATE_VTX("%.17e %.17e %.17e\n",eig1[0],eig1[1],eig1[2]);
+        fprintf(fh,"</DataArray>\n");
 
-     fprintf(fh,"<DataArray type=\"Float64\" Name=\"eig2\" NumberOfComponents=\"3\" format=\"ascii\">\n");
-    TS_WRITE_VECTOR_ITERATE_VTX("%.17e %.17e %.17e\n",eig2[0],eig2[1],eig2[2]);
-    fprintf(fh,"</DataArray>\n");
+        if (debug&debug_fields_all) {
+            fprintf(fh,"<DataArray type=\"Float64\" Name=\"eig2\" NumberOfComponents=\"3\" format=\"ascii\">\n");
+            TS_WRITE_VECTOR_ITERATE_VTX("%.17e %.17e %.17e\n",eig2[0],eig2[1],eig2[2]);
+            fprintf(fh,"</DataArray>\n");
+        }
+    }
 
     //end point data: start of cell data
 
     fprintf(fh,"</PointData>\n<CellData>\n");
 
-    fprintf(fh,"<DataArray type=\"Float64\" Name=\"bonding_energy\" format=\"ascii\">");
-        for(i=0;i<blist->n;i++){
-            fprintf(fh,"%.17e ",vesicle->blist->bond[i]->energy);
-        }
-        for(i=0;i<monono*polyno+filno*(fonono-1);i++){
-            fprintf(fh,"0.0 ");
-        }
-        for(i=0;i<vesicle->tlist->n;i++){
-            fprintf(fh,"0.0 ");
-        }
-        fprintf(fh,"</DataArray>\n");
+    if (debug!=debug_fields_minimal){
+        fprintf(fh,"<DataArray type=\"Float64\" Name=\"bonding_energy\" format=\"ascii\">");
+            for(i=0;i<blist->n;i++){
+                fprintf(fh,"%.17e ",vesicle->blist->bond[i]->energy);
+            }
+            for(i=0;i<monono*polyno+filno*(fonono-1);i++){
+                fprintf(fh,"0.0 ");
+            }
+            for(i=0;i<vesicle->tlist->n;i++){
+                fprintf(fh,"0.0 ");
+            }
+            fprintf(fh,"</DataArray>\n");
 
-    if(vesicle->tape->area_switch==1){
-        fprintf(fh,"<DataArray type=\"Float64\" Name=\"stretching_energy\" format=\"ascii\">");
-        for(i=0;i<blist->n;i++){
-            fprintf(fh, "0.0 ");
+        if(vesicle->tape->area_switch==1){
+            fprintf(fh,"<DataArray type=\"Float64\" Name=\"stretching_energy\" format=\"ascii\">");
+            for(i=0;i<blist->n;i++){
+                fprintf(fh, "0.0 ");
+            }
+            for(i=0;i<monono*polyno+filno*(fonono-1);i++){
+                fprintf(fh,"0.0 ");
+            }
+            for(i=0;i<vesicle->tlist->n;i++){
+                fprintf(fh,"%.17e ",vesicle->tlist->tria[i]->energy);
+            }
+            fprintf(fh,"</DataArray>\n");
         }
-        for(i=0;i<monono*polyno+filno*(fonono-1);i++){
-            fprintf(fh,"0.0 ");
-        }
-        for(i=0;i<vesicle->tlist->n;i++){
-            fprintf(fh,"%.17e ",vesicle->tlist->tria[i]->energy);
-        }
-        fprintf(fh,"</DataArray>\n");
     }
 
     fprintf(fh,"<DataArray type=\"Float64\" Name=\"face_normal\" NumberOfComponents=\"3\" format=\"ascii\">\n");
@@ -1377,6 +1414,7 @@ ts_tape *parsetapebuffer(char *buffer){
         CFG_INT("nxmax", 100, CFGF_NONE),
         CFG_INT("nymax", 100, CFGF_NONE),
         CFG_INT("nzmax", 100, CFGF_NONE),
+        CFG_INT("prevent_obtuse_triangles",0,CFGF_NONE),
 
         CFG_INT("number_of_vertices_with_c0", 50, CFGF_NONE),
         CFG_INT("npoly", 0, CFGF_NONE),
@@ -1391,6 +1429,7 @@ ts_tape *parsetapebuffer(char *buffer){
         CFG_INT("area_switch", 0, CFGF_NONE),
   
         CFG_BOOL("quiet", 0, CFGF_NONE),
+        CFG_INT("debug_fields",0,CFGF_NONE),
         CFG_INT("plane_confinement_switch", 0, CFGF_NONE),
         CFG_INT("allow_center_mass_movement", 0, CFGF_NONE),
         CFG_INT("force_balance_along_z_axis", 0, CFGF_NONE),
@@ -1454,6 +1493,8 @@ ts_tape *parsetapebuffer(char *buffer){
     tape->ncymax = cfg_getint(cfg,"nymax");
     tape->nczmax = cfg_getint(cfg,"nzmax");
 
+    tape->prevent_obtuse_triangles = cfg_getint(cfg,"prevent_obtuse_triangles");
+
     tape->number_of_vertices_with_c0 = cfg_getint(cfg,"number_of_vertices_with_c0");
     tape->npoly = cfg_getint(cfg,"npoly");
     tape->nmono = cfg_getint(cfg,"nmono");
@@ -1467,6 +1508,7 @@ ts_tape *parsetapebuffer(char *buffer){
     tape->area_switch = cfg_getint(cfg,"area_switch");
 
     tape->quiet = cfg_getbool(cfg,"quiet");
+    tape->debug_fields = cfg_getint(cfg,"debug_fields");
     tape->plane_confinement_switch = cfg_getint(cfg, "plane_confinement_switch");
     tape->allow_center_mass_movement = cfg_getint(cfg,"allow_center_mass_movement");
     tape->force_balance_along_z_axis = cfg_getint(cfg,"force_balance_along_z_axis");

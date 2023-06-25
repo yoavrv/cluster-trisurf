@@ -200,6 +200,12 @@ enum adhesion_geometry_type{
   model_xy_sinosoidal_potential=6,
 };
 
+enum debug_fields_level{
+    debug_fields_some=3,
+    debug_fields_all=2,
+    debug_fields_minimal=64,
+};
+
 
 /* STRUCTURES */
 
@@ -457,6 +463,8 @@ typedef struct {
     ts_bool plane_confinement_switch;
     ts_bool allow_center_mass_movement;
     ts_bool force_balance_along_z_axis;
+    ts_bool prevent_obtuse_triangles;
+    ts_flag debug_fields;
     ts_flag adhesion_geometry; // geometry of adhesion (none, plane, sphere, cylinder)
     ts_flag adhesion_model; // adhesion (none, step potential, parabolic potential)
     ts_flag bond_model;
